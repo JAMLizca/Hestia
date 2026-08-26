@@ -1,1 +1,2 @@
-Hola, este puto de git esta jodiendo
+* Ya esta configurado el archivo config.py
+Recordar que tengo que configurar el archivo base_class.py en este aplicamos algo  herencia, este es importnate.
