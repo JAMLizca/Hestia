@@ -74,7 +74,7 @@ uvicorn app.main:app --reload
 ## Estructura del proyecto
 
 ```
-hestia-backend/
+hestia/
 ├── app/
 │   ├── core/
 │   │   └── config.py        # Variables de entorno (pydantic-settings)
