@@ -16,7 +16,7 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 """
-Dependencia de la sesión de datos por request yla cerra automaticamente al finalizar.
+Dependencia de la sesión de datos por request y la cerra automaticamente al finalizar.
 """
 def get_db() -> Session:
     db = SessionLocal()
