@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     DB_HOST: str = "localhost"
     DB_PORT: int = 3306
     DB_USER: str = "root"
-    DB_PASSWORD: str = ""
+    DB_PASSWORD: str = "123456"
     DB_NAME: str = "hestia_db"
 
     SECRET_KEY: str = "change-this-secret-key"
