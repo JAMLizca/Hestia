@@ -1,2 +1,6 @@
 * Ya esta configurado el archivo config.py
 Recordar que tengo que configurar el archivo base_class.py en este aplicamos algo  herencia, este es importnate.
+* faltan endpoint de la entidad roles (ya)
+* crear la db en mysql(pendiente)
+
+*documentar primeros endpoint de la api

@@ -11,4 +11,5 @@ class RoleCreate(RoleBase):
  """Datos que la API devuelve al consultar un rol."""
 class RoleOut(RoleBase):
     id: int
+    
     model_config = ConfigDict(from_attributes=True)
