@@ -10,3 +10,5 @@ env/
 .vscode/
 .idea/
 *.log
+node_modules/
+dist/

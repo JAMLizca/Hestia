@@ -3,6 +3,39 @@
 API REST del **Sistema Inteligente de Gestión Hotelera Hestia**, construida
 con FastAPI, SQLAlchemy y MySQL.
 
+## Interfaz web
+
+El proyecto incluye un panel de recepción en React y Vite para consultar el
+resumen del hotel, reservas, habitaciones y huéspedes. El frontend usa los
+endpoints protegidos de la API y el inicio de sesión OAuth2/JWT existente.
+
+### Requisitos
+
+- Node.js 18 o superior y npm
+- API Hestia iniciada en `http://localhost:8000`
+- Usuario del personal registrado en la API
+
+### Iniciar el frontend
+
+Desde la raíz del proyecto:
+
+```bash
+npm install
+npm run dev
+```
+
+Abre la dirección local que indique Vite (por defecto
+`http://localhost:5173`). Durante el desarrollo, Vite redirige `/api/v1` a
+`http://localhost:8000`. Para usar otro servidor API, define
+`VITE_BACKEND_URL` antes de iniciar Vite. En producción, configura el hosting
+para servir el frontend y enrutar `/api/v1` al backend; si se alojan en
+orígenes distintos, configura CORS en la API.
+
+Inicia sesión con el correo y contraseña de un usuario creado mediante
+`POST /api/v1/auth/register`. Desde el panel se pueden consultar datos del
+hotel, filtrar reservas, crear reservas y actualizar su estado (confirmación,
+check-in, check-out y cancelación).
+
 ## Requisitos previos
 
 - Python 3.11 o superior
