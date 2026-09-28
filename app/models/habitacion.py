@@ -14,7 +14,9 @@ class Habitacion(Base):
     tipo_habitacion_id = Column(Integer, ForeignKey("tipos_habitacion.id"), nullable=False)
     numero = Column(String(10), unique=True, nullable=False)
     piso = Column(Integer, nullable=True)
+    
     # Valores esperados: disponible | ocupada | mantenimiento | limpieza
+    
     estado = Column(String(20), nullable=False, default="disponible")
     caracteristicas = Column(String(255), nullable=True)
 
