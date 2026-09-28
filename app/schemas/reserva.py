@@ -27,6 +27,9 @@ class ReservaBase(BaseModel):
 
 
 class ReservaCreate(ReservaBase):
+    pass
+
+
     """
     Datos requeridos para crear una reserva. El precio, el estado inicial
 

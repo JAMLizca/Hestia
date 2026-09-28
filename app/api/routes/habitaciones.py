@@ -96,7 +96,7 @@ def actualizar_habitacion(habitacion_id: int, habitacion_in: HabitacionUpdate, d
 
 
 @router.delete(
-    "/{habitacion_id}",
+    "/{habitacion_idz}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Elimina una habitación (admin/gerente)",
     dependencies=[Depends(require_roles("administrador", "gerente"))],

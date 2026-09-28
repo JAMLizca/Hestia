@@ -14,6 +14,7 @@ class UsuarioCreate(UsuarioBase):
     rol_id: int
 
 """Datos que la API devuelve al consultar un usuario. No se incluye la contraseña."""
+
 class UsuarioOut(UsuarioBase):
     id: int
     rol_id: int
