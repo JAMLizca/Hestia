@@ -6,11 +6,15 @@ from fastapi import FastAPI
 from app.api.routes import (
     auth,
     disponibilidad,
+    facturas,
     habitaciones,
     health,
     huespedes,
+    pagos,
+    reserva_servicios,
     reservas,
     roles,
+    servicios,
     tipos_habitacion,
 )
 from app.core.config import settings
@@ -36,9 +40,12 @@ app.include_router(habitaciones.router, prefix=settings.API_V1_PREFIX)
 app.include_router(huespedes.router, prefix=settings.API_V1_PREFIX)
 app.include_router(reservas.router, prefix=settings.API_V1_PREFIX)
 app.include_router(disponibilidad.router, prefix=settings.API_V1_PREFIX)
+app.include_router(servicios.router, prefix=settings.API_V1_PREFIX)
+app.include_router(reserva_servicios.router, prefix=settings.API_V1_PREFIX)
+app.include_router(pagos.router, prefix=settings.API_V1_PREFIX)
+app.include_router(facturas.router, prefix=settings.API_V1_PREFIX)
 
 
-@app.get("/", tags=["Raíz"], summary="Endpoint raíz")
+@app.get("/", tags=["Raíz"])
 def raiz():
-    """Mensaje de bienvenida con un enlace a la documentación interactiva."""
     return {"mensaje": "Bienvenido a la API de Hestia", "documentacion": "/docs"}
