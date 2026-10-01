@@ -65,6 +65,13 @@ function localDateValue(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
+function greeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Buenos días";
+  if (hour < 19) return "Buenas tardes";
+  return "Buenas noches";
+}
+
 function initials(name = "") {
   return name
     .split(/\s+/)
@@ -124,6 +131,7 @@ function App() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todas");
+  const [reservationOwnerFilter, setReservationOwnerFilter] = useState("todas");
   const [showBooking, setShowBooking] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -133,6 +141,7 @@ function App() {
     setToken(null);
     setUser(null);
     setData({ reservas: [], habitaciones: [], huespedes: [], tipos: [] });
+    setReservationOwnerFilter("todas");
     setError("");
   }, []);
 
@@ -186,10 +195,6 @@ function App() {
   const activeReservations = data.reservas.filter(
     (reservation) => !["cancelada", "checkout"].includes(reservation.estado),
   );
-  const today = localDateValue();
-  const arrivalsToday = activeReservations.filter(
-    (reservation) => reservation.fecha_checkin_prevista === today,
-  ).length;
   const occupiedRooms = data.habitaciones.filter(
     (room) => room.estado === "ocupada",
   ).length;
@@ -200,6 +205,11 @@ function App() {
       .filter(
         (reservation) =>
           statusFilter === "todas" || reservation.estado === statusFilter,
+      )
+      .filter(
+        (reservation) =>
+          reservationOwnerFilter === "todas" ||
+          reservation.usuario_id === user?.id,
       )
       .filter((reservation) => {
         if (!normalizedSearch) return true;
@@ -221,7 +231,15 @@ function App() {
           new Date(first.fecha_checkin_prevista) -
           new Date(second.fecha_checkin_prevista),
       );
-  }, [data.reservas, guestById, roomById, search, statusFilter]);
+  }, [
+    data.reservas,
+    guestById,
+    reservationOwnerFilter,
+    roomById,
+    search,
+    statusFilter,
+    user?.id,
+  ]);
 
   async function handleLogin(event) {
     event.preventDefault();
@@ -269,8 +287,6 @@ function App() {
   if (!token) return <LoginScreen onLogin={handleLogin} error={error} />;
 
   const viewTitle = navigation.find((item) => item.id === activeView)?.label;
-  const roleName = user?.rol?.nombre || "Equipo Hestia";
-
   return (
     <div className="app-shell">
       <aside className={`sidebar ${mobileNavOpen ? "sidebar--open" : ""}`}>
@@ -297,6 +313,7 @@ function App() {
               className={`nav-link ${activeView === id ? "nav-link--active" : ""}`}
               key={id}
               onClick={() => {
+                if (id === "reservas") setReservationOwnerFilter("todas");
                 setActiveView(id);
                 setMobileNavOpen(false);
               }}
@@ -321,7 +338,7 @@ function App() {
             <div className="profile-avatar">{initials(user?.nombre || "H")}</div>
             <div className="profile-copy">
               <strong>{user?.nombre || "Equipo Hestia"}</strong>
-              <span>{roleName}</span>
+              <span>{user?.email || "Cuenta activa"}</span>
             </div>
             <LogOut size={16} />
           </button>
@@ -363,13 +380,16 @@ function App() {
           {activeView === "resumen" && (
             <Dashboard
               data={data}
-              activeReservations={activeReservations}
-              arrivalsToday={arrivalsToday}
               occupiedRooms={occupiedRooms}
+              user={user}
               guestById={guestById}
               roomById={roomById}
               typeById={typeById}
               onNavigate={setActiveView}
+              onViewMyReservations={() => {
+                setReservationOwnerFilter("mias");
+                setActiveView("reservas");
+              }}
               onNewBooking={() => setShowBooking(true)}
             />
           )}
@@ -382,6 +402,8 @@ function App() {
               onSearch={setSearch}
               statusFilter={statusFilter}
               onStatusFilter={setStatusFilter}
+              ownerFilter={reservationOwnerFilter}
+              onOwnerFilter={setReservationOwnerFilter}
               onNewBooking={() => setShowBooking(true)}
               onAction={updateReservation}
             />
@@ -462,16 +484,33 @@ function PageHeading({ eyebrow, title, subtitle, action }) {
 
 function Dashboard({
   data,
-  activeReservations,
-  arrivalsToday,
   occupiedRooms,
+  user,
   guestById,
   roomById,
   typeById,
   onNavigate,
+  onViewMyReservations,
   onNewBooking,
 }) {
-  const upcoming = [...activeReservations]
+  const userReservations = data.reservas.filter(
+    (reservation) => reservation.usuario_id === user?.id,
+  );
+  const userActiveReservations = userReservations.filter(
+    (reservation) => !["cancelada", "checkout"].includes(reservation.estado),
+  );
+  const today = localDateValue();
+  const arrivalsToday = userActiveReservations.filter(
+    (reservation) =>
+      reservation.fecha_checkin_prevista === today &&
+      reservation.estado !== "checkin",
+  ).length;
+  const upcoming = [...userActiveReservations]
+    .filter(
+      (reservation) =>
+        reservation.fecha_checkin_prevista >= today &&
+        reservation.estado !== "checkin",
+    )
     .sort(
       (first, second) =>
         new Date(first.fecha_checkin_prevista) -
@@ -482,7 +521,7 @@ function Dashboard({
     data.habitaciones.length > 0
       ? Math.round((occupiedRooms / data.habitaciones.length) * 100)
       : 0;
-  const pending = data.reservas.filter(
+  const pending = userReservations.filter(
     (reservation) => reservation.estado === "pendiente",
   ).length;
   const roomStates = [
@@ -496,23 +535,23 @@ function Dashboard({
     <>
       <PageHeading
         eyebrow="PANEL PRINCIPAL"
-        title="Buenos días"
-        subtitle="Aquí tienes el resumen de hoy en Casa Hestia."
+        title={`${greeting()}, ${user?.nombre?.trim().split(/\s+/)[0] || "bienvenido"}`}
+        subtitle="Este es el estado del hotel y de tu actividad."
         action={<button className="button button--primary" onClick={onNewBooking}><Plus size={17} /> Nueva reserva</button>}
       />
       <div className="stats-grid">
         <StatCard
           icon={CalendarDays}
-          label="Reservas activas"
-          value={activeReservations.length}
+          label="Mis reservas activas"
+          value={userActiveReservations.length}
           detail={`${pending} pendiente${pending === 1 ? "" : "s"} por confirmar`}
           accent="lavender"
         />
         <StatCard
           icon={DoorOpen}
-          label="Llegadas de hoy"
+          label="Mis llegadas de hoy"
           value={arrivalsToday}
-          detail="Check-ins programados"
+          detail="Check-ins de tus reservas"
           accent="peach"
         />
         <StatCard
@@ -523,10 +562,10 @@ function Dashboard({
           accent="mint"
         />
         <StatCard
-          icon={Users}
-          label="Huéspedes registrados"
-          value={data.huespedes.length}
-          detail="En la base de datos"
+          icon={Check}
+          label="Reservas gestionadas"
+          value={userReservations.length}
+          detail="Creadas desde tu cuenta"
           accent="blue"
         />
       </div>
@@ -534,8 +573,8 @@ function Dashboard({
       <div className="dashboard-grid">
         <section className="panel arrivals-panel">
           <div className="panel-heading">
-            <div><h2>Próximas reservas</h2><p>Las estancias más cercanas</p></div>
-            <button className="text-link" onClick={() => onNavigate("reservas")}>Ver todas <ArrowRight size={14} /></button>
+            <div><h2>Tus próximas reservas</h2><p>Las estancias que has gestionado</p></div>
+            <button className="text-link" onClick={onViewMyReservations}>Ver mis reservas <ArrowRight size={14} /></button>
           </div>
           {upcoming.length ? (
             <div className="upcoming-list">
@@ -554,9 +593,9 @@ function Dashboard({
               })}
             </div>
           ) : (
-            <EmptyState title="Aún no hay reservas" description="Cuando se registren nuevas estancias, aparecerán aquí." />
+            <EmptyState title="No tienes próximas reservas" description="Las próximas estancias que gestiones aparecerán aquí." />
           )}
-          <div className="panel-footer"><button className="button button--secondary button--full" onClick={() => onNavigate("reservas")}>Ir a reservas <ArrowRight size={15} /></button></div>
+          <div className="panel-footer"><button className="button button--secondary button--full" onClick={onViewMyReservations}>Ver mis reservas <ArrowRight size={15} /></button></div>
         </section>
 
         <section className="panel room-summary-panel">
@@ -582,15 +621,15 @@ function Dashboard({
 
       <section className="panel reservation-overview">
         <div className="panel-heading">
-          <div><h2>Actividad reciente</h2><p>Últimas reservas registradas</p></div>
-          <button className="text-link" onClick={() => onNavigate("reservas")}>Ver actividad <ArrowRight size={14} /></button>
+          <div><h2>Tu actividad reciente</h2><p>Reservas que has gestionado</p></div>
+          <button className="text-link" onClick={onViewMyReservations}>Ver mis reservas <ArrowRight size={14} /></button>
         </div>
-        {data.reservas.length ? (
+        {userReservations.length ? (
           <div className="table-wrap">
             <table>
               <thead><tr><th>HUÉSPED</th><th>HABITACIÓN</th><th>ESTANCIA</th><th>IMPORTE</th><th>ESTADO</th></tr></thead>
               <tbody>
-                {[...data.reservas].sort((a, b) => new Date(b.fecha_creacion) - new Date(a.fecha_creacion)).slice(0, 4).map((reservation) => {
+                {[...userReservations].sort((a, b) => new Date(b.fecha_creacion) - new Date(a.fecha_creacion)).slice(0, 4).map((reservation) => {
                   const guest = guestById.get(reservation.huesped_id);
                   const room = roomById.get(reservation.habitacion_id);
                   const guestName = guest ? `${guest.nombres} ${guest.apellidos}` : `Huésped #${reservation.huesped_id}`;
@@ -606,7 +645,7 @@ function Dashboard({
             </table>
           </div>
         ) : (
-          <EmptyState title="Sin actividad todavía" description="La actividad de reservas se mostrará en esta tabla." />
+          <EmptyState title="Aún no tienes actividad" description="Las reservas que gestiones desde tu cuenta aparecerán aquí." />
         )}
       </section>
     </>
@@ -632,6 +671,8 @@ function ReservationsView({
   onSearch,
   statusFilter,
   onStatusFilter,
+  ownerFilter,
+  onOwnerFilter,
   onNewBooking,
   onAction,
 }) {
@@ -646,6 +687,10 @@ function ReservationsView({
       <section className="panel reservations-panel">
         <div className="list-toolbar">
           <div className="search-field"><Search size={17} /><input aria-label="Buscar reserva" placeholder="Buscar huésped o habitación" value={search} onChange={(event) => onSearch(event.target.value)} /></div>
+          <select aria-label="Filtrar reservas por usuario" value={ownerFilter} onChange={(event) => onOwnerFilter(event.target.value)}>
+            <option value="todas">Todas las reservas</option>
+            <option value="mias">Mis reservas</option>
+          </select>
           <select aria-label="Filtrar por estado" value={statusFilter} onChange={(event) => onStatusFilter(event.target.value)}>
             <option value="todas">Todos los estados</option>
             {Object.entries(statusLabels).slice(0, 5).map(([status, label]) => <option value={status} key={status}>{label}</option>)}
@@ -673,7 +718,7 @@ function ReservationsView({
               </tbody>
             </table>
           </div>
-        ) : <EmptyState title="No encontramos reservas" description={search || statusFilter !== "todas" ? "Prueba con otros términos o filtros." : "Crea la primera reserva para comenzar."} />}
+        ) : <EmptyState title="No encontramos reservas" description={search || statusFilter !== "todas" || ownerFilter !== "todas" ? "Prueba con otros términos o filtros." : "Crea la primera reserva para comenzar."} />}
         <div className="table-pagination"><span>Mostrando <strong>{reservations.length}</strong> reserva{reservations.length === 1 ? "" : "s"}</span><div><button className="pagination-button" disabled aria-label="Página anterior"><ArrowLeft size={15} /></button><span className="page-current">1</span><button className="pagination-button" disabled aria-label="Página siguiente"><ArrowRight size={15} /></button></div></div>
       </section>
     </>

@@ -2,17 +2,26 @@
 
 :root {
   font-family: "DM Sans", sans-serif;
-  color: #262b29;
-  background: #f7f8f6;
+  color: #2b343c;
+  background: #f3f4f5;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --ink: #252c29;
-  --muted: #878f8b;
-  --line: #eceeeb;
-  --green: #2f6650;
-  --deep-green: #234b3b;
-  --canvas: #f7f8f6;
+  --ink: #2b343c;
+  --ink-soft: #3d4852;
+  --muted: #8a939b;
+  --muted-light: #a7aeb5;
+  --line: #e5e7ea;
+  --line-strong: #d6dade;
+  --gold: #bea06a;
+  --gold-deep: #a8894f;
+  --gold-soft: #f6f0e3;
+  --gold-mist: #faf7ef;
+  --surface: #fff;
+  --surface-soft: #f8f9f9;
+  --green: var(--gold);
+  --deep-green: var(--gold-deep);
+  --canvas: #f3f4f5;
   --serif: "Manrope", sans-serif;
 }
 
@@ -271,6 +280,9 @@ tr:last-child td { border-bottom: 0; }
   .page-content { padding: 26px 20px 42px; }
   .dashboard-grid { grid-template-columns: 1fr; }
   .upcoming-dates { display: flex; }
+  .list-toolbar { align-items: stretch; flex-direction: column; }
+  .search-field { width: 100%; }
+  .list-toolbar > select { width: 100%; }
   .rooms-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .login-screen { grid-template-columns: .85fr 1fr; }
   .login-visual { padding-right: 7%; padding-left: 7%; }
@@ -303,9 +315,7 @@ tr:last-child td { border-bottom: 0; }
   .room-state-list { padding-right: 14px; padding-left: 14px; }
   .panel-footer { padding-right: 14px; padding-left: 14px; }
   .reservation-overview { margin-top: 12px; }
-  .list-toolbar { align-items: stretch; flex-direction: column; padding: 13px; }
-  .search-field { width: 100%; }
-  .list-toolbar > select { width: 100%; }
+  .list-toolbar { padding: 13px; }
   .rooms-grid { grid-template-columns: 1fr; gap: 12px; }
   .room-illustration { height: 155px; }
   .login-screen { display: block; min-height: 100vh; }
@@ -319,3 +329,116 @@ tr:last-child td { border-bottom: 0; }
   .booking-modal { padding: 19px; }
   .form-row { gap: 8px; }
 }
+
+body { color: var(--ink); background: var(--canvas); }
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline-color: rgba(190, 160, 106, .45); }
+
+.sidebar { color: #fff; background: #2b343c; border-right-color: #222a30; }
+.brand-mark, .hotel-avatar { color: #2b343c; background: var(--gold); }
+.brand-name { color: #fff; }
+.brand-name > span { color: var(--gold); }
+.hotel-switcher { border-color: rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .04); }
+.hotel-copy strong, .profile-copy strong, .help-card > strong { color: #fff; }
+.hotel-copy span, .profile-copy span, .help-card > span { color: #98a1a9; }
+.hotel-switcher > svg, .profile-button > svg { color: #8d969e; }
+.nav-caption { color: #79838c; }
+.nav-link { color: #aeb6bd; }
+.nav-link:hover { color: #fff; background: rgba(255, 255, 255, .07); }
+.nav-link--active { color: var(--gold); background: rgba(190, 160, 106, .14); }
+.nav-link--active > svg, .help-icon, .help-card > a { color: var(--gold); }
+.nav-count { color: var(--gold); background: rgba(190, 160, 106, .18); }
+.help-card { border-color: rgba(255, 255, 255, .09); background: rgba(255, 255, 255, .04); }
+.help-icon { background: rgba(190, 160, 106, .15); }
+.profile-button { border-top-color: rgba(255, 255, 255, .1); }
+.profile-avatar, .topbar-avatar { color: var(--ink); border: 1px solid var(--gold); background: var(--gold-soft); }
+
+.main-area { background: var(--canvas); }
+.topbar { border-bottom-color: var(--line); background: rgba(255, 255, 255, .92); }
+.breadcrumb { color: var(--muted); }
+.breadcrumb-separator { color: #c6cbd0; }
+.breadcrumb strong { color: var(--ink-soft); }
+.today-label { color: var(--muted); }
+.today-label svg { color: var(--muted-light); }
+.eyebrow { color: var(--gold); }
+.page-heading h1, .stat-value, .panel-heading h2, .upcoming-guest strong,
+.occupancy-ring strong, .occupancy-caption strong, .room-card-title h3,
+.modal-heading h2, .login-panel-content h2 { color: var(--ink); }
+.page-heading p, .panel-heading p, .occupancy-caption p,
+.empty-state > p, .login-description, .login-note { color: var(--muted); }
+.button--primary { color: var(--ink); background: var(--gold); box-shadow: 0 2px 5px rgba(43, 52, 60, .18); }
+.button--primary:hover { color: #fff; background: var(--gold-deep); }
+.button--secondary { color: #4a545d; border-color: var(--line); background: #fff; }
+.button--secondary:hover { color: var(--gold-deep); border-color: var(--gold); background: var(--gold-mist); }
+.stat-card, .panel, .room-card { border-color: var(--line); background: var(--surface); }
+.stat-card:hover, .room-card:hover { border-color: var(--line-strong); box-shadow: 0 6px 18px rgba(43, 52, 60, .07); }
+.stat-icon--lavender { color: #5d6875; background: #eceff2; }
+.stat-icon--peach { color: var(--gold-deep); background: var(--gold-soft); }
+.stat-icon--mint, .stat-trend { color: #3f6e58; background: #e9f2ed; }
+.stat-icon--blue { color: #4d6a86; background: #ecf1f6; }
+.stat-label { color: var(--muted); }
+.stat-detail { color: var(--muted-light); }
+.panel-heading p, .upcoming-guest span, .upcoming-dates span { color: var(--muted-light); }
+.text-link { color: var(--gold-deep); }
+.text-link:hover { color: var(--gold); }
+.upcoming-row, .panel-footer, .room-state-list, .reservation-overview th,
+.reservation-overview td, .modal-heading, .modal-actions { border-color: #f0f1f2; }
+.guest-avatar { color: var(--ink); background: var(--gold-soft); }
+.upcoming-dates strong { color: var(--ink-soft); }
+.occupancy-ring { background: conic-gradient(var(--gold) var(--occupancy), #edeef0 0); }
+.occupancy-ring > div { background: #fff; }
+.room-state-row { color: var(--muted); }
+.room-state-row strong { color: var(--ink-soft); }
+th { color: var(--muted-light); border-color: #f0f1f2; background: #fafbfc; }
+td { color: #5a646d; border-color: #f0f1f2; }
+.table-person > strong, .table-person > div > strong { color: var(--ink-soft); }
+.room-number { color: #4a545d; }
+.muted-cell, .cell-subtitle { color: var(--muted-light); }
+.amount-cell { color: var(--ink); }
+.empty-icon { color: var(--gold-deep); background: var(--gold-soft); }
+.alert { color: #8a6a35; border-color: #efd9c2; background: #fdf8ee; }
+.loading-line { color: var(--muted); }
+.loading-line > span, .secure-dot { background: var(--gold); }
+.search-field { color: var(--muted-light); border-color: var(--line); background: #fff; }
+.search-field:focus-within, .list-toolbar > select:focus,
+.booking-form select:focus, .booking-form input:focus { border-color: var(--gold); }
+.search-field input, .booking-form select, .booking-form input,
+.login-form input { color: var(--ink-soft); }
+.search-field input::placeholder, .booking-form input::placeholder,
+.login-form input::placeholder { color: #b0b6bb; }
+.list-toolbar > select, .booking-form select, .booking-form input,
+.login-form input { border-color: var(--line); background: #fff; }
+.reservation-id { color: var(--gold-deep); }
+.action-icon:hover { color: var(--gold-deep); border-color: var(--gold-soft); background: var(--gold-mist); }
+.page-current { color: var(--ink); border-color: var(--gold); background: var(--gold-soft); }
+.room-illustration { background: linear-gradient(135deg, #f0ede5, #e6ddc9); }
+.room-illustration--ocupada { background: linear-gradient(135deg, #e9ecee, #d9e0e4); }
+.room-illustration--limpieza { background: linear-gradient(135deg, #f2eee5, #e8e0d1); }
+.room-illustration--mantenimiento { background: linear-gradient(135deg, #efebea, #e5dcda); }
+.room-art-window { background: linear-gradient(145deg, #d3d8db 0 48%, #e8e2d2 49%); box-shadow: 36px 5px 0 -2px #dde0e2; }
+.room-art-bed { background: #fff; box-shadow: inset 0 7px #d8d3c4, 0 -4px 0 #c3beb0; }
+.room-art-bed::before, .room-art-lamp::before { background: var(--gold-soft); }
+.room-art-bed::after { background: #c9bfa4; }
+.room-art-lamp { background: #8d949b; }
+.room-card-number { color: var(--ink); }
+.room-card-title > div > span, .room-features { color: var(--muted); }
+.stays-pill { color: var(--gold-deep); background: var(--gold-soft); }
+.modal-backdrop { background: rgba(43, 52, 60, .55); }
+.booking-modal { border-color: var(--line); background: #fff; box-shadow: 0 22px 70px rgba(43, 52, 60, .35); }
+.modal-heading p, .modal-empty p { color: var(--muted); }
+.booking-form > label, .form-row label, .login-form label { color: #4a545d; }
+.form-error { color: #a25a52; }
+
+.login-screen, .login-panel { background: #fff; }
+.login-visual { background: #2b343c; }
+.login-visual::before, .login-visual::after { border-color: rgba(190, 160, 106, .16); }
+.brand--light .brand-mark { color: var(--ink); background: var(--gold); }
+.brand--light .brand-name > span, .login-quote h1 em, .login-quote .eyebrow { color: var(--gold); }
+.login-quote p { color: #c4cbd1; }
+.login-visual-footer { color: #98a1a9; }
+.footer-rule { background: var(--gold); }
+.login-form label { color: #4a545d; }
+.login-form input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(190, 160, 106, .18); }
+.login-copyright { color: var(--muted-light); }
+.mobile-menu { color: var(--muted); }
+.mobile-scrim { background: rgba(43, 52, 60, .45); }
+.sidebar { box-shadow: 12px 0 35px rgba(43, 52, 60, .2); }
