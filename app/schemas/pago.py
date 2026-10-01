@@ -1,23 +1,23 @@
+"""
+Esquemas Pydantic para los pagos asociados a una reserva.
+"""
+from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class ServicioConsumido(BaseModel):
-    servicio_nombre: str
-    cantidad: int
-    precio_unitario: Decimal
-    subtotal: Decimal
+class PagoCreate(BaseModel):
+    monto: Decimal = Field(gt=0)
+    metodo_pago: str
 
 
-class ResumenReserva(BaseModel):
+class PagoOut(BaseModel):
+    id: int
     reserva_id: int
-    huesped_nombre: str
-    habitacion_numero: str
-    noches: int
-    costo_habitacion: Decimal
-    servicios: list[ServicioConsumido]
-    costo_servicios: Decimal
-    costo_total: Decimal
-    total_pagado: Decimal
-    saldo_pendiente: Decimal
+    monto: Decimal
+    metodo_pago: str
+    estado: str
+    fecha_pago: datetime
+
+    model_config = ConfigDict(from_attributes=True)
