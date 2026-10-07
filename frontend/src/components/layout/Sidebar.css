@@ -1,0 +1,135 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: var(--sidebar-width);
+  height: 100%;
+  background: var(--navy-900);
+  font-family: var(--font-body);
+}
+
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(201, 160, 82, 0.15);
+}
+
+.sidebar__name {
+  color: var(--cream);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 0.05em;
+}
+
+.sidebar__tagline {
+  color: var(--gold);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.sidebar__nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 12px 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.sidebar__section {
+  margin-bottom: 4px;
+  padding-left: 10px;
+  color: rgba(201, 160, 82, 0.5);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.sidebar__items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border-left: 2px solid transparent;
+  color: rgba(245, 238, 224, 0.6);
+  font-size: 13px;
+  font-weight: 400;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar__icon {
+  flex-shrink: 0;
+  color: rgba(245, 238, 224, 0.4);
+}
+
+.sidebar__link:hover {
+  background: rgba(245, 238, 224, 0.04);
+  color: rgba(245, 238, 224, 0.85);
+}
+
+.sidebar__link--active,
+.sidebar__link--active:hover {
+  background: rgba(201, 160, 82, 0.12);
+  border-left-color: var(--gold);
+  color: var(--gold);
+  font-weight: 500;
+}
+
+.sidebar__link--active .sidebar__icon {
+  color: var(--gold);
+}
+
+.sidebar__footer {
+  padding: 12px 12px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar__logout {
+  color: rgba(245, 238, 224, 0.4);
+}
+
+.sidebar__logout .sidebar__icon {
+  color: rgba(245, 238, 224, 0.35);
+}
+
+/* Tablet y móvil: el menú pasa a ser un panel deslizable */
+@media (max-width: 1023px) {
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.25);
+  }
+
+  .sidebar--open {
+    transform: translateX(0);
+  }
+
+  .sidebar__link {
+    padding: 11px 12px;
+    font-size: 14px;
+  }
+
+  .sidebar__footer {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+}
