@@ -96,12 +96,17 @@ def actualizar_habitacion(habitacion_id: int, habitacion_in: HabitacionUpdate, d
 
 
 @router.delete(
-    "/{habitacion_idz}",
+    "/{habitacion_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Elimina una habitación (admin/gerente)",
     dependencies=[Depends(require_roles("administrador", "gerente"))],
 )
 def eliminar_habitacion(habitacion_id: int, db: Session = Depends(get_db)):
     habitacion = _obtener_o_404(db, habitacion_id)
+    if habitacion.reservas:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se puede eliminar: la habitación tiene reservas asociadas",
+        )
     db.delete(habitacion)
     db.commit()
