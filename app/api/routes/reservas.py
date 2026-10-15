@@ -221,5 +221,10 @@ def cancelar_reserva(reserva_id: int, db: Session = Depends(get_db)):
 )
 def eliminar_reserva(reserva_id: int, db: Session = Depends(get_db)):
     reserva = _obtener_o_404(db, reserva_id)
+    if reserva.pagos or reserva.reserva_servicios:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se puede eliminar: la reserva tiene pagos o servicios asociados. Cancélala en su lugar",
+        )
     db.delete(reserva)
     db.commit()
