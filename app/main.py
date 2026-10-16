@@ -3,7 +3,20 @@ Punto de inicio de la API
 """
 from fastapi import FastAPI
 
-from app.api.routes import health, roles
+from app.api.routes import (
+    auth,
+    disponibilidad,
+    facturas,
+    habitaciones,
+    health,
+    huespedes,
+    pagos,
+    reserva_servicios,
+    reservas,
+    roles,
+    servicios,
+    tipos_habitacion,
+)
 from app.core.config import settings
 
 app = FastAPI(
@@ -12,7 +25,7 @@ app = FastAPI(
         "API REST del Sistema Inteligente de Gestión Hotelera Hestia. "
         "Gestiona huéspedes, habitaciones, reservas y servicios, y expone "
         "las predicciones y recomendaciones generadas por el componente "
-        "de LM (Machine Learning)."
+        "de Machine Learning."
     ),
     version="0.1.0",
     docs_url="/docs",
@@ -20,9 +33,19 @@ app = FastAPI(
 )
 
 app.include_router(health.router, prefix=settings.API_V1_PREFIX)
+app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(roles.router, prefix=settings.API_V1_PREFIX)
+app.include_router(tipos_habitacion.router, prefix=settings.API_V1_PREFIX)
+app.include_router(habitaciones.router, prefix=settings.API_V1_PREFIX)
+app.include_router(huespedes.router, prefix=settings.API_V1_PREFIX)
+app.include_router(reservas.router, prefix=settings.API_V1_PREFIX)
+app.include_router(disponibilidad.router, prefix=settings.API_V1_PREFIX)
+app.include_router(servicios.router, prefix=settings.API_V1_PREFIX)
+app.include_router(reserva_servicios.router, prefix=settings.API_V1_PREFIX)
+app.include_router(pagos.router, prefix=settings.API_V1_PREFIX)
+app.include_router(facturas.router, prefix=settings.API_V1_PREFIX)
 
-@app.get("/", tags=["Raíz"], summary="Endpoint raíz")
+
+@app.get("/", tags=["Raíz"])
 def raiz():
-    """Mensaje de bienvenida con un enlace a la documentación interactiva."""
     return {"mensaje": "Bienvenido a la API de Hestia", "documentacion": "/docs"}

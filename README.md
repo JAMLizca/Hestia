@@ -14,7 +14,7 @@ con FastAPI, SQLAlchemy y MySQL.
 ### 1. Crear y activar el entorno virtual
 
 ```bash
-cd hestia-backend
+cd hestia
 python -m venv venv
 
 # Linux / macOS
@@ -37,7 +37,14 @@ cp .env.example .env
 ```
 
 Abrir `.env` y ajustar `DB_USER`, `DB_PASSWORD` y `DB_NAME` según tu
-instalación local de MySQL.
+instalación local de MySQL. `SECRET_KEY` es obligatoria (mínimo 32 caracteres);
+genera una con:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+`.env` está en `.gitignore` y nunca debe subirse al repositorio.
 
 ### 4. Crear la base de datos vacía
 
@@ -56,7 +63,17 @@ generan directamente desde los modelos con este script chicos de manera rápida:
 python -c "from app.db.base import Base; from app.db.session import engine; Base.metadata.create_all(bind=engine)"
 ```
 
-Esto crea la tabla `roles` en `hestia_db`.
+Esto crea todas las tablas en `hestia_db`.
+
+Después, crea los roles base y el primer administrador (el registro de
+usuarios en `/auth/register` exige un administrador autenticado):
+
+```bash
+python seed_roles.py
+```
+
+El script pide nombre, email y contraseña del administrador, o los toma de
+`ADMIN_NOMBRE`, `ADMIN_EMAIL` y `ADMIN_PASSWORD` si están definidas.
 
 ### 6. Levantar el servidor de desarrollo
 
