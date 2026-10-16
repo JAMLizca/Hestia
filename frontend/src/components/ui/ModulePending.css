@@ -1,0 +1,38 @@
+.module-pending {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 320px;
+  padding: 40px 20px;
+  border: 1px solid var(--canvas);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  text-align: center;
+}
+
+.module-pending__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-lg);
+  background: rgba(201, 160, 82, 0.1);
+  color: var(--gold);
+}
+
+.module-pending h2 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.module-pending p {
+  max-width: 320px;
+  color: var(--gray-400);
+  font-size: 12.5px;
+}

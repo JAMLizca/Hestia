@@ -1,0 +1,190 @@
+/* ── Formulario de nueva reserva ──────────────────── */
+.reserva-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.reserva-form__step {
+  margin-bottom: 10px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy-900);
+}
+
+.reserva-form__guest {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.reserva-form__dates {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.reserva-form__search-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.room-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.room-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px;
+  border: 1px solid var(--canvas);
+  border-radius: var(--radius-md);
+  background: #fff;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.room-option:hover {
+  border-color: rgba(201, 160, 82, 0.6);
+}
+
+.room-option--selected {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201, 160, 82, 0.18);
+  background: rgba(201, 160, 82, 0.05);
+}
+
+.room-option__number {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--navy-900);
+}
+
+.room-option__type {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--navy-700);
+}
+
+.room-option__meta {
+  font-size: 11px;
+  color: var(--gray-400);
+}
+
+.room-option__price {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+}
+
+.room-option__warn {
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: var(--orange);
+}
+
+/* ── Detalle de reserva ───────────────────────────── */
+.reserva-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.reserva-detail__tabs {
+  margin-bottom: 16px;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.summary__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--gray-500);
+}
+
+.summary__row strong {
+  color: var(--navy-900);
+  font-weight: 600;
+}
+
+.summary__row--total {
+  padding-top: 10px;
+  border-top: 1px solid var(--canvas);
+  font-size: 14px;
+}
+
+.summary__row--total strong {
+  font-family: var(--font-display);
+  font-size: 18px;
+}
+
+.summary__row--balance strong {
+  color: var(--orange);
+}
+
+.summary__row--paid strong {
+  color: var(--green);
+}
+
+.summary__items {
+  padding: 4px 0 4px 12px;
+  border-left: 2px solid var(--canvas);
+}
+
+.inline-form {
+  display: grid;
+  grid-template-columns: 1fr 110px auto;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: rgba(237, 232, 218, 0.35);
+}
+
+.inline-form--pago {
+  grid-template-columns: 1fr 1fr auto;
+}
+
+@media (max-width: 760px) {
+  .reserva-detail__actions .btn {
+    flex: 1 1 auto;
+    padding: 11px 14px;
+  }
+
+  .room-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reserva-form__guest,
+  .inline-form,
+  .inline-form--pago {
+    grid-template-columns: 1fr;
+  }
+
+  .reserva-form__dates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reserva-form__search-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
