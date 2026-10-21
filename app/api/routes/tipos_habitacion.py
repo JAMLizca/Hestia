@@ -69,6 +69,17 @@ def crear_tipo(tipo_in: TipoHabitacionCreate, db: Session = Depends(get_db)):
 def actualizar_tipo(tipo_id: int, tipo_in: TipoHabitacionUpdate, db: Session = Depends(get_db)):
     tipo = _obtener_o_404(db, tipo_id)
     datos = tipo_in.model_dump(exclude_unset=True)
+
+    if "nombre" in datos:
+        repetido = db.query(TipoHabitacion).filter(
+            TipoHabitacion.nombre == datos["nombre"], TipoHabitacion.id != tipo_id
+        ).first()
+        if repetido:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Ya existe un tipo de habitación con el nombre '{datos['nombre']}'",
+            )
+
     for campo, valor in datos.items():
         setattr(tipo, campo, valor)
     db.commit()
