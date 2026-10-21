@@ -9,6 +9,9 @@ from app.schemas.servicio import ServicioCreate, ServicioOut, ServicioUpdate
 
 router = APIRouter(prefix="/servicios", tags=["Servicios"], dependencies=[Depends(get_current_user)])
 
+# Columnas NOT NULL: un null explícito en el PUT daría error 500 en la base de datos.
+CAMPOS_OBLIGATORIOS = ("nombre", "precio")
+
 
 def _obtener_o_404(db: Session, servicio_id: int) -> Servicio:
     servicio = db.query(Servicio).filter(Servicio.id == servicio_id).first()
@@ -43,6 +46,13 @@ def crear_servicio(servicio_in: ServicioCreate, db: Session = Depends(get_db)):
 def actualizar_servicio(servicio_id: int, servicio_in: ServicioUpdate, db: Session = Depends(get_db)):
     servicio = _obtener_o_404(db, servicio_id)
     datos = servicio_in.model_dump(exclude_unset=True)
+
+    for campo in CAMPOS_OBLIGATORIOS:
+        if campo in datos and datos[campo] is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El campo '{campo}' no puede ser nulo",
+            )
 
     if "nombre" in datos:
         repetido = db.query(Servicio).filter(

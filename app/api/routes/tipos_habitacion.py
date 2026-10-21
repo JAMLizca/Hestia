@@ -18,6 +18,9 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)],
 )
 
+# Columnas NOT NULL: un null explícito en el PUT daría error 500 en la base de datos.
+CAMPOS_OBLIGATORIOS = ("nombre", "capacidad_maxima", "precio_base", "camas")
+
 
 def _obtener_o_404(db: Session, tipo_id: int) -> TipoHabitacion:
     tipo = db.query(TipoHabitacion).filter(TipoHabitacion.id == tipo_id).first()
@@ -69,6 +72,13 @@ def crear_tipo(tipo_in: TipoHabitacionCreate, db: Session = Depends(get_db)):
 def actualizar_tipo(tipo_id: int, tipo_in: TipoHabitacionUpdate, db: Session = Depends(get_db)):
     tipo = _obtener_o_404(db, tipo_id)
     datos = tipo_in.model_dump(exclude_unset=True)
+
+    for campo in CAMPOS_OBLIGATORIOS:
+        if campo in datos and datos[campo] is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El campo '{campo}' no puede ser nulo",
+            )
 
     if "nombre" in datos:
         repetido = db.query(TipoHabitacion).filter(

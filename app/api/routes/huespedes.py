@@ -14,6 +14,9 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)],
 )
 
+# Columnas NOT NULL: un null explícito en el PUT daría error 500 en la base de datos.
+CAMPOS_OBLIGATORIOS = ("tipo_documento", "nombres", "apellidos")
+
 
 def _obtener_o_404(db: Session, huesped_id: int) -> Huesped:
     huesped = db.query(Huesped).filter(Huesped.id == huesped_id).first()
@@ -23,7 +26,6 @@ def _obtener_o_404(db: Session, huesped_id: int) -> Huesped:
             detail=f"No existe un huésped con id {huesped_id}",
         )
     return huesped
-
 
 
 @router.get("/", response_model=list[HuespedOut], summary="Lista todos los huéspedes")
@@ -65,6 +67,14 @@ def crear_huesped(huesped_in: HuespedCreate, db: Session = Depends(get_db)):
 def actualizar_huesped(huesped_id: int, huesped_in: HuespedUpdate, db: Session = Depends(get_db)):
     huesped = _obtener_o_404(db, huesped_id)
     datos = huesped_in.model_dump(exclude_unset=True)
+
+    for campo in CAMPOS_OBLIGATORIOS:
+        if campo in datos and datos[campo] is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El campo '{campo}' no puede ser nulo",
+            )
+
     for campo, valor in datos.items():
         setattr(huesped, campo, valor)
     db.commit()
