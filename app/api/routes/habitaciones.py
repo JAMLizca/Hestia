@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db, require_roles
 from app.models.habitacion import Habitacion
 from app.models.tipo_habitacion import TipoHabitacion
+from app.models.usuario import Usuario
 from app.schemas.habitacion import EstadoHabitacion, HabitacionCreate, HabitacionOut, HabitacionUpdate
 
 router = APIRouter(
@@ -73,12 +74,39 @@ def crear_habitacion(habitacion_in: HabitacionCreate, db: Session = Depends(get_
 @router.put(
     "/{habitacion_id}",
     response_model=HabitacionOut,
-    summary="Actualiza una habitación (admin/gerente/recepcionista)",
+    summary="Actualiza una habitación (admin/gerente; recepción solo el estado)",
     dependencies=[Depends(require_roles("administrador", "gerente", "recepcionista"))],
 )
-def actualizar_habitacion(habitacion_id: int, habitacion_in: HabitacionUpdate, db: Session = Depends(get_db)):
+def actualizar_habitacion(
+    habitacion_id: int,
+    habitacion_in: HabitacionUpdate,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(get_current_user),
+):
     habitacion = _obtener_o_404(db, habitacion_id)
     datos = habitacion_in.model_dump(exclude_unset=True)
+
+    # Estos dos campos son NOT NULL en la base de datos: un null explícito daría error 500.
+    for campo in ("tipo_habitacion_id", "estado"):
+        if campo in datos and datos[campo] is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El campo '{campo}' no puede ser nulo",
+            )
+
+    # Recepción solo puede cambiar el estado (limpieza, mantenimiento, disponible...).
+    # Se comparan los valores con los actuales para tolerar que el formulario del
+    # frontend reenvíe los campos sin modificar.
+    if usuario_actual.rol.nombre == "recepcionista":
+        cambios_no_permitidos = [
+            campo for campo, valor in datos.items()
+            if campo != "estado" and getattr(habitacion, campo) != valor
+        ]
+        if cambios_no_permitidos:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Recepción solo puede cambiar el estado de la habitación",
+            )
 
     if "tipo_habitacion_id" in datos:
         tipo = db.query(TipoHabitacion).filter(TipoHabitacion.id == datos["tipo_habitacion_id"]).first()
