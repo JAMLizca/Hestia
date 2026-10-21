@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db, require_roles
 from app.models.habitacion import Habitacion
+from app.models.reserva import Reserva
 from app.models.tipo_habitacion import TipoHabitacion
 from app.models.usuario import Usuario
 from app.schemas.habitacion import EstadoHabitacion, HabitacionCreate, HabitacionOut, HabitacionUpdate
@@ -106,6 +107,20 @@ def actualizar_habitacion(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Recepción solo puede cambiar el estado de la habitación",
+            )
+
+    # Con un huésped alojado (reserva en 'checkin') la habitación debe seguir 'ocupada'.
+    # El estado cambia solo con el check-out; así no se salta la validación del check-in.
+    if "estado" in datos and datos["estado"] != habitacion.estado:
+        hay_huesped_alojado = db.query(
+            db.query(Reserva)
+            .filter(Reserva.habitacion_id == habitacion_id, Reserva.estado == "checkin")
+            .exists()
+        ).scalar()
+        if hay_huesped_alojado and datos["estado"] != "ocupada":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="La habitación tiene un huésped alojado (check-in activo); registra primero el check-out",
             )
 
     if "tipo_habitacion_id" in datos:
