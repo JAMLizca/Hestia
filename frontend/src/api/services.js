@@ -21,6 +21,18 @@ export const rolesApi = {
   create: (data) => apiRequest("/roles/", { method: "POST", body: data }),
 };
 
+// ── Usuarios (routes/usuarios.py) — solo administrador ──────────
+// El alta se hace con authApi.register (POST /auth/register). No hay borrado:
+// un usuario se desactiva (activo: false) en lugar de eliminarse.
+export const usuariosApi = {
+  list: () => apiRequest("/usuarios/"),
+  get: (id) => apiRequest(`/usuarios/${id}`),
+  /** { nombre?, email?, rol_id?, activo? } */
+  update: (id, data) => apiRequest(`/usuarios/${id}`, { method: "PUT", body: data }),
+  /** { password } — el administrador define una contraseña nueva (204) */
+  setPassword: (id, password) => apiRequest(`/usuarios/${id}/password`, { method: "PUT", body: { password } }),
+};
+
 // ── Tipos de habitación (routes/tipos_habitacion.py) ────────────
 export const tiposHabitacionApi = {
   list: () => apiRequest("/tipos-habitacion/"),
