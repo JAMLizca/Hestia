@@ -40,7 +40,7 @@ def _hay_solapamiento(
     checkout: date,
     excluir_reserva_id: int | None = None,
 ) -> bool:
-   
+
     query = db.query(Reserva).filter(
         Reserva.habitacion_id == habitacion_id,
         Reserva.estado.in_(ESTADOS_QUE_BLOQUEAN),
@@ -85,7 +85,7 @@ def crear_reserva(
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(get_current_user),
 ):
-   
+
     huesped = db.query(Huesped).filter(Huesped.id == reserva_in.huesped_id).first()
     if not huesped:
         raise HTTPException(
@@ -104,6 +104,19 @@ def crear_reserva(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La habitación está en mantenimiento y no se puede reservar",
+        )
+
+    if reserva_in.fecha_checkin_prevista < date.today():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La fecha de check-in no puede ser pasada",
+        )
+
+    capacidad = habitacion.tipo_habitacion.capacidad_maxima
+    if reserva_in.num_huespedes > capacidad:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"La habitación admite máximo {capacidad} huéspedes",
         )
 
     if _hay_solapamiento(
@@ -165,6 +178,13 @@ def checkin_reserva(reserva_id: int, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Solo se puede hacer check-in de una reserva 'confirmada' (actual: '{reserva.estado}')",
+        )
+    # La habitación debe estar libre: evita dos huéspedes en la misma habitación
+    # y que se haga check-in sobre una habitación sin limpiar o en mantenimiento.
+    if reserva.habitacion.estado != "disponible":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"La habitación está '{reserva.habitacion.estado}' y no puede recibir el check-in",
         )
     reserva.estado = "checkin"
     reserva.fecha_checkin_real = datetime.now(timezone.utc)
