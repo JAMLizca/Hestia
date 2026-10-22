@@ -1,4 +1,4 @@
-"""Depedencias reutilizables para los endpoints de la API.  
+"""Dependencias reutilizables para los endpoints de la API.
 """
 
 from fastapi import Depends, HTTPException, status
@@ -16,12 +16,11 @@ def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ) -> Usuario:
-    
     """
     Decodifica el JWT recibido en el header `Authorization: Bearer <token>`
     y carga el usuario correspondiente desde la DB.
     """
-    
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="No se pudo validar las credenciales",
@@ -32,10 +31,12 @@ def get_current_user(
         usuario_id = payload.get("sub")
         if usuario_id is None:
             raise credentials_exception
-    except ValueError:
+        # int() dentro del try: un "sub" no numérico da 401 y no un error 500.
+        usuario_id = int(usuario_id)
+    except (ValueError, TypeError):
         raise credentials_exception
 
-    usuario = db.query(Usuario).filter(Usuario.id == int(usuario_id)).first()
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
     if usuario is None or not usuario.activo:
         raise credentials_exception
     return usuario
@@ -50,6 +51,7 @@ def require_roles(*roles_permitidos: str):
             )
         return usuario
 
+    _verificar_rol.roles_permitidos = roles_permitidos
     return _verificar_rol
 
 

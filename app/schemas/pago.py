@@ -8,8 +8,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class PagoCreate(BaseModel):
-    monto: Decimal = Field(gt=0)
-    metodo_pago: str
+    # max_digits/decimal_places coinciden con la columna Numeric(10, 2);
+    # max_length coincide con String(30). Así un dato fuera de rango da 422 y no 500.
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    monto: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
+    metodo_pago: str = Field(min_length=1, max_length=30)
 
 
 class PagoOut(BaseModel):

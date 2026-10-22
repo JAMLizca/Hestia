@@ -1,12 +1,16 @@
-# Hestia 
+# Hestia
 
 API REST del **Sistema Inteligente de Gestión Hotelera Hestia**, construida
-con FastAPI, SQLAlchemy y MySQL.
+con FastAPI, SQLAlchemy y MySQL. Incluye autenticación JWT con roles
+(administrador, gerente, recepcionista), gestión de habitaciones, huéspedes y
+reservas, consumo de servicios, pagos y facturación. El frontend (React + Vite)
+está en la carpeta [`frontend/`](frontend/).
 
 ## Requisitos previos
 
 - Python 3.11 o superior
 - MySQL 8 corriendo localmente
+- Node.js 18 o superior (solo para el frontend)
 - Git
 
 ## Configuración del entorno de desarrollo
@@ -30,7 +34,7 @@ venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-### 3. Configurar las variables de etorno
+### 3. Configurar las variables de entorno
 
 ```bash
 cp .env.example .env
@@ -54,16 +58,18 @@ Desde el cliente de MySQL:
 CREATE DATABASE hestia_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-### 5. Crear las tablas 
+### 5. Crear las tablas
 
-Por ahora, mientras no se configura Alembic, las tablas se
-generan directamente desde los modelos con este script chicos de manera rápida:
+Por ahora, mientras no se configura Alembic, las tablas se generan
+directamente desde los modelos con este comando:
 
 ```bash
 python -c "from app.db.base import Base; from app.db.session import engine; Base.metadata.create_all(bind=engine)"
 ```
 
-Esto crea todas las tablas en `hestia_db`.
+Esto crea todas las tablas en `hestia_db`. Si ya tenías la base creada y se agregó un módulo
+nuevo (por ejemplo `configuracion_hotel`), vuelve a correr el mismo comando: solo crea las
+tablas que faltan y no toca las existentes.
 
 Después, crea los roles base y el primer administrador (el registro de
 usuarios en `/auth/register` exige un administrador autenticado):
@@ -73,7 +79,7 @@ python seed_roles.py
 ```
 
 El script pide nombre, email y contraseña del administrador, o los toma de
-`ADMIN_NOMBRE`, `ADMIN_EMAIL` y `ADMIN_PASSWORD` si están definidas.
+`ADMIN_NOMBRE`, `ADMIN_EMAIL` y `ADMIN_PASSWORD` si están definidas en `.env`.
 
 ### 6. Levantar el servidor de desarrollo
 
@@ -86,7 +92,18 @@ uvicorn app.main:app --reload
 - Documentación interactiva (Swagger): http://localhost:8000/docs
 - Documentación alternativa (ReDoc): http://localhost:8000/redoc
 - Healthcheck: http://localhost:8000/api/v1/health
-- Roles: http://localhost:8000/api/v1/roles/
+
+### 8. Levantar el frontend (opcional)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+En desarrollo, Vite reenvía `/api/v1` al backend (`http://localhost:8000`),
+por lo que no hace falta configurar CORS. Más detalles en
+[`frontend/README.md`](frontend/README.md).
 
 ## Estructura del proyecto
 
@@ -94,40 +111,82 @@ uvicorn app.main:app --reload
 hestia/
 ├── app/
 │   ├── core/
-│   │   └── config.py        # Variables de entorno (pydantic-settings)
+│   │   ├── config.py            # Variables de entorno (pydantic-settings)
+│   │   ├── permisos.py          # Matriz de permisos calculada desde las rutas
+│   │   └── security.py          # Hash de contraseñas (bcrypt) y tokens JWT
 │   ├── db/
-│   │   ├── base_class.py    # Base declarativa de SQLAlchemy
-│   │   ├── base.py          # Registro de todos los modelos (para Alembic)
-│   │   └── session.py       # Engine, SessionLocal y dependencia get_db
-│   ├── models/
-│   │   └── role.py          # Modelo SQLAlchemy de la tabla roles
-│   ├── schemas/
-│   │   └── role.py          # Esquemas Pydantic (entrada/salida de la API)
+│   │   ├── base_class.py        # Base declarativa de SQLAlchemy
+│   │   ├── base.py              # Registro de todos los modelos (para Alembic)
+│   │   └── session.py           # Engine, SessionLocal y dependencia get_db
+│   ├── models/                  # Tablas SQLAlchemy
+│   │   ├── role.py, usuario.py, configuracion.py
+│   │   ├── tipo_habitacion.py, habitacion.py
+│   │   ├── huesped.py, reserva.py
+│   │   └── servicio.py, reserva_servicio.py, pago.py
+│   ├── schemas/                 # Esquemas Pydantic (entrada/salida de la API)
+│   │   └── role, usuario, tipo_habitacion, habitacion, huesped, reserva,
+│   │       servicio, reserva_servicio, pago, factura
 │   ├── api/
-│   │   ├── deps.py          # Dependencias compartidas (get_db, futuro auth)
+│   │   ├── deps.py              # get_db, get_current_user, require_roles (RBAC)
 │   │   └── routes/
-│   │       ├── health.py    # GET /health
-│   │       └── roles.py     # GET/POST /roles
-│   └── main.py               # Instancia de FastAPI y registro de routers
+│   │       ├── health.py, auth.py, roles.py, usuarios.py
+│   │       ├── tipos_habitacion.py, habitaciones.py, disponibilidad.py
+│   │       ├── huespedes.py, reservas.py
+│   │       └── servicios.py, reserva_servicios.py, pagos.py, facturas.py
+│   └── main.py                  # Instancia de FastAPI y registro de routers
+├── frontend/                    # React + Vite
+├── seed_roles.py                # Roles base y primer administrador
 ├── .env.example
 ├── .gitignore
 ├── requirements.txt
 └── README.md
 ```
 
-## Primer endpoint documentado
+## Endpoints principales
 
-Se eligió la entidad `Role` como primer módulo porque es la tabla más
-simple del modelo E-R (sin llaves foráneas propias), lo que permite validar
-el flujo completo:
-- modelo SQLAlchemy → esquema Pydantic → sesión de base
-de datos → endpoint — antes de construir los módulos más complejos.
+Todos los endpoints (salvo `/health` y `/auth/login`) requieren el header
+`Authorization: Bearer <token>`. Prefijo: `/api/v1`.
 
-| Método | Ruta                | Descripción                        |
-|--------|---------------------|-------------------------------------|
-| GET    | `/api/v1/health`    | Verifica que la API y MySQL responden |
-| GET    | `/api/v1/roles/`    | Lista todos los roles               |
-| POST   | `/api/v1/roles/`    | Crea un rol nuevo                   |
+| Módulo | Endpoints | Quién puede escribir |
+|--------|-----------|----------------------|
+| Salud | `GET /health` | — |
+| Autenticación | `POST /auth/login`, `GET /auth/me`, `PUT /auth/me/password`, `POST /auth/register` | `register`: administrador. `me/password`: cada usuario cambia la suya (pide la actual) |
+| Roles | `GET/POST /roles/`, `PUT /roles/{id}` (solo la descripción), `GET /roles/permisos` | crear y editar: administrador. `permisos` devuelve la matriz módulo × acción × rol y los usuarios por rol |
+| Configuración | `GET/PUT /configuracion/` | consultar: cualquier usuario; modificar: administrador |
+| Usuarios | `GET /usuarios/`, `GET/PUT /usuarios/{id}`, `PUT /usuarios/{id}/password` | solo administrador (el alta es `POST /auth/register`) |
+| Tipos de habitación | `GET/POST /tipos-habitacion/`, `GET/PUT/DELETE /tipos-habitacion/{id}` | administrador, gerente |
+| Habitaciones | `GET/POST /habitaciones/`, `GET/PUT/DELETE /habitaciones/{id}` | crear/eliminar: administrador, gerente. Editar: también recepcionista, pero solo el `estado` |
+| Disponibilidad | `GET /disponibilidad/?fecha_checkin=&fecha_checkout=` | — |
+| Huéspedes | `GET/POST /huespedes/`, `GET/PUT/DELETE /huespedes/{id}` | cualquier usuario; eliminar: administrador, gerente |
+| Reservas | `GET/POST /reservas/`, `GET/DELETE /reservas/{id}`, `POST /reservas/{id}/confirmar`, `/checkin`, `/checkout`, `/cancelar` | cualquier usuario; eliminar: administrador |
+| Servicios (catálogo) | `GET/POST /servicios/`, `GET/PUT/DELETE /servicios/{id}` | administrador, gerente |
+| Consumo de servicios | `GET/POST /reservas/{id}/servicios/`, `DELETE /reservas/{id}/servicios/{consumo_id}` | cualquier usuario |
+| Pagos | `GET/POST /reservas/{id}/pagos/` | cualquier usuario |
+| Facturación | `GET /reservas/{id}/resumen` | — |
 
-Ambos routers quedan documentados automáticamente en `/docs` gracias a los
-`summary` y docstrings de cada función. Hacer pruebas.
+## Reglas de negocio
+
+- **Estados de una reserva:** `pendiente → confirmada → checkin → checkout`.
+  Solo se puede cancelar desde `pendiente` o `confirmada`.
+- **Habitación y reserva:** el check-in exige que la habitación esté
+  `disponible` y la pasa a `ocupada`; el check-out la pasa a `limpieza`. Recepción
+  debe marcarla `disponible` antes del siguiente check-in. Mientras haya una
+  reserva en `checkin`, el estado de la habitación no se puede cambiar.
+- **Solapamiento:** dos reservas de la misma habitación chocan si
+  `A.checkin < B.checkout` y `B.checkin < A.checkout` (solo cuentan las
+  `pendiente`, `confirmada` y `checkin`). Que una salga el mismo día que otra
+  entra **no** es conflicto. Un choque devuelve `409`.
+- **Validaciones al reservar:** la fecha de check-in no puede ser pasada y
+  `num_huespedes` no puede superar la capacidad del tipo de habitación.
+- **Precio:** `precio_base` del tipo de habitación × noches. El precio de cada
+  servicio consumido se copia en el momento del consumo, así que un cambio
+  posterior en el catálogo no altera facturas ya generadas.
+- **Facturación:** `costo_total = costo_habitacion + costo_servicios`;
+  `saldo_pendiente = costo_total − pagos`.
+- **Pagos:** el monto debe ser mayor que 0 (máximo 10 dígitos y 2 decimales), no
+  puede superar el saldo pendiente y no se aceptan pagos de una reserva cancelada.
+- **Configuración:** datos del hotel, horarios de check-in/out, moneda y zona horaria en una sola fila (`configuracion_hotel`). Mientras no se guarde nada, `GET /configuracion/` devuelve valores por defecto. El nombre del hotel se muestra en el menú y la moneda en todos los montos del panel; las horas y la zona horaria son de referencia.
+- **Roles y permisos:** los permisos se asignan por nombre de rol con `require_roles` en cada ruta. `GET /roles/permisos` los calcula recorriendo las rutas reales, así que la pantalla de Roles siempre refleja lo que la API aplica (es de solo lectura). Un rol nuevo solo accede a las rutas abiertas a cualquier usuario autenticado. El nombre de un rol no se puede cambiar.
+- **Usuarios:** no se eliminan, se desactivan (`activo: false`); un usuario inactivo no puede iniciar sesión y su token deja de funcionar de inmediato. Un administrador no puede desactivarse ni cambiarse el rol a sí mismo, y siempre debe quedar al menos un administrador activo.
+- **Borrados:** no se eliminan tipos de habitación, habitaciones, huéspedes,
+  servicios ni reservas que tengan registros asociados.

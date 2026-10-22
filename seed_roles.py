@@ -1,11 +1,3 @@
-"""
-Script de arranque: insertar los roles base del sistema si no existen y,
-si todavía no hay ningún administrador, crear el primero.
-
-Como `/auth/register` exige un administrador autenticado, el primer
-administrador se crea aquí. Los datos se toman de las variables de entorno
-ADMIN_NOMBRE, ADMIN_EMAIL y ADMIN_PASSWORD; si faltan, se piden por consola.
-"""
 import os
 from getpass import getpass
 
@@ -15,16 +7,22 @@ from app.db.session import SessionLocal
 from app.models.role import Role
 from app.models.usuario import Usuario
 
-ROLES_BASE = ["administrador", "gerente", "recepcionista"]
+ROLES_BASE = {
+    "administrador": "Acceso total: usuarios, roles, configuración y toda la operación del hotel.",
+    "gerente": "Gestiona habitaciones, tipos, servicios y huéspedes; supervisa la operación.",
+    "recepcionista": "Atiende reservas, check-in/out, huéspedes, consumos y pagos; solo cambia el estado de las habitaciones.",
+}
 
 
 def seed_roles(db):
-    for nombre in ROLES_BASE:
+    for nombre, descripcion in ROLES_BASE.items():
         existe = db.query(Role).filter(Role.nombre == nombre).first()
         if not existe:
-            db.add(Role(nombre=nombre))
+            db.add(Role(nombre=nombre, description=descripcion))
             print(f"Rol creado: {nombre}")
         else:
+            if not existe.description:
+                existe.description = descripcion
             print(f"Rol ya existe: {nombre}")
     db.commit()
 

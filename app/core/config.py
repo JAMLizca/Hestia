@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     DB_PORT: int = 3306
     DB_USER: str = "root"
     # Sin valor por defecto: debe definirse en `.env` (puede ser vacía).
-    DB_PASSWORD: str
+    DB_PASSWORD: str 
     DB_NAME: str = "hestia_db"
 
     # Sin valor por defecto: con una clave conocida cualquiera puede falsificar tokens.
