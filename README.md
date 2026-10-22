@@ -67,7 +67,9 @@ directamente desde los modelos con este comando:
 python -c "from app.db.base import Base; from app.db.session import engine; Base.metadata.create_all(bind=engine)"
 ```
 
-Esto crea todas las tablas en `hestia_db`.
+Esto crea todas las tablas en `hestia_db`. Si ya tenías la base creada y se agregó un módulo
+nuevo (por ejemplo `configuracion_hotel`), vuelve a correr el mismo comando: solo crea las
+tablas que faltan y no toca las existentes.
 
 Después, crea los roles base y el primer administrador (el registro de
 usuarios en `/auth/register` exige un administrador autenticado):
@@ -117,7 +119,7 @@ hestia/
 │   │   ├── base.py              # Registro de todos los modelos (para Alembic)
 │   │   └── session.py           # Engine, SessionLocal y dependencia get_db
 │   ├── models/                  # Tablas SQLAlchemy
-│   │   ├── role.py, usuario.py
+│   │   ├── role.py, usuario.py, configuracion.py
 │   │   ├── tipo_habitacion.py, habitacion.py
 │   │   ├── huesped.py, reserva.py
 │   │   └── servicio.py, reserva_servicio.py, pago.py
@@ -150,6 +152,7 @@ Todos los endpoints (salvo `/health` y `/auth/login`) requieren el header
 | Salud | `GET /health` | — |
 | Autenticación | `POST /auth/login`, `GET /auth/me`, `POST /auth/register` | `register`: administrador |
 | Roles | `GET/POST /roles/`, `PUT /roles/{id}` (solo la descripción), `GET /roles/permisos` | crear y editar: administrador. `permisos` devuelve la matriz módulo × acción × rol y los usuarios por rol |
+| Configuración | `GET/PUT /configuracion/` | consultar: cualquier usuario; modificar: administrador |
 | Usuarios | `GET /usuarios/`, `GET/PUT /usuarios/{id}`, `PUT /usuarios/{id}/password` | solo administrador (el alta es `POST /auth/register`) |
 | Tipos de habitación | `GET/POST /tipos-habitacion/`, `GET/PUT/DELETE /tipos-habitacion/{id}` | administrador, gerente |
 | Habitaciones | `GET/POST /habitaciones/`, `GET/PUT/DELETE /habitaciones/{id}` | crear/eliminar: administrador, gerente. Editar: también recepcionista, pero solo el `estado` |
@@ -182,6 +185,7 @@ Todos los endpoints (salvo `/health` y `/auth/login`) requieren el header
   `saldo_pendiente = costo_total − pagos`.
 - **Pagos:** el monto debe ser mayor que 0 (máximo 10 dígitos y 2 decimales), no
   puede superar el saldo pendiente y no se aceptan pagos de una reserva cancelada.
+- **Configuración:** datos del hotel, horarios de check-in/out, moneda y zona horaria en una sola fila (`configuracion_hotel`). Mientras no se guarde nada, `GET /configuracion/` devuelve valores por defecto. El nombre del hotel se muestra en el menú y la moneda en todos los montos del panel; las horas y la zona horaria son de referencia.
 - **Roles y permisos:** los permisos se asignan por nombre de rol con `require_roles` en cada ruta. `GET /roles/permisos` los calcula recorriendo las rutas reales, así que la pantalla de Roles siempre refleja lo que la API aplica (es de solo lectura). Un rol nuevo solo accede a las rutas abiertas a cualquier usuario autenticado. El nombre de un rol no se puede cambiar.
 - **Usuarios:** no se eliminan, se desactivan (`activo: false`); un usuario inactivo no puede iniciar sesión y su token deja de funcionar de inmediato. Un administrador no puede desactivarse ni cambiarse el rol a sí mismo, y siempre debe quedar al menos un administrador activo.
 - **Borrados:** no se eliminan tipos de habitación, habitaciones, huéspedes,

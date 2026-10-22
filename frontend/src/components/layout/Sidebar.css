@@ -16,6 +16,10 @@
   border-bottom: 1px solid rgba(201, 160, 82, 0.15);
 }
 
+.sidebar__titles {
+  min-width: 0;
+}
+
 .sidebar__name {
   color: var(--cream);
   font-family: var(--font-display);
@@ -31,6 +35,9 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar__nav {
