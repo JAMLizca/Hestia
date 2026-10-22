@@ -51,6 +51,7 @@ def require_roles(*roles_permitidos: str):
             )
         return usuario
 
+    _verificar_rol.roles_permitidos = roles_permitidos
     return _verificar_rol
 
 
