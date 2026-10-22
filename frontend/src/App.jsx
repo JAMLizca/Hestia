@@ -26,7 +26,7 @@ const PAGES = {
 };
 
 const PENDING_REASONS = {
- 
+  "/configuracion": "El backend no tiene endpoints para guardar la información del hotel ni la configuración regional.",
 };
 
 export default function App() {
