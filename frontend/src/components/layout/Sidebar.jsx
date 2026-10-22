@@ -1,20 +1,24 @@
 import { LogOut } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useConfig } from "../../context/ConfigContext";
 import Logo from "../ui/Logo";
 import { NAV_SECTIONS } from "./navigation";
 import "./Sidebar.css";
 
 export default function Sidebar({ open, onNavigate }) {
   const { logout } = useAuth();
+  const { config } = useConfig();
 
   return (
     <aside className={`sidebar${open ? " sidebar--open" : ""}`} aria-label="Menú principal">
       <div className="sidebar__brand">
         <Logo size={42} />
-        <div>
+        <div className="sidebar__titles">
           <div className="sidebar__name">HESTIA</div>
-          <div className="sidebar__tagline">Gestión Hotelera</div>
+          <div className="sidebar__tagline" title={config.nombre}>
+            {config.nombre}
+          </div>
         </div>
       </div>
 

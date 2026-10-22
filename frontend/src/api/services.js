@@ -107,3 +107,10 @@ export const pagosApi = {
   /** { monto, metodo_pago } */
   create: (reservaId, data) => apiRequest(`/reservas/${reservaId}/pagos/`, { method: "POST", body: data }),
 };
+// ── Configuración del hotel (routes/configuracion.py) ───────────
+export const configApi = {
+  /** Cualquier usuario autenticado. Devuelve valores por defecto si aún no se guardó nada. */
+  get: () => apiRequest("/configuracion/"),
+  /** Solo administrador. Actualización parcial: { nombre?, nit?, ..., hora_checkin?: "HH:MM", moneda?, zona_horaria? } */
+  update: (data) => apiRequest("/configuracion/", { method: "PUT", body: data }),
+};
