@@ -110,6 +110,7 @@ hestia/
 ├── app/
 │   ├── core/
 │   │   ├── config.py            # Variables de entorno (pydantic-settings)
+│   │   ├── permisos.py          # Matriz de permisos calculada desde las rutas
 │   │   └── security.py          # Hash de contraseñas (bcrypt) y tokens JWT
 │   ├── db/
 │   │   ├── base_class.py        # Base declarativa de SQLAlchemy
@@ -126,7 +127,7 @@ hestia/
 │   ├── api/
 │   │   ├── deps.py              # get_db, get_current_user, require_roles (RBAC)
 │   │   └── routes/
-│   │       ├── health.py, auth.py, roles.py
+│   │       ├── health.py, auth.py, roles.py, usuarios.py
 │   │       ├── tipos_habitacion.py, habitaciones.py, disponibilidad.py
 │   │       ├── huespedes.py, reservas.py
 │   │       └── servicios.py, reserva_servicios.py, pagos.py, facturas.py
@@ -148,7 +149,8 @@ Todos los endpoints (salvo `/health` y `/auth/login`) requieren el header
 |--------|-----------|----------------------|
 | Salud | `GET /health` | — |
 | Autenticación | `POST /auth/login`, `GET /auth/me`, `POST /auth/register` | `register`: administrador |
-| Roles | `GET/POST /roles/` | `POST`: administrador |
+| Roles | `GET/POST /roles/`, `PUT /roles/{id}` (solo la descripción), `GET /roles/permisos` | crear y editar: administrador. `permisos` devuelve la matriz módulo × acción × rol y los usuarios por rol |
+| Usuarios | `GET /usuarios/`, `GET/PUT /usuarios/{id}`, `PUT /usuarios/{id}/password` | solo administrador (el alta es `POST /auth/register`) |
 | Tipos de habitación | `GET/POST /tipos-habitacion/`, `GET/PUT/DELETE /tipos-habitacion/{id}` | administrador, gerente |
 | Habitaciones | `GET/POST /habitaciones/`, `GET/PUT/DELETE /habitaciones/{id}` | crear/eliminar: administrador, gerente. Editar: también recepcionista, pero solo el `estado` |
 | Disponibilidad | `GET /disponibilidad/?fecha_checkin=&fecha_checkout=` | — |
@@ -180,5 +182,7 @@ Todos los endpoints (salvo `/health` y `/auth/login`) requieren el header
   `saldo_pendiente = costo_total − pagos`.
 - **Pagos:** el monto debe ser mayor que 0 (máximo 10 dígitos y 2 decimales), no
   puede superar el saldo pendiente y no se aceptan pagos de una reserva cancelada.
+- **Roles y permisos:** los permisos se asignan por nombre de rol con `require_roles` en cada ruta. `GET /roles/permisos` los calcula recorriendo las rutas reales, así que la pantalla de Roles siempre refleja lo que la API aplica (es de solo lectura). Un rol nuevo solo accede a las rutas abiertas a cualquier usuario autenticado. El nombre de un rol no se puede cambiar.
+- **Usuarios:** no se eliminan, se desactivan (`activo: false`); un usuario inactivo no puede iniciar sesión y su token deja de funcionar de inmediato. Un administrador no puede desactivarse ni cambiarse el rol a sí mismo, y siempre debe quedar al menos un administrador activo.
 - **Borrados:** no se eliminan tipos de habitación, habitaciones, huéspedes,
   servicios ni reservas que tengan registros asociados.

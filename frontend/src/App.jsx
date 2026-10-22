@@ -11,6 +11,7 @@ import HuespedesPage from "./pages/HuespedesPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import ReservasPage from "./pages/ReservasPage";
+import RolesPage from "./pages/RolesPage";
 import ServiciosPage from "./pages/ServiciosPage";
 import UsuariosPage from "./pages/UsuariosPage";
 
@@ -19,14 +20,13 @@ const PAGES = {
   "/reservas": ReservasPage,
   "/habitaciones": HabitacionesPage,
   "/huespedes": HuespedesPage,
+  "/roles": RolesPage,
   "/servicios": ServiciosPage,
   "/usuarios": UsuariosPage,
 };
 
-// Pantallas del mockup que dependen de endpoints que el backend aún no tiene.
 const PENDING_REASONS = {
-  "/roles": "El backend solo expone GET y POST /roles, sin permisos por módulo. La matriz de permisos del mockup necesita esa información.",
-  "/configuracion": "El backend no tiene endpoints para guardar la información del hotel ni la configuración regional.",
+ 
 };
 
 export default function App() {
