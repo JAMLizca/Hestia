@@ -5,6 +5,7 @@ from fastapi import FastAPI
 
 from app.api.routes import (
     auth,
+    configuracion,
     disponibilidad,
     facturas,
     habitaciones,
@@ -16,6 +17,7 @@ from app.api.routes import (
     roles,
     servicios,
     tipos_habitacion,
+    usuarios,
 )
 from app.core.config import settings
 
@@ -35,6 +37,7 @@ app = FastAPI(
 app.include_router(health.router, prefix=settings.API_V1_PREFIX)
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(roles.router, prefix=settings.API_V1_PREFIX)
+app.include_router(configuracion.router, prefix=settings.API_V1_PREFIX)
 app.include_router(tipos_habitacion.router, prefix=settings.API_V1_PREFIX)
 app.include_router(habitaciones.router, prefix=settings.API_V1_PREFIX)
 app.include_router(huespedes.router, prefix=settings.API_V1_PREFIX)
@@ -44,6 +47,7 @@ app.include_router(servicios.router, prefix=settings.API_V1_PREFIX)
 app.include_router(reserva_servicios.router, prefix=settings.API_V1_PREFIX)
 app.include_router(pagos.router, prefix=settings.API_V1_PREFIX)
 app.include_router(facturas.router, prefix=settings.API_V1_PREFIX)
+app.include_router(usuarios.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/", tags=["Raíz"])

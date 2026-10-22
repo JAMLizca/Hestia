@@ -8,7 +8,7 @@ from app.api.deps import get_current_user, get_db, require_roles
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.role import Role
 from app.models.usuario import Usuario
-from app.schemas.usuario import Token, UsuarioCreate, UsuarioOut
+from app.schemas.usuario import PasswordChange, Token, UsuarioCreate, UsuarioOut
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
@@ -95,3 +95,32 @@ def login(
 )
 def perfil_actual(usuario_actual: Usuario = Depends(get_current_user)):
     return usuario_actual
+
+
+@router.put(
+    "/me/password",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Cambia la contraseña del usuario autenticado",
+)
+def cambiar_mi_password(
+    datos: PasswordChange,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Exige la contraseña actual. Devuelve 400 (y no 401, que el frontend toma como sesión
+    vencida) si la contraseña actual es incorrecta o si la nueva es igual a la actual.
+    El token vigente sigue siendo válido.
+    """
+    if not verify_password(datos.password_actual, usuario_actual.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La contraseña actual no es correcta",
+        )
+    if datos.password_nueva == datos.password_actual:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La contraseña nueva debe ser distinta de la actual",
+        )
+    usuario_actual.password_hash = hash_password(datos.password_nueva)
+    db.commit()

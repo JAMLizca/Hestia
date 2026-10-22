@@ -1,12 +1,19 @@
-import { Bell, ChevronDown, HelpCircle, Menu } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
-import { capitalize, initials } from "../../utils/format";
+import { Menu } from "lucide-react";
+import { useCallback, useState } from "react";
+import ChangePasswordModal from "./ChangePasswordModal";
+import { HelpMenu, NotificationsMenu, UserMenu } from "./HeaderMenus";
 import "./Header.css";
 
 export default function Header({ title, subtitle, onMenuClick }) {
-  const { user } = useAuth();
-  const nombre = user?.nombre ?? "";
-  const rol = capitalize(user?.rol ?? "");
+  // Solo un menú abierto a la vez: "avisos" | "ayuda" | "usuario"
+  const [openMenu, setOpenMenu] = useState(null);
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  const toggle = (name) => () => setOpenMenu((current) => (current === name ? null : name));
+  // Cada menú se cierra solo si es el que está abierto (los callbacks son estables).
+  const closeAvisos = useCallback(() => setOpenMenu((c) => (c === "avisos" ? null : c)), []);
+  const closeAyuda = useCallback(() => setOpenMenu((c) => (c === "ayuda" ? null : c)), []);
+  const closeUsuario = useCallback(() => setOpenMenu((c) => (c === "usuario" ? null : c)), []);
 
   return (
     <header className="header">
@@ -21,23 +28,17 @@ export default function Header({ title, subtitle, onMenuClick }) {
       </div>
 
       <div className="header__right">
-        {/* Notificaciones y ayuda aparecen en el mockup, pero el backend no expone
-            datos para ellas todavía; se muestran sin contenido inventado. */}
-        <button type="button" className="header__icon-btn" title="Notificaciones" aria-label="Notificaciones">
-          <Bell size={18} strokeWidth={1.75} />
-        </button>
-        <button type="button" className="header__icon-btn header__help" title="Ayuda" aria-label="Ayuda">
-          <HelpCircle size={18} strokeWidth={1.75} />
-        </button>
-        <div className="header__user">
-          <div className="header__avatar">{initials(nombre)}</div>
-          <div className="header__user-text">
-            <div className="header__user-name">{nombre}</div>
-            {rol && <div className="header__user-role">{rol}</div>}
-          </div>
-          <ChevronDown size={14} strokeWidth={1.75} color="var(--gray-400)" className="header__chevron" />
-        </div>
+        <NotificationsMenu open={openMenu === "avisos"} onToggle={toggle("avisos")} onClose={closeAvisos} />
+        <HelpMenu open={openMenu === "ayuda"} onToggle={toggle("ayuda")} onClose={closeAyuda} />
+        <UserMenu
+          open={openMenu === "usuario"}
+          onToggle={toggle("usuario")}
+          onClose={closeUsuario}
+          onChangePassword={() => setChangingPassword(true)}
+        />
       </div>
+
+      {changingPassword && <ChangePasswordModal onClose={() => setChangingPassword(false)} />}
     </header>
   );
 }

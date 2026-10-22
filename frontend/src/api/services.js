@@ -1,10 +1,9 @@
 /**
  * Servicios por recurso. Cada función corresponde 1:1 a un endpoint
- * existente en app/api/routes del backend. No se agregan endpoints nuevos.
  */
 import { apiRequest } from "./client";
 
-// ── Autenticación (routes/auth.py) ──────────────────────────────
+//Autenticación (routes/auth.py)
 export const authApi = {
   /** POST /auth/login — form-data: username (email), password */
   login: (email, password) =>
@@ -13,15 +12,27 @@ export const authApi = {
   me: () => apiRequest("/auth/me"),
   /** POST /auth/register — { nombre, email, password, rol_id } */
   register: (data) => apiRequest("/auth/register", { method: "POST", body: data }),
+  /** PUT /auth/me/password — { password_actual, password_nueva } (204). Cambia la contraseña de quien tiene la sesión. */
+  changePassword: (data) => apiRequest("/auth/me/password", { method: "PUT", body: data }),
 };
 
-// ── Roles (routes/roles.py) ─────────────────────────────────────
+//Roles (routes/roles.py) 
 export const rolesApi = {
   list: () => apiRequest("/roles/"),
   create: (data) => apiRequest("/roles/", { method: "POST", body: data }),
+  update: (id, data) => apiRequest(`/roles/${id}`, { method: "PUT", body: data }),
+  permisos: () => apiRequest("/roles/permisos"),
 };
 
-// ── Tipos de habitación (routes/tipos_habitacion.py) ────────────
+//Usuarios (routes/usuarios.py)
+export const usuariosApi = {
+  list: () => apiRequest("/usuarios/"),
+  get: (id) => apiRequest(`/usuarios/${id}`),
+  update: (id, data) => apiRequest(`/usuarios/${id}`, { method: "PUT", body: data }),
+  setPassword: (id, password) => apiRequest(`/usuarios/${id}/password`, { method: "PUT", body: { password } }),
+};
+
+//Tipos de habitación (routes/tipos_habitacion.py)
 export const tiposHabitacionApi = {
   list: () => apiRequest("/tipos-habitacion/"),
   get: (id) => apiRequest(`/tipos-habitacion/${id}`),
@@ -30,26 +41,28 @@ export const tiposHabitacionApi = {
   remove: (id) => apiRequest(`/tipos-habitacion/${id}`, { method: "DELETE" }),
 };
 
-// ── Habitaciones (routes/habitaciones.py) ───────────────────────
+//Habitaciones (routes/habitaciones.py)
 export const habitacionesApi = {
   /** estado: disponible | ocupada | mantenimiento | limpieza */
   list: (estado) => apiRequest("/habitaciones/", { query: { estado } }),
   get: (id) => apiRequest(`/habitaciones/${id}`),
   create: (data) => apiRequest("/habitaciones/", { method: "POST", body: data }),
   update: (id, data) => apiRequest(`/habitaciones/${id}`, { method: "PUT", body: data }),
-  // Nota: DELETE /habitaciones/{id} tiene un bug en el backend (ruta declarada como
-  // {habitacion_idz}). Se deja el servicio con el contrato esperado; reportado al equipo.
+
+  // DELETE /habitaciones/{id} tiene un bug en el backend (
+  // {habitacion_idz}). Se deja el servicio con el contrato esperado corregir!!!
+
   remove: (id) => apiRequest(`/habitaciones/${id}`, { method: "DELETE" }),
 };
 
-// ── Disponibilidad (routes/disponibilidad.py) ───────────────────
+//}Disponibilidad (routes/disponibilidad.py)
 export const disponibilidadApi = {
   /** fechas en formato YYYY-MM-DD */
   check: ({ fecha_checkin, fecha_checkout, tipo_habitacion_id }) =>
     apiRequest("/disponibilidad/", { query: { fecha_checkin, fecha_checkout, tipo_habitacion_id } }),
 };
 
-// ── Huéspedes (routes/huespedes.py) ─────────────────────────────
+//Huéspedes (routes/huespedes.py)
 export const huespedesApi = {
   list: () => apiRequest("/huespedes/"),
   get: (id) => apiRequest(`/huespedes/${id}`),
@@ -58,12 +71,10 @@ export const huespedesApi = {
   remove: (id) => apiRequest(`/huespedes/${id}`, { method: "DELETE" }),
 };
 
-// ── Reservas (routes/reservas.py) ───────────────────────────────
+//Reservas (routes/reservas.py)
 export const reservasApi = {
-  /** filtros opcionales: huesped_id, habitacion_id, estado */
   list: (filtros = {}) => apiRequest("/reservas/", { query: filtros }),
   get: (id) => apiRequest(`/reservas/${id}`),
-  /** { huesped_id, habitacion_id, fecha_checkin_prevista, fecha_checkout_prevista, num_huespedes } */
   create: (data) => apiRequest("/reservas/", { method: "POST", body: data }),
   confirmar: (id) => apiRequest(`/reservas/${id}/confirmar`, { method: "POST" }),
   checkin: (id) => apiRequest(`/reservas/${id}/checkin`, { method: "POST" }),
@@ -74,7 +85,7 @@ export const reservasApi = {
   resumen: (id) => apiRequest(`/reservas/${id}/resumen`),
 };
 
-// ── Servicios (routes/servicios.py) ─────────────────────────────
+//Servicios (routes/servicios.py) 
 export const serviciosApi = {
   list: () => apiRequest("/servicios/"),
   get: (id) => apiRequest(`/servicios/${id}`),
@@ -83,7 +94,7 @@ export const serviciosApi = {
   remove: (id) => apiRequest(`/servicios/${id}`, { method: "DELETE" }),
 };
 
-// ── Servicios consumidos en una reserva (routes/reserva_servicios.py)
+//Servicios consumidos en una reserva (routes/reserva_servicios.py)
 export const reservaServiciosApi = {
   list: (reservaId) => apiRequest(`/reservas/${reservaId}/servicios/`),
   /** { servicio_id, cantidad } */
@@ -92,9 +103,16 @@ export const reservaServiciosApi = {
     apiRequest(`/reservas/${reservaId}/servicios/${itemId}`, { method: "DELETE" }),
 };
 
-// ── Pagos (routes/pagos.py) ─────────────────────────────────────
+//Pagos (routes/pagos.py)
 export const pagosApi = {
   list: (reservaId) => apiRequest(`/reservas/${reservaId}/pagos/`),
   /** { monto, metodo_pago } */
   create: (reservaId, data) => apiRequest(`/reservas/${reservaId}/pagos/`, { method: "POST", body: data }),
+};
+// ── Configuración del hotel (routes/configuracion.py) ───────────
+export const configApi = {
+  /** Cualquier usuario autenticado. Devuelve valores por defecto si aún no se guardó nada. */
+  get: () => apiRequest("/configuracion/"),
+  /** Solo administrador. Actualización parcial: { nombre?, nit?, ..., hora_checkin?: "HH:MM", moneda?, zona_horaria? } */
+  update: (data) => apiRequest("/configuracion/", { method: "PUT", body: data }),
 };

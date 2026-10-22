@@ -48,17 +48,14 @@ que empiece por `recepcion` entra como recepcionista (para probar permisos).
 | Huéspedes | Registro, edición, perfil con historial de estadías, eliminar | `/huespedes`, `GET /reservas` |
 | Habitaciones | Vista en tarjetas (con foto) o tabla; CRUD de habitaciones y tipos, filtro por estado, marcar limpieza → disponible | `/habitaciones`, `/tipos-habitacion` |
 | Servicios | Consumos de todas las reservas, registrar consumo, catálogo CRUD | `/servicios`, `/reservas/{id}/servicios` |
+| Configuración | Datos del hotel (nombre, NIT, dirección, contacto), horarios de check-in/out, moneda y zona horaria. Todos consultan; solo el administrador guarda. El nombre aparece en el menú y la moneda en los montos | `/configuracion` |
+| Roles | Tarjetas de roles con usuarios asignados y matriz de permisos por módulo (solo lectura, calculada por el backend); crear rol y editar descripción (administrador) | `/roles`, `/roles/permisos` |
+| Usuarios | Solo administrador: lista con filtros y búsqueda, crear, editar, cambiar contraseña, activar/desactivar | `/usuarios`, `/usuarios/{id}/password`, `POST /auth/register`, `/roles` |
 
-**Pendientes por falta de endpoints:** Usuarios, Roles (matriz de permisos) y
-Configuración. La pantalla de cada uno explica qué falta en el backend.
+Todas las pantallas del mockup ya tienen su módulo.
 
 ## Pendientes del backend detectados
 
-- `app/schemas/pago.py` en `main` tiene el contenido de la factura y falta
-  `app/schemas/factura.py`: la API no arranca. La rama
-  `agents/frontend-html-css-react-implementation` tiene la corrección.
-- `DELETE /habitaciones/{habitacion_idz}`: el nombre del parámetro no coincide,
-  así que eliminar una habitación responde 422.
 - No existe `PUT /reservas/{id}`: el botón "Editar" del mockup se reemplazó
   por la siguiente acción de estado disponible.
 - Los consumos de servicio no tienen estado (pendiente / en proceso /

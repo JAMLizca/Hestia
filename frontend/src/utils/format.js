@@ -56,9 +56,33 @@ export function nights(checkin, checkout) {
   return Math.round((b - a) / 86400000);
 }
 
-/** Montos: el backend devuelve Decimal serializado como string. */
+// Moneda con la que se muestran los montos. La fija ConfigProvider según la
+// configuración del hotel (GET /configuracion/); mientras no cargue se usa COP.
+let moneda = "COP";
+const formateadores = {};
+
+export function configureFormat(config) {
+  moneda = config?.moneda || "COP";
+}
+
+function formateador(code) {
+  formateadores[code] ??= new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: code,
+    currencyDisplay: "narrowSymbol",
+    maximumFractionDigits: 0,
+  });
+  return formateadores[code];
+}
+
+/** Montos: el backend devuelve Decimal serializado como string. Ej.: "$150.000". */
 export function formatMoney(value) {
   const n = Number(value);
   if (Number.isNaN(n)) return "—";
-  return `$${n.toLocaleString("es-CO", { maximumFractionDigits: 0 })}`;
+  // Se quitan los espacios entre el símbolo y la cifra para mantener "$150.000".
+  return formateador(moneda)
+    .formatToParts(n)
+    .filter((part) => !(part.type === "literal" && !part.value.trim()))
+    .map((part) => part.value)
+    .join("");
 }
