@@ -52,6 +52,13 @@ class UsuarioPasswordUpdate(BaseModel):
     password: str = Field(min_length=8, max_length=72, description="Entre 8 y 72 caracteres")
 
 
+class PasswordChange(BaseModel):
+    """Cambio de contraseña del propio usuario: exige la contraseña actual."""
+
+    password_actual: str = Field(min_length=1, max_length=72)
+    password_nueva: str = Field(min_length=8, max_length=72, description="Entre 8 y 72 caracteres")
+
+
 class Token(BaseModel):
     """Respuesta del endpoint de login."""
 

@@ -150,7 +150,7 @@ Todos los endpoints (salvo `/health` y `/auth/login`) requieren el header
 | Módulo | Endpoints | Quién puede escribir |
 |--------|-----------|----------------------|
 | Salud | `GET /health` | — |
-| Autenticación | `POST /auth/login`, `GET /auth/me`, `POST /auth/register` | `register`: administrador |
+| Autenticación | `POST /auth/login`, `GET /auth/me`, `PUT /auth/me/password`, `POST /auth/register` | `register`: administrador. `me/password`: cada usuario cambia la suya (pide la actual) |
 | Roles | `GET/POST /roles/`, `PUT /roles/{id}` (solo la descripción), `GET /roles/permisos` | crear y editar: administrador. `permisos` devuelve la matriz módulo × acción × rol y los usuarios por rol |
 | Configuración | `GET/PUT /configuracion/` | consultar: cualquier usuario; modificar: administrador |
 | Usuarios | `GET /usuarios/`, `GET/PUT /usuarios/{id}`, `PUT /usuarios/{id}/password` | solo administrador (el alta es `POST /auth/register`) |
