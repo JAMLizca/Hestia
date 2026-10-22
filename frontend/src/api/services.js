@@ -12,6 +12,8 @@ export const authApi = {
   me: () => apiRequest("/auth/me"),
   /** POST /auth/register — { nombre, email, password, rol_id } */
   register: (data) => apiRequest("/auth/register", { method: "POST", body: data }),
+  /** PUT /auth/me/password — { password_actual, password_nueva } (204). Cambia la contraseña de quien tiene la sesión. */
+  changePassword: (data) => apiRequest("/auth/me/password", { method: "PUT", body: data }),
 };
 
 //Roles (routes/roles.py) 
