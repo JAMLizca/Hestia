@@ -7,9 +7,12 @@ import { indexById, useApiData } from "../../hooks/useApiData";
 import { formatMoney, nights, todayISO } from "../../utils/format";
 import { dateOnly } from "../../utils/hotel";
 import { CANALES, RESERVA_ESTADOS } from "../../utils/status";
+import { mismasPreferencias, preferenciasDesde, preferenciasPayload } from "../../utils/preferencias";
+import PreferenciasFields from "./PreferenciasFields";
 import "./reservas.css";
 
-const TODOS = ["habitacion_id", "fecha_checkin_prevista", "fecha_checkout_prevista", "num_huespedes", "canal", "notas"];
+// Qué puede cambiar cada estado (debe coincidir con _CAMPOS_EDITABLES en routes/reservas.py).
+const TODOS = ["habitacion_id", "fecha_checkin_prevista", "fecha_checkout_prevista", "num_huespedes", "canal", "notas", "preferencias"];
 const CAMPOS_EDITABLES = {
   pendiente: TODOS,
   confirmada: TODOS,
@@ -21,7 +24,12 @@ function addDays(iso, days) {
   return todayISO(new Date(y, m - 1, d + days));
 }
 
-
+/**
+ * Edición de una reserva (PUT /reservas/{id}). Qué campos se pueden tocar depende del estado:
+ * pendiente/confirmada casi todo; en check-in solo la salida, los huéspedes y las notas;
+ * en cualquier otro estado, solo las notas. El backend vuelve a validar disponibilidad,
+ * capacidad y precio, y responde con el motivo si algo no es posible.
+ */
 export default function ReservaEditModal({ reserva, huesped, onClose, onSaved }) {
   const { data, loading, error: loadError } = useApiData({
     habitaciones: () => habitacionesApi.list(),
@@ -39,6 +47,7 @@ export default function ReservaEditModal({ reserva, huesped, onClose, onSaved })
     canal: reserva.canal ?? "presencial",
     notas: reserva.notas ?? "",
   });
+  const [prefs, setPrefs] = useState(() => preferenciasDesde(reserva.preferencias));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const set = (key) => (e) => setValues((v) => ({ ...v, [key]: e.target.value }));
@@ -52,7 +61,7 @@ export default function ReservaEditModal({ reserva, huesped, onClose, onSaved })
   const fechasValidas = values.fecha_checkin_prevista && values.fecha_checkout_prevista && noches > 0;
   const nuevoTotal = tipo && fechasValidas ? Number(tipo.precio_base) * noches : null;
 
-  
+  /** Solo se envía lo que cambió: el backend rechaza campos no editables en el estado actual. */
   const cambios = {};
   if (can("habitacion_id") && Number(values.habitacion_id) !== reserva.habitacion_id) cambios.habitacion_id = Number(values.habitacion_id);
   if (can("fecha_checkin_prevista") && values.fecha_checkin_prevista !== dateOnly(reserva.fecha_checkin_prevista))
@@ -62,6 +71,7 @@ export default function ReservaEditModal({ reserva, huesped, onClose, onSaved })
   if (can("num_huespedes") && Number(values.num_huespedes) !== reserva.num_huespedes) cambios.num_huespedes = Number(values.num_huespedes);
   if (can("canal") && values.canal !== (reserva.canal ?? "presencial")) cambios.canal = values.canal;
   if (can("notas") && values.notas.trim() !== (reserva.notas ?? "")) cambios.notas = values.notas.trim() || null;
+  if (can("preferencias") && !mismasPreferencias(prefs, preferenciasDesde(reserva.preferencias))) cambios.preferencias = preferenciasPayload(prefs) ?? {};
   const hayCambios = Object.keys(cambios).length > 0;
   const cambiaPrecio = ["habitacion_id", "fecha_checkin_prevista", "fecha_checkout_prevista"].some((k) => k in cambios);
 
@@ -169,6 +179,14 @@ export default function ReservaEditModal({ reserva, huesped, onClose, onSaved })
             <Field label="Notas" full hint={`${values.notas.length}/500`}>
               <Textarea rows={3} maxLength={500} value={values.notas} onChange={set("notas")} />
             </Field>
+            {can("preferencias") && (
+              <div className="field field--full">
+                <span className="field__label">
+                  Preferencias del huésped<small> (opcional)</small>
+                </span>
+                <PreferenciasFields value={prefs} onChange={setPrefs} />
+              </div>
+            )}
           </div>
 
           {cambiaPrecio && (

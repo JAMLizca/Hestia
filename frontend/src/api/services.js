@@ -1,7 +1,7 @@
 /**
  * Servicios por recurso. Cada función corresponde 1:1 a un endpoint
  */
-import { apiRequest } from "./client";
+import { apiDownload, apiRequest } from "./client";
 
 //Autenticación (routes/auth.py)
 export const authApi = {
@@ -21,6 +21,8 @@ export const rolesApi = {
   list: () => apiRequest("/roles/"),
   create: (data) => apiRequest("/roles/", { method: "POST", body: data }),
   update: (id, data) => apiRequest(`/roles/${id}`, { method: "PUT", body: data }),
+  /** DELETE /roles/{id} — 409 si es un rol del sistema o aún tiene usuarios */
+  remove: (id) => apiRequest(`/roles/${id}`, { method: "DELETE" }),
   permisos: () => apiRequest("/roles/permisos"),
 };
 
@@ -29,6 +31,8 @@ export const usuariosApi = {
   list: () => apiRequest("/usuarios/"),
   get: (id) => apiRequest(`/usuarios/${id}`),
   update: (id, data) => apiRequest(`/usuarios/${id}`, { method: "PUT", body: data }),
+  /** DELETE /usuarios/{id} — 409 si ya registró actividad (en ese caso se desactiva) */
+  remove: (id) => apiRequest(`/usuarios/${id}`, { method: "DELETE" }),
   setPassword: (id, password) => apiRequest(`/usuarios/${id}/password`, { method: "PUT", body: { password } }),
 };
 
@@ -116,6 +120,8 @@ export const reservaServiciosApi = {
   list: (reservaId) => apiRequest(`/reservas/${reservaId}/servicios/`),
   /** { servicio_id, cantidad } */
   add: (reservaId, data) => apiRequest(`/reservas/${reservaId}/servicios/`, { method: "POST", body: data }),
+  /** PUT — corrige la cantidad: { cantidad } (el precio unitario queda congelado) */
+  update: (reservaId, itemId, data) => apiRequest(`/reservas/${reservaId}/servicios/${itemId}`, { method: "PUT", body: data }),
   remove: (reservaId, itemId) =>
     apiRequest(`/reservas/${reservaId}/servicios/${itemId}`, { method: "DELETE" }),
 };
@@ -125,6 +131,16 @@ export const pagosApi = {
   list: (reservaId) => apiRequest(`/reservas/${reservaId}/pagos/`),
   /** { monto, metodo_pago } */
   create: (reservaId, data) => apiRequest(`/reservas/${reservaId}/pagos/`, { method: "POST", body: data }),
+  /** PUT — corrige un pago manual: { monto?, metodo_pago? } (administrador o gerente) */
+  update: (reservaId, pagoId, data) => apiRequest(`/reservas/${reservaId}/pagos/${pagoId}`, { method: "PUT", body: data }),
+  /** POST — anula un pago manual dejando el motivo: { motivo } (administrador o gerente) */
+  anular: (reservaId, pagoId, motivo) => apiRequest(`/reservas/${reservaId}/pagos/${pagoId}/anular`, { method: "POST", body: { motivo } }),
+};
+
+// Reportes y datos (routes/reportes.py) — administrador y gerente
+export const reportesApi = {
+  /** Descarga el dataset de reservas para analítica/ML: { desde?, hasta?, solo_cerradas?, formato: "csv" | "json" } */
+  datasetReservas: (query) => apiDownload("/reportes/dataset-reservas", { query }),
 };
 // ── Configuración del hotel (routes/configuracion.py) ───────────
 export const configApi = {
@@ -137,6 +153,8 @@ export const configApi = {
 // Reservas en línea, públicas (routes/reservas_web.py). Ninguna requiere sesión.
 export const reservasWebApi = {
   hotel: () => apiRequest("/publico/hotel", { auth: false }),
+  /** Habitaciones y servicios que ofrece el hotel (página principal). */
+  catalogo: () => apiRequest("/publico/catalogo", { auth: false }),
   disponibilidad: ({ checkin, checkout, huespedes }) =>
     apiRequest(`/publico/disponibilidad?fecha_checkin=${checkin}&fecha_checkout=${checkout}&huespedes=${huespedes}`, { auth: false }),
   crear: (body) => apiRequest("/publico/reservas", { method: "POST", body, auth: false }),

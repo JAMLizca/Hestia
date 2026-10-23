@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db, require_roles
-from app.core.security import create_access_token, hash_password, verify_password
-from app.models.role import Role
+from app.core.security import create_access_token
+from app.services import usuarios as servicio
 from app.models.usuario import Usuario
 from app.schemas.usuario import PasswordChange, Token, UsuarioCreate, UsuarioOut
 
@@ -21,38 +21,12 @@ router = APIRouter(prefix="/auth", tags=["Autenticación"])
     dependencies=[Depends(require_roles("administrador"))],
 )
 def registrar_usuario(usuario_in: UsuarioCreate, db: Session = Depends(get_db)):
-
     """
-    Crear un usuario nuevo del personal. Solo un administrador autenticado puede
-    hacerlo; el primer administrador se crea con `seed_roles.py`. Valida que el email no
-    esté registrado y que el `rol_id` indicado exista en la tabla `roles`.
-    La contraseña nunca se guarda en texto plano: se almacena su hash.
+    Crear un usuario nuevo del personal. Solo un administrador autenticado puede hacerlo; el primer
+    administrador se crea con `seed_roles.py`. Valida que el email no esté registrado y que el `rol_id`
+    exista. La contraseña nunca se guarda en texto plano: se almacena su hash.
     """
-
-    existe = db.query(Usuario).filter(Usuario.email == usuario_in.email).first()
-    if existe:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ya existe un usuario registrado con ese email",
-        )
-
-    rol = db.query(Role).filter(Role.id == usuario_in.rol_id).first()
-    if not rol:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"El rol con id {usuario_in.rol_id} no existe",
-        )
-
-    nuevo_usuario = Usuario(
-        nombre=usuario_in.nombre,
-        email=usuario_in.email,
-        password_hash=hash_password(usuario_in.password),
-        rol_id=usuario_in.rol_id,
-    )
-    db.add(nuevo_usuario)
-    db.commit()
-    db.refresh(nuevo_usuario)
-    return nuevo_usuario
+    return servicio.crear(db, usuario_in)
 
 
 @router.post(
@@ -68,18 +42,7 @@ def login(
     Recibe `username` (aquí se usa el email) y `password` como form-data, valida las
     credenciales y devuelve un token JWT.
     """
-    usuario = db.query(Usuario).filter(Usuario.email == form_data.username).first()
-    if not usuario or not verify_password(form_data.password, usuario.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email o contraseña incorrectos",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    if not usuario.activo:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="El usuario está inactivo",
-        )
+    usuario = servicio.autenticar(db, form_data.username, form_data.password)
 
     token = create_access_token(
         subject=str(usuario.id),
@@ -112,15 +75,4 @@ def cambiar_mi_password(
     vencida) si la contraseña actual es incorrecta o si la nueva es igual a la actual.
     El token vigente sigue siendo válido.
     """
-    if not verify_password(datos.password_actual, usuario_actual.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La contraseña actual no es correcta",
-        )
-    if datos.password_nueva == datos.password_actual:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La contraseña nueva debe ser distinta de la actual",
-        )
-    usuario_actual.password_hash = hash_password(datos.password_nueva)
-    db.commit()
+    servicio.cambiar_mi_password(db, usuario_actual, datos)

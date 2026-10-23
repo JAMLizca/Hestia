@@ -1,13 +1,14 @@
 """
 Modelo SQLAlchemy de la tabla `servicios` (catálogo).
 """
-from sqlalchemy import Column, Integer, Numeric, String
+from sqlalchemy import CheckConstraint, Column, Integer, Numeric, String
 
 from app.db.base_class import Base
 
 
 class Servicio(Base):
     __tablename__ = "servicios"
+    __table_args__ = (CheckConstraint("precio >= 0", name="ck_servicios_precio"),)
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), unique=True, nullable=False)

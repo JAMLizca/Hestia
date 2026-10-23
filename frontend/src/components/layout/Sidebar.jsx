@@ -2,6 +2,7 @@ import { LogOut } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useConfig } from "../../context/ConfigContext";
+import { usePermisos } from "../../context/PermisosContext";
 import Logo from "../ui/Logo";
 import { NAV_SECTIONS } from "./navigation";
 import "./Sidebar.css";
@@ -9,6 +10,9 @@ import "./Sidebar.css";
 export default function Sidebar({ open, onNavigate }) {
   const { logout } = useAuth();
   const { config } = useConfig();
+  const { can } = usePermisos();
+  // Cada rol ve solo los módulos que la matriz de permisos le permite consultar.
+  const sections = NAV_SECTIONS.map((s) => ({ ...s, items: s.items.filter((item) => !item.modulo || can(item.modulo, "ver")) })).filter((s) => s.items.length > 0);
 
   return (
     <aside className={`sidebar${open ? " sidebar--open" : ""}`} aria-label="Menú principal">
@@ -23,7 +27,7 @@ export default function Sidebar({ open, onNavigate }) {
       </div>
 
       <nav className="sidebar__nav">
-        {NAV_SECTIONS.map((section) => (
+        {sections.map((section) => (
           <div key={section.title}>
             <div className="sidebar__section">{section.title}</div>
             <div className="sidebar__items">

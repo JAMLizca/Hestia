@@ -4,7 +4,7 @@ Modelo SQLAlchemy de la tabla `configuracion_hotel`: ajustes generales del hotel
 Es una tabla de una sola fila (id = 1): el hotel es uno solo. Mientras no se
 guarde nada, la API responde con los valores por defecto (ver schemas/configuracion.py).
 """
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Time
+from sqlalchemy import Boolean, CheckConstraint, Column, DateTime, Integer, String, Time
 from sqlalchemy.sql import expression
 from sqlalchemy.sql import func
 
@@ -15,6 +15,10 @@ CONFIG_ID = 1
 
 class ConfiguracionHotel(Base):
     __tablename__ = "configuracion_hotel"
+    __table_args__ = (
+        CheckConstraint("horas_vencimiento_pendiente BETWEEN 0 AND 720", name="ck_configuracion_horas"),
+        CheckConstraint("anticipo_porcentaje BETWEEN 0 AND 100", name="ck_configuracion_anticipo"),
+    )
 
     id = Column(Integer, primary_key=True)
     nombre = Column(String(150), nullable=False)

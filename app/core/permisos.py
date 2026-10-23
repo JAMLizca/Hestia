@@ -16,6 +16,7 @@ MODULOS = {
     "servicios": "Servicios (catálogo)",
     "usuarios": "Usuarios",
     "roles": "Roles",
+    "reportes": "Reportes y datos",
 }
 
 ACCIONES = {
@@ -29,9 +30,7 @@ ACCIONES = {
 _METODO_ACCION = {"GET": "ver", "POST": "crear", "PUT": "editar", "PATCH": "editar", "DELETE": "eliminar"}
 
 #No se pueden leer de las rutas porque se aplican dentro del endpoint.
-NOTAS = {
-    ("habitaciones", "editar"): {"recepcionista": "Solo el estado de la habitación"},
-}
+NOTAS: dict = {}
 
 # "publico": enlaces sin sesión (pre-check-in del huésped); no pertenecen a ningún rol.
 RUTAS_IGNORADAS = {"health", "auth", "publico"}  # 
@@ -77,7 +76,8 @@ def _clasificar(ruta: str, metodo: str):
         if anidado == "servicios":
             return ("consumos", accion)
         if anidado == "pagos":
-            return ("pagos", accion)
+            # anular un pago es cambiarle el estado, no crear uno nuevo
+            return ("pagos", "estado" if segmentos[-1] == "anular" else accion)
         if anidado == "resumen":
             return ("facturacion", accion)
         if anidado == "precheckin":  # crear/regenerar el enlace y validar los datos es editar la reserva

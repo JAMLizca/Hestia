@@ -18,6 +18,7 @@ import {
   Tabs,
   usePagination,
 } from "../components/ui";
+import { usePermisos } from "../context/PermisosContext";
 import { useToast } from "../context/ToastContext";
 import HuespedFormModal from "../features/huespedes/HuespedFormModal";
 import HuespedProfileDrawer from "../features/huespedes/HuespedProfileDrawer";
@@ -38,6 +39,7 @@ const TABS = [
 
 export default function HuespedesPage() {
   const toast = useToast();
+  const { can } = usePermisos();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const { data, loading, error, reload } = useApiData({
@@ -50,7 +52,7 @@ export default function HuespedesPage() {
   const [profileId, setProfileId] = useState(null);
   const [editing, setEditing] = useState(null);
   const [reservaId, setReservaId] = useState(null);
-  const creating = params.get("accion") === "nuevo";
+  const creating = params.get("accion") === "nuevo" && can("huespedes", "crear");
 
   const huespedesList = useMemo(() => data.huespedes ?? [], [data.huespedes]);
   const reservas = useMemo(() => data.reservas ?? [], [data.reservas]);
@@ -133,7 +135,7 @@ export default function HuespedesPage() {
       render: (h) => (
         <div className="icon-actions">
           <IconButton icon={Eye} title="Ver perfil" color={COLORS.purple} onClick={() => setProfileId(h.id)} />
-          <IconButton icon={Pencil} title="Editar" color={COLORS.navy} onClick={() => setEditing(huespedesById[h.id])} />
+          {can("huespedes", "editar") && <IconButton icon={Pencil} title="Editar" color={COLORS.navy} onClick={() => setEditing(huespedesById[h.id])} />}
         </div>
       ),
     },
@@ -154,9 +156,11 @@ export default function HuespedesPage() {
         <Tabs options={TABS} value={tab} onChange={setTab} label="Filtrar por estado" />
         <SearchInput value={query} onChange={setQuery} placeholder="Buscar nombre, documento, correo..." />
         <div className="toolbar__end">
-          <Button icon={Plus} onClick={() => setParams({ accion: "nuevo" }, { replace: true })}>
-            Registrar huésped
-          </Button>
+          {can("huespedes", "crear") && (
+            <Button icon={Plus} onClick={() => setParams({ accion: "nuevo" }, { replace: true })}>
+              Registrar huésped
+            </Button>
+          )}
         </div>
       </div>
 

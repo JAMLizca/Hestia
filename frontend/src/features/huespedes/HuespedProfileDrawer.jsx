@@ -3,14 +3,16 @@ import { useState } from "react";
 import { huespedesApi } from "../../api/services";
 import { Avatar, Badge, Button, Chip, EmptyState, TableView } from "../../components/ui";
 import { ConfirmDialog, Drawer } from "../../components/ui/Modal";
+import { usePermisos } from "../../context/PermisosContext";
 import { useToast } from "../../context/ToastContext";
 import { formatMoney, formatShortDate, nights, parseDate } from "../../utils/format";
 import { ESTADOS_ANULADOS, fullName } from "../../utils/hotel";
 import { RESERVA_ESTADOS } from "../../utils/status";
 
-/** Perfil del huésped con su historial de estadías */
+/** Perfil del huésped con su historial de estadías (reservas filtradas por huesped_id). */
 export default function HuespedProfileDrawer({ huesped, reservas, habitaciones, onClose, onEdit, onNewReserva, onOpenReserva, onDeleted }) {
   const toast = useToast();
+  const { can } = usePermisos();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -48,15 +50,21 @@ export default function HuespedProfileDrawer({ huesped, reservas, habitaciones, 
       onClose={onClose}
     >
       <div className="reserva-detail__actions">
-        <Button icon={CalendarPlus} onClick={onNewReserva}>
-          Nueva reserva
-        </Button>
-        <Button variant="outline" icon={Pencil} onClick={onEdit}>
-          Editar datos
-        </Button>
-        <Button variant="danger" icon={Trash2} onClick={() => setConfirmDelete(true)} disabled={reservas.length > 0} title={reservas.length > 0 ? "El backend no permite eliminar huéspedes con reservas" : undefined}>
-          Eliminar
-        </Button>
+        {can("reservas", "crear") && (
+          <Button icon={CalendarPlus} onClick={onNewReserva}>
+            Nueva reserva
+          </Button>
+        )}
+        {can("huespedes", "editar") && (
+          <Button variant="outline" icon={Pencil} onClick={onEdit}>
+            Editar datos
+          </Button>
+        )}
+        {can("huespedes", "eliminar") && (
+          <Button variant="danger" icon={Trash2} onClick={() => setConfirmDelete(true)} disabled={reservas.length > 0} title={reservas.length > 0 ? "No se puede eliminar un huésped con reservas" : undefined}>
+            Eliminar
+          </Button>
+        )}
       </div>
 
       <dl className="detail-grid">

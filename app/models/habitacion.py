@@ -1,7 +1,7 @@
 """
 Modelo SQLAlchemy de la tabla `habitaciones`.
 """
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
@@ -9,6 +9,9 @@ from app.db.base_class import Base
 
 class Habitacion(Base):
     __tablename__ = "habitaciones"
+    __table_args__ = (
+        CheckConstraint("estado IN ('disponible', 'ocupada', 'mantenimiento', 'limpieza')", name="ck_habitaciones_estado"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     tipo_habitacion_id = Column(Integer, ForeignKey("tipos_habitacion.id"), nullable=False)

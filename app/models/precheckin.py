@@ -5,7 +5,7 @@ un enlace antes de llegar. Cada reserva tiene como máximo uno.
 Los datos que envía el huésped se guardan tal cual en `datos` (JSON) y solo pasan al registro
 del huésped cuando recepción los valida.
 """
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import JSON, CheckConstraint, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import backref, relationship
 from sqlalchemy.sql import func
 
@@ -14,6 +14,7 @@ from app.db.base_class import Base
 
 class PreCheckin(Base):
     __tablename__ = "precheckins"
+    __table_args__ = (CheckConstraint("estado IN ('enviado', 'completado', 'validado')", name="ck_precheckins_estado"),)
 
     id = Column(Integer, primary_key=True, index=True)
     reserva_id = Column(Integer, ForeignKey("reservas.id"), unique=True, nullable=False)

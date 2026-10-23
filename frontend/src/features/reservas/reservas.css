@@ -308,3 +308,42 @@
   padding-top: 16px;
   border-top: 1px solid var(--canvas);
 }
+
+/* ── Preferencias de la estadía ───────────────────── */
+.preferencias {
+  display: grid;
+  gap: 10px;
+}
+.preferencias__selects {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.preferencias__flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 13px;
+  color: var(--navy-900);
+}
+.preferencias__flags label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+@media (max-width: 640px) {
+  .preferencias__selects {
+    grid-template-columns: 1fr;
+  }
+}
+.reserva-form__prefs {
+  margin-top: 12px;
+}
+.reserva-form__prefs summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--navy-700);
+  margin-bottom: 10px;
+}

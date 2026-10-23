@@ -1,80 +1,39 @@
 """
-CRUD del catálogo de servicios. Consultar: autenticado. Escribir: admin/gerente.
+CRUD del catálogo de servicios. Consultar: autenticado. Escribir: solo recepción.
+Las reglas están en app/services/servicios.py.
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
+
 from app.api.deps import get_current_user, get_db, require_roles
-from app.models.servicio import Servicio
 from app.schemas.servicio import ServicioCreate, ServicioOut, ServicioUpdate
+from app.services import servicios as servicio
 
 router = APIRouter(prefix="/servicios", tags=["Servicios"], dependencies=[Depends(get_current_user)])
 
-# Columnas NOT NULL: un null explícito en el PUT daría error 500 en la base de datos.
-CAMPOS_OBLIGATORIOS = ("nombre", "precio")
-
-
-def _obtener_o_404(db: Session, servicio_id: int) -> Servicio:
-    servicio = db.query(Servicio).filter(Servicio.id == servicio_id).first()
-    if not servicio:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No existe un servicio con id {servicio_id}")
-    return servicio
+_SOLO_RECEPCION = [Depends(require_roles("recepcionista"))]
 
 
 @router.get("/", response_model=list[ServicioOut])
 def listar_servicios(db: Session = Depends(get_db)):
-    return db.query(Servicio).all()
+    return servicio.listar(db)
 
 
 @router.get("/{servicio_id}", response_model=ServicioOut)
 def obtener_servicio(servicio_id: int, db: Session = Depends(get_db)):
-    return _obtener_o_404(db, servicio_id)
+    return servicio.obtener(db, servicio_id)
 
 
-@router.post("/", response_model=ServicioOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles("administrador", "gerente"))])
+@router.post("/", response_model=ServicioOut, status_code=status.HTTP_201_CREATED, dependencies=_SOLO_RECEPCION)
 def crear_servicio(servicio_in: ServicioCreate, db: Session = Depends(get_db)):
-    existe = db.query(Servicio).filter(Servicio.nombre == servicio_in.nombre).first()
-    if existe:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Ya existe un servicio con el nombre '{servicio_in.nombre}'")
-    nuevo = Servicio(**servicio_in.model_dump())
-    db.add(nuevo)
-    db.commit()
-    db.refresh(nuevo)
-    return nuevo
+    return servicio.crear(db, servicio_in)
 
 
-@router.put("/{servicio_id}", response_model=ServicioOut, dependencies=[Depends(require_roles("administrador", "gerente"))])
+@router.put("/{servicio_id}", response_model=ServicioOut, dependencies=_SOLO_RECEPCION)
 def actualizar_servicio(servicio_id: int, servicio_in: ServicioUpdate, db: Session = Depends(get_db)):
-    servicio = _obtener_o_404(db, servicio_id)
-    datos = servicio_in.model_dump(exclude_unset=True)
-
-    for campo in CAMPOS_OBLIGATORIOS:
-        if campo in datos and datos[campo] is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"El campo '{campo}' no puede ser nulo",
-            )
-
-    if "nombre" in datos:
-        repetido = db.query(Servicio).filter(
-            Servicio.nombre == datos["nombre"], Servicio.id != servicio_id
-        ).first()
-        if repetido:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Ya existe un servicio con el nombre '{datos['nombre']}'",
-            )
-
-    for campo, valor in datos.items():
-        setattr(servicio, campo, valor)
-    db.commit()
-    db.refresh(servicio)
-    return servicio
+    return servicio.editar(db, servicio_id, servicio_in)
 
 
-@router.delete("/{servicio_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_roles("administrador", "gerente"))])
+@router.delete("/{servicio_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=_SOLO_RECEPCION)
 def eliminar_servicio(servicio_id: int, db: Session = Depends(get_db)):
-    servicio = _obtener_o_404(db, servicio_id)
-    if servicio.reserva_servicios:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No se puede eliminar: hay reservas que consumieron este servicio")
-    db.delete(servicio)
-    db.commit()
+    servicio.eliminar(db, servicio_id)

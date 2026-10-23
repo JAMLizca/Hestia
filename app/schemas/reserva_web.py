@@ -8,6 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.schemas.precheckin import TipoDocumento
+from app.schemas.reserva import PreferenciasReserva
 
 MAX_NOCHES = 30
 MAX_DIAS_ANTICIPACION = 365
@@ -28,6 +29,31 @@ class HotelPublico(BaseModel):
     horas_vencimiento: int  # 0 = las reservas pendientes no vencen
     pagos_activos: bool = False  # hay pasarela configurada y anticipo > 0
     anticipo_porcentaje: int = 0
+
+
+class TipoPublico(BaseModel):
+    """Una habitación de la oferta del hotel, sin números de habitación ni disponibilidad."""
+
+    tipo_habitacion_id: int
+    nombre: str
+    descripcion: str | None = None
+    capacidad_maxima: int
+    camas: int
+    metros_cuadrados: Decimal | None = None
+    precio_noche: Decimal
+    habitaciones: int  # cuántas habitaciones de este tipo tiene el hotel
+
+
+class ServicioPublico(BaseModel):
+    nombre: str
+    descripcion: str | None = None
+    categoria: str | None = None
+    precio: Decimal
+
+
+class CatalogoPublico(BaseModel):
+    tipos: list[TipoPublico]
+    servicios: list[ServicioPublico]
 
 
 class TipoDisponible(BaseModel):
@@ -69,6 +95,7 @@ class ReservaWebCreate(_Contacto):
     num_huespedes: int = Field(ge=1, le=MAX_HUESPEDES)
     huesped: HuespedWeb
     notas: str | None = Field(default=None, max_length=500)
+    preferencias: PreferenciasReserva | None = None
     # Campo trampa: está oculto en el formulario; solo lo llenan los bots.
     sitio_web: str | None = Field(default=None, max_length=200)
 

@@ -4,6 +4,7 @@ import { precheckinApi } from "../../api/services";
 import { Badge, Button, EmptyState, ErrorBanner, InfoBanner, LoadingState, TableView } from "../../components/ui";
 import { ConfirmDialog } from "../../components/ui/Modal";
 import { useConfig } from "../../context/ConfigContext";
+import { usePermisos } from "../../context/PermisosContext";
 import { useToast } from "../../context/ToastContext";
 import { formatShortDate } from "../../utils/format";
 import { onlyDigits } from "../../utils/hotel";
@@ -43,14 +44,20 @@ async function copiar(texto) {
   }
 }
 
-/** Número para wa.me */
+/** Número para wa.me: solo dígitos; un móvil colombiano de 10 dígitos recibe el prefijo 57. */
 function numeroWhatsApp(telefono) {
   const digits = onlyDigits(telefono);
   return digits.length === 10 && digits.startsWith("3") ? `57${digits}` : digits;
 }
 
+/**
+ * Pestaña "Pre-check-in" del detalle de reserva: crea el enlace que se le envía al huésped, muestra lo
+ * que él completó (comparado con lo que ya hay en su registro) y lo valida.
+ */
 export default function PreCheckinPanel({ reserva, huesped, onChanged }) {
   const toast = useToast();
+  const { can } = usePermisos();
+  const puedeEditar = can("reservas", "editar"); // crear/regenerar el enlace y validar es editar la reserva
   const { config } = useConfig();
   const [version, setVersion] = useState(0);
   const [state, setState] = useState({ loading: true, error: "", pc: null });
@@ -90,7 +97,8 @@ export default function PreCheckinPanel({ reserva, huesped, onChanged }) {
 
   const { pc, loading, error } = state;
   const admite = ESTADOS_ADMITEN.includes(reserva.estado);
-  
+  // VITE_PUBLIC_URL: dominio público del panel (ej. https://hotel.com). Sin él se usa el de la pestaña actual,
+  // que en desarrollo es localhost y no sirve para enviárselo a un huésped.
   const base = (import.meta.env.VITE_PUBLIC_URL || window.location.origin).replace(/\/$/, "");
   const url = pc ? `${base}${pc.enlace}` : "";
   const mensaje = pc
@@ -122,9 +130,11 @@ export default function PreCheckinPanel({ reserva, huesped, onChanged }) {
               title="Aún no se pidió el pre-check-in"
               text="Crea un enlace único para que el huésped complete sus datos y los de sus acompañantes antes de llegar. Tú los revisas y los validas."
               action={
-                <Button icon={Link2} loading={busy === "crear"} onClick={() => run("crear", () => precheckinApi.create(reserva.id), "Enlace creado")}>
-                  Crear enlace de pre-check-in
-                </Button>
+                puedeEditar && (
+                  <Button icon={Link2} loading={busy === "crear"} onClick={() => run("crear", () => precheckinApi.create(reserva.id), "Enlace creado")}>
+                    Crear enlace de pre-check-in
+                  </Button>
+                )
               }
             />
           ) : (
@@ -154,9 +164,11 @@ export default function PreCheckinPanel({ reserva, huesped, onChanged }) {
                 <a className="btn btn--outline" href={whatsapp} target="_blank" rel="noopener noreferrer">
                   <MessageCircle size={15} strokeWidth={1.75} /> WhatsApp
                 </a>
-                <Button variant="outline" icon={RefreshCw} onClick={() => setConfirm("regenerar")}>
-                  Enlace nuevo
-                </Button>
+                {puedeEditar && (
+                  <Button variant="outline" icon={RefreshCw} onClick={() => setConfirm("regenerar")}>
+                    Enlace nuevo
+                  </Button>
+                )}
               </div>
               <p className="precheckin__hint">
                 Quien tenga este enlace puede completar el registro de esta reserva: envíalo solo al huésped. Si se comparte por error, genera uno nuevo y el anterior deja de funcionar.
@@ -240,10 +252,14 @@ export default function PreCheckinPanel({ reserva, huesped, onChanged }) {
                       El documento declarado ({declarado.documento_identidad}) no coincide con el registrado ({registrado.documento_identidad}). Confírmalo con el huésped antes de validar.
                     </InfoBanner>
                   )}
-                  <Button icon={Check} loading={busy === "validar"} onClick={() => (documentoDistinto ? setConfirm("documento") : validar(false))}>
-                    Validar y aplicar al huésped
-                  </Button>
-                  <p className="precheckin__hint">Los datos del titular reemplazan los del registro del huésped (nombre, nacionalidad, nacimiento, teléfono y correo).</p>
+                  {puedeEditar && (
+                    <>
+                      <Button icon={Check} loading={busy === "validar"} onClick={() => (documentoDistinto ? setConfirm("documento") : validar(false))}>
+                        Validar y aplicar al huésped
+                      </Button>
+                      <p className="precheckin__hint">Los datos del titular reemplazan los del registro del huésped (nombre, nacionalidad, nacimiento, teléfono y correo).</p>
+                    </>
+                  )}
                 </div>
               )}
             </>

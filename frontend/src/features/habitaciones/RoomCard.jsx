@@ -38,11 +38,11 @@ export default function RoomCard({ habitacion, tipo, busy, onEdit, onDelete, onM
         <div className="room-card__footer">
           <span className="room-card__price">{tipo ? `${formatMoney(tipo.precio_base)} / noche` : ""}</span>
           <div className="icon-actions">
-            {habitacion.estado === "limpieza" && (
+            {habitacion.estado === "limpieza" && onMarkAvailable && (
               <IconButton icon={Sparkles} title="Marcar como disponible (limpieza terminada)" color={COLORS.green} disabled={busy} onClick={onMarkAvailable} />
             )}
-            <IconButton icon={Pencil} title="Editar" color={COLORS.navy} onClick={onEdit} />
-            <IconButton icon={Trash2} title="Eliminar" color={COLORS.red} onClick={onDelete} />
+            {onEdit && <IconButton icon={Pencil} title="Editar" color={COLORS.navy} onClick={onEdit} />}
+            {onDelete && <IconButton icon={Trash2} title="Eliminar" color={COLORS.red} onClick={onDelete} />}
           </div>
         </div>
       </div>

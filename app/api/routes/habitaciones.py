@@ -1,155 +1,52 @@
 """
-Endpoints CRUD de la entidad Habitacion.
+Endpoints CRUD de habitaciones. Consultar: cualquier usuario autenticado. Crear, editar y eliminar: solo recepción. Las reglas están en app/services/habitaciones.py.
 """
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
+
 from app.api.deps import get_current_user, get_db, require_roles
-from app.models.habitacion import Habitacion
-from app.models.reserva import Reserva
-from app.models.tipo_habitacion import TipoHabitacion
-from app.models.usuario import Usuario
 from app.schemas.habitacion import EstadoHabitacion, HabitacionCreate, HabitacionOut, HabitacionUpdate
+from app.services import habitaciones as servicio
 
-router = APIRouter(
-    prefix="/habitaciones",
-    tags=["Habitaciones"],
-    dependencies=[Depends(get_current_user)],
-)
-
-
-def _obtener_o_404(db: Session, habitacion_id: int) -> Habitacion:
-    habitacion = db.query(Habitacion).filter(Habitacion.id == habitacion_id).first()
-    if not habitacion:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No existe una habitación con id {habitacion_id}",
-        )
-    return habitacion
+router = APIRouter(prefix="/habitaciones", tags=["Habitaciones"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("/", response_model=list[HabitacionOut], summary="Lista habitaciones (filtra opcionalmente por estado)")
-def listar_habitaciones(
-    estado: EstadoHabitacion | None = Query(default=None, description="Filtra por estado operativo"),
-    db: Session = Depends(get_db),
-):
-    query = db.query(Habitacion)
-    if estado:
-        query = query.filter(Habitacion.estado == estado)
-    return query.all()
+def listar_habitaciones(estado: EstadoHabitacion | None = Query(default=None, description="Filtra por estado operativo"), db: Session = Depends(get_db)):
+    return servicio.listar(db, estado)
 
 
 @router.get("/{habitacion_id}", response_model=HabitacionOut, summary="Consulta una habitación por id")
 def obtener_habitacion(habitacion_id: int, db: Session = Depends(get_db)):
-    return _obtener_o_404(db, habitacion_id)
+    return servicio.obtener(db, habitacion_id)
 
 
 @router.post(
     "/",
     response_model=HabitacionOut,
     status_code=status.HTTP_201_CREATED,
-    summary="Crea una nueva habitación (admin/gerente)",
-    dependencies=[Depends(require_roles("administrador", "gerente"))],
+    summary="Crea una nueva habitación (solo recepción)",
+    dependencies=[Depends(require_roles("recepcionista"))],
 )
 def crear_habitacion(habitacion_in: HabitacionCreate, db: Session = Depends(get_db)):
-    tipo = db.query(TipoHabitacion).filter(TipoHabitacion.id == habitacion_in.tipo_habitacion_id).first()
-    if not tipo:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"El tipo de habitación con id {habitacion_in.tipo_habitacion_id} no existe",
-        )
-
-    existe = db.query(Habitacion).filter(Habitacion.numero == habitacion_in.numero).first()
-    if existe:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Ya existe una habitación con el número '{habitacion_in.numero}'",
-        )
-
-    nueva_habitacion = Habitacion(**habitacion_in.model_dump())
-    db.add(nueva_habitacion)
-    db.commit()
-    db.refresh(nueva_habitacion)
-    return nueva_habitacion
+    return servicio.crear(db, habitacion_in)
 
 
 @router.put(
     "/{habitacion_id}",
     response_model=HabitacionOut,
-    summary="Actualiza una habitación (admin/gerente; recepción solo el estado)",
-    dependencies=[Depends(require_roles("administrador", "gerente", "recepcionista"))],
+    summary="Actualiza una habitación (solo recepción)",
+    dependencies=[Depends(require_roles("recepcionista"))],
 )
-def actualizar_habitacion(
-    habitacion_id: int,
-    habitacion_in: HabitacionUpdate,
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(get_current_user),
-):
-    habitacion = _obtener_o_404(db, habitacion_id)
-    datos = habitacion_in.model_dump(exclude_unset=True)
-
-    # Estos dos campos son NOT NULL en la base de datos: un null explícito daría error 500.
-    for campo in ("tipo_habitacion_id", "estado"):
-        if campo in datos and datos[campo] is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"El campo '{campo}' no puede ser nulo",
-            )
-
-    # Recepción solo puede cambiar el estado (limpieza, mantenimiento, disponible...).
-    # Se comparan los valores con los actuales para tolerar que el formulario del
-    # frontend reenvíe los campos sin modificar.
-    if usuario_actual.rol.nombre == "recepcionista":
-        cambios_no_permitidos = [
-            campo for campo, valor in datos.items()
-            if campo != "estado" and getattr(habitacion, campo) != valor
-        ]
-        if cambios_no_permitidos:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Recepción solo puede cambiar el estado de la habitación",
-            )
-
-    # Con un huésped alojado (reserva en 'checkin') la habitación debe seguir 'ocupada'.
-    # El estado cambia solo con el check-out; así no se salta la validación del check-in.
-    if "estado" in datos and datos["estado"] != habitacion.estado:
-        hay_huesped_alojado = db.query(
-            db.query(Reserva)
-            .filter(Reserva.habitacion_id == habitacion_id, Reserva.estado == "checkin")
-            .exists()
-        ).scalar()
-        if hay_huesped_alojado and datos["estado"] != "ocupada":
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="La habitación tiene un huésped alojado (check-in activo); registra primero el check-out",
-            )
-
-    if "tipo_habitacion_id" in datos:
-        tipo = db.query(TipoHabitacion).filter(TipoHabitacion.id == datos["tipo_habitacion_id"]).first()
-        if not tipo:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"El tipo de habitación con id {datos['tipo_habitacion_id']} no existe",
-            )
-
-    for campo, valor in datos.items():
-        setattr(habitacion, campo, valor)
-    db.commit()
-    db.refresh(habitacion)
-    return habitacion
+def actualizar_habitacion(habitacion_id: int, habitacion_in: HabitacionUpdate, db: Session = Depends(get_db)):
+    return servicio.editar(db, habitacion_id, habitacion_in)
 
 
 @router.delete(
     "/{habitacion_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Elimina una habitación (admin/gerente)",
-    dependencies=[Depends(require_roles("administrador", "gerente"))],
+    summary="Elimina una habitación (solo recepción)",
+    dependencies=[Depends(require_roles("recepcionista"))],
 )
 def eliminar_habitacion(habitacion_id: int, db: Session = Depends(get_db)):
-    habitacion = _obtener_o_404(db, habitacion_id)
-    if habitacion.reservas:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No se puede eliminar: la habitación tiene reservas asociadas",
-        )
-    db.delete(habitacion)
-    db.commit()
+    servicio.eliminar(db, habitacion_id)

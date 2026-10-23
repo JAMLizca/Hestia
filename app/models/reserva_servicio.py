@@ -2,7 +2,7 @@
 Tabla puente entre Reserva y Servicio. El precio_unitario secongela al
 momento de agregar el servicio (no cambia si lugo cambia el catálogo).
 """
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Integer, Numeric
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -11,6 +11,10 @@ from app.db.base_class import Base
 
 class ReservaServicio(Base):
     __tablename__ = "reserva_servicios"
+    __table_args__ = (
+        CheckConstraint("cantidad >= 1", name="ck_reserva_servicios_cantidad"),
+        CheckConstraint("precio_unitario >= 0", name="ck_reserva_servicios_precio"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     reserva_id = Column(Integer, ForeignKey("reservas.id"), nullable=False)

@@ -3,12 +3,12 @@ import { useState } from "react";
 import { configApi } from "../api/services";
 import { Button, Card, ErrorBanner, InfoBanner, LoadingState } from "../components/ui";
 import { Field, Input, Select } from "../components/ui/Form";
-import { useAuth } from "../context/AuthContext";
+import { usePermisos } from "../context/PermisosContext";
 import { useConfig } from "../context/ConfigContext";
 import { useToast } from "../context/ToastContext";
 import { useApiData } from "../hooks/useApiData";
 
-
+// Opciones admitidas por el backend (schemas/configuracion.py).
 const MONEDAS = [
   { value: "COP", label: "COP — Peso colombiano" },
   { value: "USD", label: "USD — Dólar estadounidense" },
@@ -35,7 +35,7 @@ const ZONAS = [
 
 const TEXT_FIELDS = ["nombre", "razon_social", "nit", "direccion", "ciudad", "pais", "telefono", "email", "sitio_web"];
 
-
+/** De la respuesta de la API a valores de formulario (texto; la hora como HH:MM). */
 function toForm(config) {
   const values = Object.fromEntries(TEXT_FIELDS.map((k) => [k, config[k] ?? ""]));
   return {
@@ -50,6 +50,7 @@ function toForm(config) {
   };
 }
 
+/** Del formulario al cuerpo del PUT: los textos vacíos se envían como null. */
 function toPayload(values) {
   const payload = { ...values };
   TEXT_FIELDS.forEach((k) => {
@@ -67,7 +68,8 @@ function formatUpdated(value) {
 }
 
 /**
- * Configuración general: datos del hotel, horarios y ajustes regionales.
+ * Configuración general: datos del hotel, horarios y ajustes regionales. Todos los usuarios
+ * pueden consultarla; solo el administrador puede guardar cambios.
  */
 export default function ConfiguracionPage() {
   const { data, loading, error, reload } = useApiData({ config: () => configApi.get() });
@@ -81,10 +83,10 @@ export default function ConfiguracionPage() {
 }
 
 function ConfigForm({ initial }) {
-  const { user } = useAuth();
+  const { can } = usePermisos();
   const { update } = useConfig();
   const toast = useToast();
-  const esAdmin = user?.rol === "administrador";
+  const esAdmin = can("configuracion", "editar");
 
   const [baseline, setBaseline] = useState(() => toForm(initial));
   const [values, setValues] = useState(() => toForm(initial));
@@ -93,6 +95,7 @@ function ConfigForm({ initial }) {
   const [saving, setSaving] = useState(false);
 
   const dirty = JSON.stringify(values) !== JSON.stringify(baseline);
+  // VITE_PUBLIC_URL: dominio público del panel; sin él se usa el de la pestaña (en desarrollo, localhost).
   const urlReservas = `${(import.meta.env.VITE_PUBLIC_URL || window.location.origin).replace(/\/$/, "")}/reservar`;
   async function copiarUrl() {
     try {
@@ -194,7 +197,7 @@ function ConfigForm({ initial }) {
               </Button>
             </div>
             <span className="field__hint">
-              Los huéspedes piden su reserva en la página pública, sin pago en línea: queda pendiente y tú la confirmas. Si no la confirmas a tiempo, vence sola.
+              Los huéspedes reservan en la página pública. Si cobras anticipo en línea, la reserva se confirma sola al pagar; si no, queda pendiente y tú la confirmas. Si nadie la confirma a tiempo, vence sola. Recuerda pulsar «Guardar cambios».
             </span>
           </div>
           <Field
