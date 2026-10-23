@@ -3,7 +3,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export default function ProtectedRoute() {
-  const { status, manualLogout } = useAuth();
+  const { status, manualLogout, user } = useAuth();
   const location = useLocation();
 
   if (status === "loading") {
@@ -16,5 +16,7 @@ export default function ProtectedRoute() {
   // Si la sesión expiró se recuerda la pantalla para volver a ella tras el login;
   // si el usuario cerró sesión a propósito, no.
   if (status !== "authenticated") return <Navigate to="/login" replace state={manualLogout ? undefined : { from: location }} />;
+  // Una cuenta de huésped no tiene panel: vuelve a la página principal.
+  if (user?.tipo === "cliente") return <Navigate to="/" replace />;
   return <Outlet />;
 }

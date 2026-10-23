@@ -33,7 +33,7 @@ _METODO_ACCION = {"GET": "ver", "POST": "crear", "PUT": "editar", "PATCH": "edit
 NOTAS: dict = {}
 
 # "publico": enlaces sin sesión (pre-check-in del huésped); no pertenecen a ningún rol.
-RUTAS_IGNORADAS = {"health", "auth", "publico"}  # 
+RUTAS_IGNORADAS = {"health", "auth", "publico", "cuenta"}  # 
 
 def _iterar_rutas(rutas, prefijo=""):
     

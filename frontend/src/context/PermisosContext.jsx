@@ -18,12 +18,12 @@ const PermisosContext = createContext(null);
  * quien rechaza lo que no corresponda.
  */
 export function PermisosProvider({ children }) {
-  const { status, user } = useAuth();
+  const { esPersonal, user } = useAuth();
   const [matriz, setMatriz] = useState(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (status !== "authenticated") return;
+    if (!esPersonal) return; // un huésped no tiene panel: no se consulta la matriz
     let active = true;
     rolesApi
       .permisos()
@@ -36,7 +36,7 @@ export function PermisosProvider({ children }) {
     return () => {
       active = false;
     };
-  }, [status, user?.rol]);
+  }, [esPersonal, user?.rol]);
 
   const rol = user?.rol ?? null;
   const can = useCallback(

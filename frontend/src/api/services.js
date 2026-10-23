@@ -16,6 +16,19 @@ export const authApi = {
   changePassword: (data) => apiRequest("/auth/me/password", { method: "PUT", body: data }),
 };
 
+// Cuenta del huésped (routes/cuenta.py): quien reserva en línea. El token es el mismo de siempre (tipo "cliente").
+export const cuentaApi = {
+  /** POST /cuenta/registro — { nombres, apellidos, email, password } → { access_token }: deja la sesión iniciada. */
+  registro: (data) => apiRequest("/cuenta/registro", { method: "POST", body: data, auth: false }),
+  me: () => apiRequest("/cuenta/me"),
+  reservas: () => apiRequest("/cuenta/reservas"),
+  cancelar: (codigo) => apiRequest(`/cuenta/reservas/${encodeURIComponent(codigo)}/cancelar`, { method: "POST" }),
+  /** Devuelve { url } del checkout de Wompi. */
+  pagar: (codigo) => apiRequest(`/cuenta/reservas/${encodeURIComponent(codigo)}/pagar`, { method: "POST" }),
+  verificarPago: (codigo, transaccionId) =>
+    apiRequest(`/cuenta/reservas/${encodeURIComponent(codigo)}/verificar-pago`, { method: "POST", body: { transaccion_id: transaccionId } }),
+};
+
 //Roles (routes/roles.py) 
 export const rolesApi = {
   list: () => apiRequest("/roles/"),
@@ -150,14 +163,15 @@ export const configApi = {
   update: (data) => apiRequest("/configuracion/", { method: "PUT", body: data }),
 };
 
-// Reservas en línea, públicas (routes/reservas_web.py). Ninguna requiere sesión.
+// Reservas en línea, públicas (routes/reservas_web.py). Solo `crear` requiere sesión (de huésped).
 export const reservasWebApi = {
   hotel: () => apiRequest("/publico/hotel", { auth: false }),
   /** Habitaciones y servicios que ofrece el hotel (página principal). */
   catalogo: () => apiRequest("/publico/catalogo", { auth: false }),
   disponibilidad: ({ checkin, checkout, huespedes }) =>
     apiRequest(`/publico/disponibilidad?fecha_checkin=${checkin}&fecha_checkout=${checkout}&huespedes=${huespedes}`, { auth: false }),
-  crear: (body) => apiRequest("/publico/reservas", { method: "POST", body, auth: false }),
+  /** Exige sesión de huésped: lleva el token (auth) y el backend responde 401 sin él. */
+  crear: (body) => apiRequest("/publico/reservas", { method: "POST", body }),
   consultar: (body) => apiRequest("/publico/reservas/consultar", { method: "POST", body, auth: false }),
   cancelar: (body) => apiRequest("/publico/reservas/cancelar", { method: "POST", body, auth: false }),
   /** Inicia el pago del anticipo: devuelve { url } del checkout de Wompi al que hay que enviar al huésped. */

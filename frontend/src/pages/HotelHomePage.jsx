@@ -2,6 +2,7 @@ import { ArrowRight, BedDouble, CalendarDays, Clock, ConciergeBell, Loader2, Mai
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { reservasWebApi } from "../api/services";
+import { useAuth } from "../context/AuthContext";
 import fotoHabitacion from "../assets/habitacion.webp";
 import { configureFormat, formatMoney, formatShortDate, nights as contarNoches, todayISO } from "../utils/format";
 import "./HotelHomePage.css";
@@ -20,6 +21,7 @@ const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 /** Página principal para el público: qué ofrece el hotel, disponibilidad por fechas y acceso a reservar. */
 export default function HotelHomePage() {
   const navigate = useNavigate();
+  const { status, user, esCliente, esPersonal, logout } = useAuth();
   const [hotel, setHotel] = useState(null);
   const [catalogo, setCatalogo] = useState(null);
   const [loadError, setLoadError] = useState("");
@@ -149,8 +151,33 @@ export default function HotelHomePage() {
               </a>
             ))}
             <Link to="/reservar?vista=consultar" onClick={() => setMenuAbierto(false)}>
-              Mi reserva
+              Consultar reserva
             </Link>
+            {esCliente && (
+              <>
+                <Link to="/mis-reservas" onClick={() => setMenuAbierto(false)}>
+                  Mis reservas
+                </Link>
+                <button type="button" className="hh-nav__salir" onClick={logout}>
+                  Salir ({user.nombres})
+                </button>
+              </>
+            )}
+            {esPersonal && (
+              <Link to="/dashboard" onClick={() => setMenuAbierto(false)}>
+                Ir al panel
+              </Link>
+            )}
+            {status === "anonymous" && (
+              <>
+                <Link to="/login" onClick={() => setMenuAbierto(false)}>
+                  Iniciar sesión
+                </Link>
+                <Link to="/login?modo=registro" className="hh-btn hh-btn--claro hh-btn--sm" onClick={() => setMenuAbierto(false)}>
+                  Crear cuenta
+                </Link>
+              </>
+            )}
             {reservasActivas && (
               <Link to="/reservar" className="hh-btn hh-btn--oro hh-btn--sm">
                 Reservar

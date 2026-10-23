@@ -216,6 +216,24 @@ pequeño de prueba. Hestia elige solo el ambiente (sandbox o producción) según
   aplica el backend (`GET /roles/permisos`): lo que el rol no puede hacer no se muestra, y entrar por URL a una pantalla
   restringida muestra «Acceso restringido». El backend sigue siendo quien decide.
 
+## Cuentas de huésped (Fase 6)
+
+Quien quiere reservar en línea crea una **cuenta de huésped**. Ver la página principal, las habitaciones y la
+disponibilidad sigue siendo público; **reservar exige haber iniciado sesión**.
+
+- **Un solo formulario de acceso** (`/login`). Si el correo es de un usuario del personal entra al panel; si es de un
+  huésped, vuelve a donde estaba (por ejemplo a `/reservar` con su búsqueda) o a la página principal. «Crear cuenta»
+  está en esa misma pantalla (`/login?modo=registro`), en la página principal y en `/reservar`.
+- **Cuentas aparte del personal** (tabla `cuentas_huesped`). El token del huésped lleva `tipo: "cliente"` y el backend
+  lo rechaza en todas las rutas del panel; el del personal no sirve en las rutas de huésped. Un mismo correo no puede
+  ser de las dos cosas.
+- **Mis reservas** (`/mis-reservas`): lista las reservas hechas con la cuenta; desde ahí se paga el anticipo y se
+  cancela. Las reservas que ya existían (teléfono, anteriores) siguen consultándose con código + documento.
+- **Límites:** 10 contraseñas incorrectas por IP en 5 minutos (después, `429`); 10 cuentas nuevas por IP por hora;
+  hasta 3 reservas pendientes por cuenta.
+- **Migración:** `python migraciones/fase6_cuentas.py` (crea `cuentas_huesped` y `reservas.cuenta_id`). Haz copia de la
+  base antes. Es repetible.
+
 ## Estructura del proyecto
 
 ```
@@ -277,7 +295,8 @@ Todos los endpoints (salvo `/health` y `/auth/login`) requieren el header
 | Reservas | `GET/POST /reservas/` (filtros `huesped_id`, `habitacion_id`, `estado`, `codigo`), `GET/PUT/DELETE /reservas/{id}`, `POST /reservas/{id}/confirmar`, `/checkin`, `/checkout`, `/cancelar`, `/no-show` | cualquier usuario; eliminar: administrador |
 | Pre-check-in | `GET/POST /reservas/{id}/precheckin/` (crear o regenerar el enlace), `POST /reservas/{id}/precheckin/validar` | cualquier usuario |
 | Pre-check-in (público) | `GET/PUT /publico/precheckin/{token}` | sin sesión: lo usa el huésped con su enlace |
-| Reserva en línea (público) | `GET /publico/hotel`, `GET /publico/disponibilidad`, `POST /publico/reservas`, `POST /publico/reservas/consultar`, `POST /publico/reservas/cancelar`, `POST /publico/reservas/pagar`, `POST /publico/reservas/verificar-pago` | sin sesión; las de disponibilidad y creación responden `403` si el hotel no activó `reservas_web_activas` |
+| Reserva en línea (público) | `GET /publico/hotel`, `GET /publico/disponibilidad`, `POST /publico/reservas`, `POST /publico/reservas/consultar`, `POST /publico/reservas/cancelar`, `POST /publico/reservas/pagar`, `POST /publico/reservas/verificar-pago` | sin sesión, **excepto `POST /publico/reservas`, que exige iniciar sesión con una cuenta de huésped** (`401` si no); las de disponibilidad y creación responden `403` si el hotel no activó `reservas_web_activas` |
+| Cuenta del huésped | `POST /cuenta/registro`, `GET /cuenta/me`, `GET /cuenta/reservas`, `POST /cuenta/reservas/{codigo}/cancelar`, `/pagar`, `/verificar-pago` | registro sin sesión; el resto, solo con sesión de huésped (el personal no entra por aquí). Una cuenta solo ve y gestiona sus propias reservas |
 | Catálogo público | `GET /publico/catalogo` | sin sesión; tipos de habitación (nombre, descripción, capacidad, camas, m², precio por noche) y servicios. Nunca números de habitación. Funciona aunque las reservas en línea estén apagadas |
 | Webhook de Wompi (público) | `POST /publico/wompi/eventos` | sin sesión; solo acepta avisos con checksum válido |
 | Servicios (catálogo) | `GET/POST /servicios/`, `GET/PUT/DELETE /servicios/{id}` | consultar: cualquier usuario. Crear, editar y eliminar: **solo recepcionista** |

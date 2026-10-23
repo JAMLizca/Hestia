@@ -301,3 +301,42 @@
     text-align: center;
   }
 }
+
+/* Crear cuenta (huéspedes) */
+.login__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.login__row .login__field {
+  min-width: 0;
+}
+
+.login__switch {
+  margin-top: 18px;
+  color: var(--gray-500, #6b7280);
+  font-size: 12.5px;
+}
+
+.login__switch button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--navy-900);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.login__switch button:hover {
+  color: var(--login-gold);
+}
+
+@media (max-width: 520px) {
+  .login__row {
+    grid-template-columns: 1fr;
+  }
+}

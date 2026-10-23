@@ -7,10 +7,14 @@ from sqlalchemy.orm import Session
 from app.core.security import decode_access_token
 from app.core.vencimiento import expirar_pendientes
 from app.db.session import get_db
+from app.models.cuenta_huesped import CuentaHuesped
 from app.models.usuario import Usuario
 
 # tokenUrl le indica a Swagger dónde está el endpoint de login para el botón "Authorize".
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+TIPO_PERSONAL = "personal"
+TIPO_CLIENTE = "cliente"
 
 
 def get_current_user(
@@ -32,6 +36,10 @@ def get_current_user(
         usuario_id = payload.get("sub")
         if usuario_id is None:
             raise credentials_exception
+        # El token de un huésped lleva tipo="cliente" y su "sub" es el id de OTRA tabla: jamás vale como personal.
+        # Los tokens del personal anteriores a las cuentas de huésped no traen "tipo" y siguen siendo válidos.
+        if payload.get("tipo", TIPO_PERSONAL) != TIPO_PERSONAL:
+            raise credentials_exception
         # int() dentro del try: un "sub" no numérico da 401 y no un error 500.
         usuario_id = int(usuario_id)
     except (ValueError, TypeError):
@@ -41,6 +49,29 @@ def get_current_user(
     if usuario is None or not usuario.activo:
         raise credentials_exception
     return usuario
+
+
+def get_cuenta_actual(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> CuentaHuesped:
+    """Cuenta de huésped autenticada. Rechaza cualquier token que no sea de huésped (incluido el del personal)."""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Inicia sesión con tu cuenta de huésped para continuar",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = decode_access_token(token)
+        if payload.get("tipo") != TIPO_CLIENTE:
+            raise credentials_exception
+        cuenta_id = int(payload.get("sub"))
+    except (ValueError, TypeError):
+        raise credentials_exception
+    cuenta = db.get(CuentaHuesped, cuenta_id)
+    if cuenta is None or not cuenta.activo:
+        raise credentials_exception
+    return cuenta
 
 
 def liberar_pendientes_vencidas(db: Session = Depends(get_db)) -> None:
@@ -65,4 +96,4 @@ def require_roles(*roles_permitidos: str):
     return _verificar_rol
 
 
-__all__ = ["get_db", "get_current_user", "liberar_pendientes_vencidas", "require_roles"]
+__all__ = ["get_db", "get_current_user", "get_cuenta_actual", "TIPO_CLIENTE", "TIPO_PERSONAL", "liberar_pendientes_vencidas", "require_roles"]

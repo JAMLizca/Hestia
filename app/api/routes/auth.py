@@ -1,11 +1,14 @@
 """
 Endpoints de autenticación: registro, login (JWT) y perfil del usuario atual.
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from app.api.deps import get_current_user, get_db, require_roles
+from app.api.deps import TIPO_CLIENTE, TIPO_PERSONAL, get_current_user, get_db, require_roles
+from app.core.errores import ErrorNegocio
+from app.core.limites import limitar_login, registrar_fallo_login
 from app.core.security import create_access_token
+from app.services import cuentas
 from app.services import usuarios as servicio
 from app.models.usuario import Usuario
 from app.schemas.usuario import PasswordChange, Token, UsuarioCreate, UsuarioOut
@@ -32,22 +35,35 @@ def registrar_usuario(usuario_in: UsuarioCreate, db: Session = Depends(get_db)):
 @router.post(
     "/login",
     response_model=Token,
-    summary="Inicia sesión y devuelve un token JWT",
+    summary="Inicia sesión (personal o huésped) y devuelve un token JWT",
+    dependencies=[Depends(limitar_login)],
 )
 def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
     """
     Recibe `username` (aquí se usa el email) y `password` como form-data, valida las
     credenciales y devuelve un token JWT.
-    """
-    usuario = servicio.autenticar(db, form_data.username, form_data.password)
 
-    token = create_access_token(
-        subject=str(usuario.id),
-        extra_claims={"rol": usuario.rol.nombre},
-    )
+    Hay un solo formulario de acceso: si el correo es de un usuario del personal se valida contra ese usuario; si no,
+    contra las cuentas de huésped. El token lleva `tipo` ("personal" o "cliente"): el del huésped no sirve en el panel.
+    Tras 10 intentos fallidos desde una misma IP se responde 429 por unos minutos.
+    """
+    try:
+        if db.query(Usuario.id).filter(Usuario.email == form_data.username).first():
+            usuario = servicio.autenticar(db, form_data.username, form_data.password)
+            token = create_access_token(
+                subject=str(usuario.id),
+                extra_claims={"rol": usuario.rol.nombre, "tipo": TIPO_PERSONAL},
+            )
+        else:
+            cuenta = cuentas.autenticar(db, form_data.username, form_data.password)
+            token = create_access_token(subject=str(cuenta.id), extra_claims={"tipo": TIPO_CLIENTE})
+    except ErrorNegocio:
+        registrar_fallo_login(request)
+        raise
     return Token(access_token=token)
 
 

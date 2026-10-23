@@ -5,7 +5,7 @@
   background: var(--canvas);
   font-family: var(--font-body);
   color: var(--navy-900);
-}j
+}
 
 .pc > * {
   max-width: 640px;

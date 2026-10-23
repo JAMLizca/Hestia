@@ -30,6 +30,7 @@ from app.core.errores import (
 )
 from app.core.security import hash_password
 from app.models.configuracion import CONFIG_ID, ConfiguracionHotel
+from app.models.cuenta_huesped import CuentaHuesped
 from app.models.habitacion import Habitacion
 from app.models.huesped import Huesped
 from app.models.pago import Pago
@@ -227,12 +228,17 @@ def disponibilidad(db: Session, checkin: date, checkout: date, huespedes: int) -
     ]
 
 
-def crear(db: Session, datos: ReservaWebCreate) -> ReservaWebOut:
+def crear(db: Session, datos: ReservaWebCreate, cuenta: CuentaHuesped) -> ReservaWebOut:
+    """Crea una reserva en línea a nombre de una cuenta de huésped (la sesión es obligatoria)."""
     config = config_hotel(db)
     exigir_activas(config)
     if datos.sitio_web:  # campo trampa: un humano nunca lo ve
         raise SolicitudInvalida("No se pudo procesar la solicitud.")
     noches = validar_fechas(datos.fecha_checkin, datos.fecha_checkout)
+
+    pendientes_cuenta = db.query(Reserva).filter(Reserva.cuenta_id == cuenta.id, Reserva.estado == "pendiente").count()
+    if pendientes_cuenta >= MAX_PENDIENTES_WEB_POR_HUESPED:
+        raise Conflicto("Ya tienes varias reservas pendientes. Págalas, cancélalas o espera a que el hotel las confirme antes de hacer otra.")
 
     tipo = db.get(TipoHabitacion, datos.tipo_habitacion_id)
     if tipo is None:
@@ -279,6 +285,7 @@ def crear(db: Session, datos: ReservaWebCreate) -> ReservaWebOut:
         huesped_id=huesped.id,
         habitacion_id=libre.id,
         usuario_id=_usuario_web(db).id,
+        cuenta_id=cuenta.id,
         fecha_checkin_prevista=datos.fecha_checkin,
         fecha_checkout_prevista=datos.fecha_checkout,
         num_huespedes=datos.num_huespedes,

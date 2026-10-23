@@ -15,6 +15,7 @@ import HuespedesPage from "./pages/HuespedesPage";
 import HotelHomePage from "./pages/HotelHomePage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
+import MisReservasPage from "./pages/MisReservasPage";
 import PreCheckinPage from "./pages/PreCheckinPage";
 import ReservarPage from "./pages/ReservarPage";
 import ReportesPage from "./pages/ReportesPage";
@@ -53,6 +54,8 @@ export default function App() {
               <Route path="/pre-checkin/:token" element={<PreCheckinPage />} />
               {/* Público: reserva en línea (si el hotel la tiene activada en Configuración). */}
               <Route path="/reservar" element={<ReservarPage />} />
+              {/* Huésped con cuenta: sus reservas (si no ha iniciado sesión, va al acceso). */}
+              <Route path="/mis-reservas" element={<MisReservasPage />} />
 
               <Route element={<ProtectedRoute />}>
                 <Route element={<AppLayout />}>
