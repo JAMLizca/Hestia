@@ -9,6 +9,8 @@ import { formatMoney, nights, todayISO } from "../../utils/format";
 import { fullName, matches, onlyDigits } from "../../utils/hotel";
 import { CANALES } from "../../utils/status";
 import HuespedFormModal from "../huespedes/HuespedFormModal";
+import { PREFERENCIAS_VACIAS, preferenciasPayload } from "../../utils/preferencias";
+import PreferenciasFields from "./PreferenciasFields";
 import "./reservas.css";
 
 function addDays(iso, days) {
@@ -28,6 +30,7 @@ export default function ReservaFormModal({ huespedes, tipos, initialHuespedId, o
   const [guestQuery, setGuestQuery] = useState("");
   const [canal, setCanal] = useState("presencial");
   const [notas, setNotas] = useState("");
+  const [preferencias, setPreferencias] = useState(PREFERENCIAS_VACIAS);
   const [checkin, setCheckin] = useState(todayISO());
   const [checkout, setCheckout] = useState(addDays(todayISO(), 1));
   const [numHuespedes, setNumHuespedes] = useState(1);
@@ -81,6 +84,7 @@ export default function ReservaFormModal({ huespedes, tipos, initialHuespedId, o
         num_huespedes: Number(numHuespedes),
         canal,
         notas: notas.trim() || null,
+        preferencias: preferenciasPayload(preferencias),
       });
       onCreated(reserva);
     } catch (err) {
@@ -170,6 +174,10 @@ export default function ReservaFormModal({ huespedes, tipos, initialHuespedId, o
               <Textarea rows={2} maxLength={500} value={notas} onChange={(e) => setNotas(e.target.value)} />
             </Field>
           </div>
+          <details className="reserva-form__prefs">
+            <summary>Preferencias del huésped (opcional)</summary>
+            <PreferenciasFields value={preferencias} onChange={setPreferencias} />
+          </details>
         </section>
 
         <section>

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { habitacionesApi, huespedesApi, reservasApi, serviciosApi } from "../api/services";
 import { Badge, Button, Card, Chip, ErrorBanner, LoadingState, Person, StatCard, StatGrid, TableView, hexAlpha } from "../components/ui";
 import { BedIcon, PercentIcon, ServiceBellIcon, SparklesIcon } from "../components/ui/icons";
+import { usePermisos } from "../context/PermisosContext";
 import { indexById, useApiData } from "../hooks/useApiData";
 import { formatShortDate } from "../utils/format";
 import { ESTADOS_ANULADOS, fullName, isToday, recentActivity, timeAgo, weeklyOccupancy } from "../utils/hotel";
@@ -18,6 +19,7 @@ const ACTIVITY_STYLE = {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { can } = usePermisos();
   const { data, loading, error, reload } = useApiData({
     reservas: () => reservasApi.list(),
     habitaciones: () => habitacionesApi.list(),
@@ -193,10 +195,10 @@ export default function DashboardPage() {
         <div className="dash-side">
           <Card title="Acciones rápidas">
             <div className="quick-actions">
-              <QuickAction icon={CalendarDays} label="Nueva reserva" onClick={() => navigate("/reservas?accion=nueva")} />
-              <QuickAction icon={UserPlus} label="Registrar huésped" onClick={() => navigate("/huespedes?accion=nuevo")} />
-              <QuickAction icon={BedIcon} label="Nueva habitación" onClick={() => navigate("/habitaciones?accion=nueva")} />
-              <QuickAction icon={ServiceBellIcon} label="Agregar servicio" onClick={() => navigate("/servicios?accion=consumo")} />
+              {can("reservas", "crear") && <QuickAction icon={CalendarDays} label="Nueva reserva" onClick={() => navigate("/reservas?accion=nueva")} />}
+              {can("huespedes", "crear") && <QuickAction icon={UserPlus} label="Registrar huésped" onClick={() => navigate("/huespedes?accion=nuevo")} />}
+              {can("habitaciones", "crear") && <QuickAction icon={BedIcon} label="Nueva habitación" onClick={() => navigate("/habitaciones?accion=nueva")} />}
+              {can("consumos", "crear") && <QuickAction icon={ServiceBellIcon} label="Agregar servicio" onClick={() => navigate("/servicios?accion=consumo")} />}
             </div>
           </Card>
 

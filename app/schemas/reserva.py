@@ -18,6 +18,23 @@ def _notas_o_none(valor):
     return valor
 
 
+class PreferenciasReserva(BaseModel):
+    """Preferencias del huésped para esta estadía (RF-20). Todas son opcionales."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    piso: Literal["bajo", "alto"] | None = None
+    vista: Literal["exterior", "interior"] | None = None
+    cama: Literal["doble", "sencillas"] | None = None
+    tranquila: bool = False
+    accesible: bool = False
+
+    def compactas(self) -> dict | None:
+        """Solo lo que el huésped pidió; None si no pidió nada (así se guarda en la base)."""
+        pedidas = {k: v for k, v in self.model_dump().items() if v not in (None, False)}
+        return pedidas or None
+
+
 class ReservaBase(BaseModel):
     huesped_id: int
     habitacion_id: int
@@ -43,6 +60,7 @@ class ReservaCreate(ReservaBase):
 
     canal: CanalReserva = "presencial"
     notas: str | None = Field(default=None, max_length=500)
+    preferencias: PreferenciasReserva | None = None
 
     @field_validator("notas", mode="before")
     @classmethod
@@ -64,6 +82,7 @@ class ReservaUpdate(BaseModel):
     num_huespedes: int | None = Field(default=None, gt=0)
     canal: CanalReserva | None = None
     notas: str | None = Field(default=None, max_length=500)
+    preferencias: PreferenciasReserva | None = None
 
     @field_validator("notas", mode="before")
     @classmethod
@@ -76,6 +95,8 @@ class ReservaOut(ReservaBase):
     codigo: str
     canal: CanalReserva
     notas: str | None = None
+    temporada: str = "baja"
+    preferencias: dict | None = None
     motivo_cancelacion: str | None = None
     precheckin_estado: str | None = None
     usuario_id: int

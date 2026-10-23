@@ -111,3 +111,43 @@ export async function apiRequest(path, { method = "GET", body, form, query, auth
   }
   return payload;
 }
+
+/**
+ * Descarga un archivo de la API (la petición lleva el token, por eso no basta con un enlace <a href>).
+ * Devuelve { blob, filename } y quien llama dispara la descarga con `saveBlob`.
+ */
+export async function apiDownload(path, { query } = {}) {
+  const url = new URL(`${API_URL}${path}`, window.location.origin);
+  if (query) {
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "" && value !== false) url.searchParams.set(key, value);
+    });
+  }
+  const token = tokenStorage.get();
+  let response;
+  try {
+    response = await fetch(url.pathname + url.search, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  } catch {
+    throw new ApiError(NO_CONNECTION, 0);
+  }
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    if (response.status === 401 && unauthorizedHandler) unauthorizedHandler();
+    throw new ApiError(parseDetail(payload, response.status), response.status);
+  }
+  const disposition = response.headers.get("Content-Disposition") || "";
+  const filename = /filename="?([^";]+)"?/i.exec(disposition)?.[1] ?? "descarga";
+  return { blob: await response.blob(), filename };
+}
+
+/** Guarda un Blob en el equipo del usuario con el nombre indicado. */
+export function saveBlob(blob, filename) {
+  const href = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = href;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 1000);
+}

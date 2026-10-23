@@ -131,7 +131,7 @@ def _nota_reembolso(reserva: Reserva, referencia: str) -> None:
 
 def _reactivar_si_libre(db: Session, reserva: Reserva) -> bool:
     """Una reserva que venció mientras el huésped pagaba se reactiva si su habitación sigue libre."""
-    from app.api.routes.reservas import ESTADOS_QUE_BLOQUEAN
+    from app.services.ocupacion import ESTADOS_QUE_BLOQUEAN
 
     choque = (
         db.query(Reserva.id)

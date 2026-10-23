@@ -19,6 +19,7 @@ import {
   usePagination,
 } from "../components/ui";
 import { ConfirmDialog } from "../components/ui/Modal";
+import { usePermisos } from "../context/PermisosContext";
 import { useToast } from "../context/ToastContext";
 import HabitacionFormModal from "../features/habitaciones/HabitacionFormModal";
 import RoomCard from "../features/habitaciones/RoomCard";
@@ -35,6 +36,7 @@ const VIEWS = [
 
 export default function HabitacionesPage() {
   const toast = useToast();
+  const { can } = usePermisos();
   const [params, setParams] = useSearchParams();
   const { data, loading, error, reload } = useApiData({
     habitaciones: () => habitacionesApi.list(),
@@ -48,7 +50,7 @@ export default function HabitacionesPage() {
   const [tipoForm, setTipoForm] = useState(null); // null | "nuevo" | tipo
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [busy, setBusy] = useState(null);
-  const creating = params.get("accion") === "nueva";
+  const creating = params.get("accion") === "nueva" && can("habitaciones", "crear");
 
   const habitaciones = useMemo(() => data.habitaciones ?? [], [data.habitaciones]);
   const tipos = useMemo(() => data.tipos ?? [], [data.tipos]);
@@ -104,6 +106,8 @@ export default function HabitacionesPage() {
       toast.success(kind === "tipo" ? `Tipo “${item.nombre}” eliminado` : `Habitación ${item.numero} eliminada`);
       reload();
     } catch (err) {
+      // DELETE /habitaciones/{id} responde 422 por un error en la ruta del backend
+      // (declarada como {habitacion_idz}). Se informa en lugar de mostrar el detalle técnico.
       toast.error(
         kind === "habitacion" && err.status === 422
           ? "El backend no permite eliminar habitaciones todavía (error en la ruta DELETE /habitaciones). Reportado al equipo de backend."
@@ -132,15 +136,21 @@ export default function HabitacionesPage() {
       label: "Acciones",
       render: (h) => (
         <div className="icon-actions">
-          <IconButton
-            icon={Sparkles}
-            title={h.estado === "limpieza" ? "Marcar como disponible (limpieza terminada)" : "Solo aplica a habitaciones en limpieza"}
-            color={COLORS.green}
-            disabled={h.estado !== "limpieza" || busy === h.id}
-            onClick={() => markAvailable(h)}
-          />
-          <IconButton icon={Pencil} title="Editar" color={COLORS.navy} onClick={() => setEditing(h)} />
-          <IconButton icon={Trash2} title="Eliminar" color={COLORS.red} onClick={() => setDeleteTarget({ kind: "habitacion", item: h })} />
+          {can("habitaciones", "editar") && (
+            <>
+              <IconButton
+                icon={Sparkles}
+                title={h.estado === "limpieza" ? "Marcar como disponible (limpieza terminada)" : "Solo aplica a habitaciones en limpieza"}
+                color={COLORS.green}
+                disabled={h.estado !== "limpieza" || busy === h.id}
+                onClick={() => markAvailable(h)}
+              />
+              <IconButton icon={Pencil} title="Editar" color={COLORS.navy} onClick={() => setEditing(h)} />
+            </>
+          )}
+          {can("habitaciones", "eliminar") && (
+            <IconButton icon={Trash2} title="Eliminar" color={COLORS.red} onClick={() => setDeleteTarget({ kind: "habitacion", item: h })} />
+          )}
         </div>
       ),
     },
@@ -159,8 +169,10 @@ export default function HabitacionesPage() {
       label: "Acciones",
       render: (t) => (
         <div className="icon-actions">
-          <IconButton icon={Pencil} title="Editar" color={COLORS.navy} onClick={() => setTipoForm(t)} />
-          <IconButton icon={Trash2} title="Eliminar" color={COLORS.red} onClick={() => setDeleteTarget({ kind: "tipo", item: t })} />
+          {can("tipos-habitacion", "editar") && <IconButton icon={Pencil} title="Editar" color={COLORS.navy} onClick={() => setTipoForm(t)} />}
+          {can("tipos-habitacion", "eliminar") && (
+            <IconButton icon={Trash2} title="Eliminar" color={COLORS.red} onClick={() => setDeleteTarget({ kind: "tipo", item: t })} />
+          )}
         </div>
       ),
     },
@@ -196,13 +208,17 @@ export default function HabitacionesPage() {
         <Tabs options={VIEWS} value={view} onChange={setView} label="Sección" />
         <div className="toolbar__end">
           {view === "habitaciones" ? (
-            <Button icon={Plus} onClick={() => setParams({ accion: "nueva" }, { replace: true })} disabled={loading}>
-              Nueva habitación
-            </Button>
+            can("habitaciones", "crear") && (
+              <Button icon={Plus} onClick={() => setParams({ accion: "nueva" }, { replace: true })} disabled={loading}>
+                Nueva habitación
+              </Button>
+            )
           ) : (
-            <Button icon={Plus} onClick={() => setTipoForm("nuevo")}>
-              Nuevo tipo
-            </Button>
+            can("tipos-habitacion", "crear") && (
+              <Button icon={Plus} onClick={() => setTipoForm("nuevo")}>
+                Nuevo tipo
+              </Button>
+            )
           )}
         </div>
       </div>
@@ -247,9 +263,9 @@ export default function HabitacionesPage() {
                     habitacion={h}
                     tipo={tiposById[h.tipo_habitacion_id]}
                     busy={busy === h.id}
-                    onEdit={() => setEditing(h)}
-                    onDelete={() => setDeleteTarget({ kind: "habitacion", item: h })}
-                    onMarkAvailable={() => markAvailable(h)}
+                    onEdit={can("habitaciones", "editar") ? () => setEditing(h) : undefined}
+                    onDelete={can("habitaciones", "eliminar") ? () => setDeleteTarget({ kind: "habitacion", item: h }) : undefined}
+                    onMarkAvailable={can("habitaciones", "editar") ? () => markAvailable(h) : undefined}
                   />
                 ))}
               </div>

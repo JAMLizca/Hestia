@@ -1,15 +1,16 @@
-import { Ban, CheckCircle2, CreditCard, LogIn, LogOut, Pencil, Phone, Plus, ReceiptText, Trash2, UserX, Utensils } from "lucide-react";
+import { Ban, CheckCircle2, CreditCard, LogIn, LogOut, Pencil, Phone, Plus, ReceiptText, Trash2, UserX, Utensils, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { pagosApi, reservaServiciosApi, reservasApi, serviciosApi } from "../../api/services";
 import { Badge, Button, Chip, EmptyState, ErrorBanner, IconButton, InfoBanner, LoadingState, TableView, Tabs } from "../../components/ui";
 import { Field, Input, Select } from "../../components/ui/Form";
 import { ConfirmDialog, Drawer } from "../../components/ui/Modal";
-import { useAuth } from "../../context/AuthContext";
+import { usePermisos } from "../../context/PermisosContext";
 import { useToast } from "../../context/ToastContext";
 import { indexById } from "../../hooks/useApiData";
 import { formatMoney, formatShortDate, nights, parseDate } from "../../utils/format";
 import { ESTADOS_CANCELABLES, ESTADOS_MODIFICABLES, nextStep, puedeMarcarNoShow } from "../../utils/hotel";
-import { canalLabel, categoriaColor, COLORS, PAGO_ESTADOS, RESERVA_ESTADOS } from "../../utils/status";
+import { canalLabel, categoriaColor, COLORS, PAGO_ESTADOS, preferenciasLabel, RESERVA_ESTADOS, temporadaLabel } from "../../utils/status";
+import { AnularPagoModal, CorregirConsumoModal, CorregirPagoModal } from "./CorreccionesModals";
 import PreCheckinPanel from "./PreCheckinPanel";
 import ReservaEditModal from "./ReservaEditModal";
 import "./reservas.css";
@@ -28,9 +29,15 @@ function formatDateTime(value) {
   return date.toLocaleString("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-
+/**
+ * Detalle de una reserva:
+ *  - GET /reservas/{id}, /reservas/{id}/resumen, /servicios/, /pagos/
+ *  - Acciones: confirmar, check-in, check-out, editar, cancelar, no se presentó, eliminar (solo administrador)
+ *  - Consumo de servicios (POST/DELETE /reservas/{id}/servicios/)
+ *  - Pagos (POST /reservas/{id}/pagos/)
+ */
 export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitaciones = {}, onClose, onChanged }) {
-  const { user } = useAuth();
+  const { can } = usePermisos();
   const toast = useToast();
   const [tab, setTab] = useState("resumen");
   const [state, setState] = useState({ loading: true, error: "", reserva: null, resumen: null, consumos: [], pagos: [], catalogo: [] });
@@ -90,7 +97,6 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
   const noShow = reserva && puedeMarcarNoShow(reserva);
   const telefono = huesped?.telefono;
   const etiqueta = reserva ? reserva.codigo ?? `#${reserva.id}` : "";
-  const esAdmin = user?.rol === "administrador";
 
   return (
     <Drawer
@@ -118,7 +124,7 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
       {reserva && (
         <>
           <div className="reserva-detail__actions">
-            {step && (
+            {step && can("reservas", "estado") && (
               <Button
                 icon={StepIcon}
                 loading={busy === step.action}
@@ -127,20 +133,22 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
                 {step.label}
               </Button>
             )}
-            <Button variant="outline" icon={Pencil} onClick={() => setEditing(true)}>
-              Editar
-            </Button>
-            {noShow && (
+            {can("reservas", "editar") && (
+              <Button variant="outline" icon={Pencil} onClick={() => setEditing(true)}>
+                Editar
+              </Button>
+            )}
+            {noShow && can("reservas", "estado") && (
               <Button variant="outline" icon={UserX} onClick={() => setConfirm("noshow")}>
                 No se presentó
               </Button>
             )}
-            {cancelable && (
+            {cancelable && can("reservas", "estado") && (
               <Button variant="danger" icon={Ban} onClick={() => setConfirm("cancelar")}>
                 Cancelar reserva
               </Button>
             )}
-            {esAdmin && (
+            {can("reservas", "eliminar") && (
               <Button variant="outline" icon={Trash2} onClick={() => setConfirm("eliminar")}>
                 Eliminar
               </Button>
@@ -185,6 +193,16 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
               <dt>Creada</dt>
               <dd>{formatDateTime(reserva.fecha_creacion)}</dd>
             </div>
+            <div>
+              <dt>Temporada</dt>
+              <dd>{temporadaLabel(reserva.temporada)}</dd>
+            </div>
+            {reserva.preferencias && (
+              <div className="detail-grid__full">
+                <dt>Preferencias del huésped</dt>
+                <dd>{preferenciasLabel(reserva.preferencias)}</dd>
+              </div>
+            )}
             {reserva.motivo_cancelacion && (
               <div className="detail-grid__full">
                 <dt>Motivo de la cancelación</dt>
@@ -215,7 +233,7 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
             />
           </div>
 
-          {tab === "resumen" && <ResumenTab resumen={resumen} />}
+          {tab === "resumen" && (can("facturacion", "ver") ? <ResumenTab resumen={resumen} /> : <InfoBanner>Tu rol no incluye el resumen de facturación.</InfoBanner>)}
           {tab === "servicios" && (
             <ServiciosTab
               reservaId={reserva.id}
@@ -225,6 +243,10 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
               estado={reserva.estado}
               busy={busy}
               run={run}
+              onCorregido={() => {
+                toast.success("Consumo corregido");
+                refresh();
+              }}
             />
           )}
           {tab === "precheckin" && <PreCheckinPanel reserva={reserva} huesped={huesped} onChanged={refresh} />}
@@ -236,6 +258,10 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
               cancelada={reserva.estado === "cancelada"}
               busy={busy}
               run={run}
+              onCorregido={(mensaje) => {
+                toast.success(mensaje);
+                refresh();
+              }}
             />
           )}
         </>
@@ -308,7 +334,7 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
   );
 }
 
-/* Resumen de costos  */
+/* ── Resumen de costos (GET /reservas/{id}/resumen) ─────────── */
 function ResumenTab({ resumen }) {
   if (!resumen) return null;
   if (resumen.__error) return <ErrorBanner message={`No se pudo obtener el resumen de costos: ${resumen.__error}`} />;
@@ -353,8 +379,10 @@ function ResumenTab({ resumen }) {
   );
 }
 
-/* Servicios consumidos */
-function ServiciosTab({ reservaId, consumos, catalogo, modificable, estado, busy, run }) {
+/* ── Servicios consumidos ───────────────────────────────────── */
+function ServiciosTab({ reservaId, consumos, catalogo, modificable, estado, busy, run, onCorregido }) {
+  const { can } = usePermisos();
+  const [corrigiendo, setCorrigiendo] = useState(null);
   const [servicioId, setServicioId] = useState("");
   const [cantidad, setCantidad] = useState(1);
   const catalogoById = indexById(catalogo);
@@ -374,7 +402,7 @@ function ServiciosTab({ reservaId, consumos, catalogo, modificable, estado, busy
 
   return (
     <>
-      {modificable ? (
+      {!can("consumos", "crear") ? null : modificable ? (
         catalogo.length ? (
           <form className="inline-form" onSubmit={agregar}>
             <Field label="Servicio" required>
@@ -434,24 +462,46 @@ function ServiciosTab({ reservaId, consumos, catalogo, modificable, estado, busy
               label: "",
               render: (c) =>
                 modificable && (
-                  <IconButton
-                    icon={Trash2}
-                    title="Quitar servicio"
-                    color="#EF4444"
-                    disabled={busy === `quitar-${c.id}`}
-                    onClick={() => run(`quitar-${c.id}`, () => reservaServiciosApi.remove(reservaId, c.id), "Servicio quitado de la reserva")}
-                  />
+                  <div className="icon-actions">
+                    {can("consumos", "editar") && (
+                      <IconButton icon={Pencil} title="Corregir cantidad" color={COLORS.gold} onClick={() => setCorrigiendo(c)} />
+                    )}
+                    {can("consumos", "eliminar") && (
+                      <IconButton
+                        icon={Trash2}
+                        title="Quitar servicio"
+                        color="#EF4444"
+                        disabled={busy === `quitar-${c.id}`}
+                        onClick={() => run(`quitar-${c.id}`, () => reservaServiciosApi.remove(reservaId, c.id), "Servicio quitado de la reserva")}
+                      />
+                    )}
+                  </div>
                 ),
             },
           ]}
+        />
+      )}
+      {corrigiendo && (
+        <CorregirConsumoModal
+          reservaId={reservaId}
+          consumo={corrigiendo}
+          nombre={catalogoById[corrigiendo.servicio_id]?.nombre ?? `Servicio #${corrigiendo.servicio_id}`}
+          onClose={() => setCorrigiendo(null)}
+          onSaved={() => {
+            setCorrigiendo(null);
+            onCorregido();
+          }}
         />
       )}
     </>
   );
 }
 
-/* Pagos */
-function PagosTab({ reservaId, pagos, saldo, cancelada, busy, run }) {
+/* ── Pagos ──────────────────────────────────────────────────── */
+function PagosTab({ reservaId, pagos, saldo, cancelada, busy, run, onCorregido }) {
+  const { can } = usePermisos();
+  const [corrigiendo, setCorrigiendo] = useState(null);
+  const [anulando, setAnulando] = useState(null);
   const [monto, setMonto] = useState(saldo > 0 ? String(saldo) : "");
   const [metodo, setMetodo] = useState("");
 
@@ -470,7 +520,7 @@ function PagosTab({ reservaId, pagos, saldo, cancelada, busy, run }) {
 
   return (
     <>
-      {cancelada ? (
+      {!can("pagos", "crear") ? null : cancelada ? (
         <div style={{ marginBottom: 16 }}>
           <InfoBanner>No se pueden registrar pagos sobre una reserva cancelada.</InfoBanner>
         </div>
@@ -503,8 +553,51 @@ function PagosTab({ reservaId, pagos, saldo, cancelada, busy, run }) {
             { key: "monto", label: "Monto", className: "td-strong", render: (p) => formatMoney(p.monto) },
             { key: "metodo", label: "Método", render: (p) => (p.referencia ? <span title={`Referencia ${p.referencia}`}>{p.metodo_pago} · en línea</span> : p.metodo_pago) },
             { key: "fecha", label: "Fecha", render: (p) => formatDateTime(p.fecha_pago) },
-            { key: "estado", label: "Estado", render: (p) => <Badge color={(PAGO_ESTADOS[p.estado] ?? { color: COLORS.gray }).color}>{PAGO_ESTADOS[p.estado]?.label ?? p.estado}</Badge> },
+            {
+              key: "estado",
+              label: "Estado",
+              render: (p) => (
+                <span title={p.motivo_anulacion ? `Motivo: ${p.motivo_anulacion}` : undefined}>
+                  <Badge color={(PAGO_ESTADOS[p.estado] ?? { color: COLORS.gray }).color}>{PAGO_ESTADOS[p.estado]?.label ?? p.estado}</Badge>
+                </span>
+              ),
+            },
+            {
+              key: "acciones",
+              label: "",
+              // Solo los pagos manuales vigentes se corrigen o anulan; los de Wompi se devuelven desde su panel.
+              render: (p) =>
+                p.estado === "pagado" &&
+                !p.referencia && (
+                  <div className="icon-actions">
+                    {!cancelada && can("pagos", "editar") && <IconButton icon={Pencil} title="Corregir pago" color={COLORS.gold} onClick={() => setCorrigiendo(p)} />}
+                    {can("pagos", "estado") && <IconButton icon={XCircle} title="Anular pago" color="#EF4444" onClick={() => setAnulando(p)} />}
+                  </div>
+                ),
+            },
           ]}
+        />
+      )}
+      {corrigiendo && (
+        <CorregirPagoModal
+          reservaId={reservaId}
+          pago={corrigiendo}
+          onClose={() => setCorrigiendo(null)}
+          onSaved={() => {
+            setCorrigiendo(null);
+            onCorregido("Pago corregido");
+          }}
+        />
+      )}
+      {anulando && (
+        <AnularPagoModal
+          reservaId={reservaId}
+          pago={anulando}
+          onClose={() => setAnulando(null)}
+          onSaved={() => {
+            setAnulando(null);
+            onCorregido("Pago anulado");
+          }}
         />
       )}
     </>

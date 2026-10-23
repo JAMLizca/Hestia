@@ -1,9 +1,10 @@
 import { BedDouble, CalendarDays, CheckCircle2, Clock, CreditCard, Loader2, Search, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { reservasWebApi } from "../api/services";
 import Logo from "../components/ui/Logo";
 import { configureFormat, formatMoney, formatShortDate, nights as contarNoches, todayISO } from "../utils/format";
+import { PREFERENCIAS_BANDERAS, PREFERENCIAS_OPCIONES } from "../utils/status";
 import "../components/ui/ui.css";
 import "./PreCheckinPage.css";
 import "./ReservarPage.css";
@@ -26,7 +27,7 @@ const ESTADOS = {
   no_show: { label: "No se presentó", tono: "muted" },
 };
 
-
+// Se recuerda en la pestaña para poder confirmar el pago cuando Wompi devuelve al huésped a esta página.
 const CLAVE_RESERVA = "hestia_reserva_web";
 const recordar = (codigo, documento) => {
   try {
@@ -49,6 +50,14 @@ const sumarDias = (iso, n) => {
   d.setDate(d.getDate() + n);
   return todayISO(d);
 };
+
+/** Solo lo que el huésped pidió; null si no pidió nada. */
+function preferenciasEnvio(p) {
+  const out = {};
+  ["piso", "vista", "cama"].forEach((k) => p[k] && (out[k] = p[k]));
+  PREFERENCIAS_BANDERAS.forEach(({ key }) => p[key] && (out[key] = true));
+  return Object.keys(out).length ? out : null;
+}
 
 function Campo({ label, required, hint, full, children }) {
   return (
@@ -90,6 +99,7 @@ function Contacto({ hotel, extra }) {
   );
 }
 
+/** Resumen de una reserva (confirmación y consulta). */
 function Resumen({ r, hotel, onCancelar, cancelando, errorCancelar, onPagar, pagando, errorPago }) {
   const estado = ESTADOS[r.estado] ?? { label: r.estado, tono: "muted" };
   const [confirmar, setConfirmar] = useState(false);
@@ -200,18 +210,37 @@ function Resumen({ r, hotel, onCancelar, cancelando, errorCancelar, onPagar, pag
 
 function Reservar({ hotel }) {
   const hoy = todayISO();
-  const [fechas, setFechas] = useState({ checkin: sumarDias(hoy, 1), checkout: sumarDias(hoy, 2), huespedes: 1 });
+  // La página principal (/) envía las fechas elegidas y el tipo: ?llegada=&salida=&huespedes=&tipo=
+  const [params] = useSearchParams();
+  const pedido = useMemo(() => {
+    const llegada = params.get("llegada") ?? "";
+    const salida = params.get("salida") ?? "";
+    const huespedes = Number(params.get("huespedes"));
+    const valido = /^\d{4}-\d{2}-\d{2}$/.test(llegada) && /^\d{4}-\d{2}-\d{2}$/.test(salida) && llegada >= hoy && salida > llegada;
+    return valido ? { checkin: llegada, checkout: salida, huespedes: huespedes >= 1 && huespedes <= 10 ? huespedes : 1, tipo: Number(params.get("tipo")) || null } : null;
+  }, [params, hoy]);
+  const [fechas, setFechas] = useState(() =>
+    pedido ? { checkin: pedido.checkin, checkout: pedido.checkout, huespedes: pedido.huespedes } : { checkin: sumarDias(hoy, 1), checkout: sumarDias(hoy, 2), huespedes: 1 },
+  );
   const [buscando, setBuscando] = useState(false);
   const [errorBusqueda, setErrorBusqueda] = useState("");
   const [tipos, setTipos] = useState(null);
   const [elegido, setElegido] = useState(null);
   const [huesped, setHuesped] = useState({ tipo_documento: "CC", documento_identidad: "", nombres: "", apellidos: "", email: "", telefono: "" });
   const [notas, setNotas] = useState("");
+  const [prefs, setPrefs] = useState({ piso: "", vista: "", cama: "", tranquila: false, accesible: false });
   const [trampa, setTrampa] = useState("");
   const [consent, setConsent] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
   const [reserva, setReserva] = useState(null);
+
+  // Cambiar fechas o huéspedes invalida lo mostrado: el precio y el cupo se vuelven a consultar.
+  const editarFechas = (fn) => {
+    setTipos(null);
+    setElegido(null);
+    setFechas(fn);
+  };
 
   const noches = contarNoches(fechas.checkin, fechas.checkout);
   const [pagando, setPagando] = useState(false);
@@ -229,14 +258,16 @@ function Reservar({ hotel }) {
     }
   }
 
-  async function buscar(e) {
-    e.preventDefault();
+  async function buscar(e, preseleccion = null) {
+    e?.preventDefault();
     setErrorBusqueda("");
     setError("");
     setElegido(null);
     setBuscando(true);
     try {
-      setTipos(await reservasWebApi.disponibilidad(fechas));
+      const encontrados = await reservasWebApi.disponibilidad(fechas);
+      setTipos(encontrados);
+      if (preseleccion) setElegido(encontrados.find((t) => t.tipo_habitacion_id === preseleccion) ?? null);
     } catch (err) {
       setTipos(null);
       setErrorBusqueda(err.message);
@@ -244,6 +275,12 @@ function Reservar({ hotel }) {
       setBuscando(false);
     }
   }
+
+  // Viene de la página principal con fechas y habitación ya elegidas: se busca solo y se deja elegida.
+  useEffect(() => {
+    if (pedido) buscar(null, pedido.tipo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function enviar(e) {
     e.preventDefault();
@@ -257,6 +294,7 @@ function Reservar({ hotel }) {
         num_huespedes: Number(fechas.huespedes),
         huesped,
         notas: notas.trim() || null,
+        preferencias: preferenciasEnvio(prefs),
         sitio_web: trampa || null,
       });
       recordar(r.codigo, huesped.documento_identidad.trim());
@@ -292,14 +330,14 @@ function Reservar({ hotel }) {
         <div className="pc-grid pc-grid--spaced">
           <Campo label="Llegada" required>
             <input className="input" type="date" min={hoy} value={fechas.checkin} required name="llegada"
-              onChange={(e) => setFechas((f) => ({ ...f, checkin: e.target.value, checkout: f.checkout <= e.target.value ? sumarDias(e.target.value, 1) : f.checkout }))} />
+              onChange={(e) => editarFechas((f) => ({ ...f, checkin: e.target.value, checkout: f.checkout <= e.target.value ? sumarDias(e.target.value, 1) : f.checkout }))} />
           </Campo>
           <Campo label="Salida" required>
             <input className="input" type="date" min={sumarDias(fechas.checkin, 1)} value={fechas.checkout} required name="salida"
-              onChange={(e) => setFechas((f) => ({ ...f, checkout: e.target.value }))} />
+              onChange={(e) => editarFechas((f) => ({ ...f, checkout: e.target.value }))} />
           </Campo>
           <Campo label="Huéspedes" required>
-            <select className="input" value={fechas.huespedes} name="huespedes" onChange={(e) => setFechas((f) => ({ ...f, huespedes: Number(e.target.value) }))}>
+            <select className="input" value={fechas.huespedes} name="huespedes" onChange={(e) => editarFechas((f) => ({ ...f, huespedes: Number(e.target.value) }))}>
               {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
                 <option key={n} value={n}>
                   {n} {n === 1 ? "persona" : "personas"}
@@ -357,7 +395,12 @@ function Reservar({ hotel }) {
         <form className="pc__form" onSubmit={enviar}>
           <section className="pc__card">
             <h2>3. Tus datos</h2>
-            <p className="pc__help">Titular de la reserva. El hotel la confirmará contigo; no se cobra nada en línea.</p>
+            <p className="pc__help">
+              Titular de la reserva.{" "}
+              {hotel.pagos_activos
+                ? `Al terminar podrás pagar un anticipo del ${hotel.anticipo_porcentaje}% para asegurar tu habitación; el resto se paga en el hotel.`
+                : "El hotel la confirmará contigo; no se cobra nada en línea."}
+            </p>
             <div className="pc-grid">
               <Campo label="Tipo de documento" required>
                 <select className="input" value={huesped.tipo_documento} onChange={setH("tipo_documento")} name="tipo-documento">
@@ -383,6 +426,33 @@ function Reservar({ hotel }) {
               <Campo label="Teléfono móvil" required>
                 <input className="input" type="tel" value={huesped.telefono} onChange={setH("telefono")} required minLength={7} maxLength={30} autoComplete="tel" name="telefono" />
               </Campo>
+              {[
+                ["piso", "Piso"],
+                ["vista", "Vista"],
+                ["cama", "Cama"],
+              ].map(([clave, etiqueta]) => (
+                <Campo key={clave} label={etiqueta}>
+                  <select className="input" value={prefs[clave]} onChange={(e) => setPrefs((p) => ({ ...p, [clave]: e.target.value }))} name={`pref_${clave}`}>
+                    <option value="">Sin preferencia</option>
+                    {PREFERENCIAS_OPCIONES[clave].map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </Campo>
+              ))}
+              <div className="pc-field pc-field--full" style={{ flexDirection: "row", flexWrap: "wrap", gap: "8px 20px" }}>
+                {PREFERENCIAS_BANDERAS.map(({ key, label }) => (
+                  <label key={key} style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+                    <input type="checkbox" checked={prefs[key]} onChange={(e) => setPrefs((p) => ({ ...p, [key]: e.target.checked }))} name={`pref_${key}`} />
+                    {label}
+                  </label>
+                ))}
+                <small className="pc-field__hint" style={{ flexBasis: "100%" }}>
+                  Las preferencias se atienden según la disponibilidad; no están garantizadas.
+                </small>
+              </div>
               <Campo label="Algo que debamos saber" full hint={`${notas.length}/500`}>
                 <textarea className="input" rows={3} maxLength={500} value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Hora de llegada, cama extra, alergias…" name="notas" />
               </Campo>
@@ -502,6 +572,10 @@ function Consultar({ hotel }) {
   );
 }
 
+/**
+ * Al volver de Wompi (`/reservar?pago=CÓDIGO&id=TRANSACCIÓN`): confirma el pago consultando la transacción.
+ * El webhook de Wompi suele confirmarlo antes; esto cubre el caso en que no llegue (p. ej. en desarrollo).
+ */
 function Retorno({ hotel, codigo, transaccion }) {
   const [documento, setDocumento] = useState(() => recordada(codigo));
   const [estado, setEstado] = useState({ error: "", reserva: null });
@@ -510,7 +584,7 @@ function Retorno({ hotel, codigo, transaccion }) {
   useEffect(() => {
     if (!documento) return undefined;
     let activo = true;
-   
+    // Sin id de transacción (el huésped volvió sin terminar) solo se consulta el estado de la reserva.
     (transaccion
       ? reservasWebApi.verificarPago({ codigo, documento_identidad: documento, transaccion_id: transaccion })
       : reservasWebApi.consultar({ codigo, documento_identidad: documento })
@@ -604,8 +678,8 @@ function Retorno({ hotel, codigo, transaccion }) {
 export default function ReservarPage() {
   const [hotel, setHotel] = useState(null);
   const [loadError, setLoadError] = useState("");
-  const [vista, setVista] = useState("reservar");
   const [params] = useSearchParams();
+  const [vista, setVista] = useState(params.get("vista") === "consultar" ? "consultar" : "reservar");
   const codigoPago = params.get("pago");
   const transaccion = params.get("id");
 

@@ -1,29 +1,53 @@
-import { Pencil, Plus, Shield } from "lucide-react";
+import { Pencil, Plus, Shield, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { rolesApi } from "../api/services";
 import { Button, Card, ErrorBanner, IconButton, InfoBanner, LoadingState, MiniStat, StatGrid, hexAlpha } from "../components/ui";
-import { useAuth } from "../context/AuthContext";
+import { usePermisos } from "../context/PermisosContext";
 import { useToast } from "../context/ToastContext";
 import RoleFormModal from "../features/roles/RoleFormModal";
 import "../features/roles/roles.css";
 import { useApiData } from "../hooks/useApiData";
-import { rolColor, rolLabel } from "../utils/roles";
+import { ConfirmDialog } from "../components/ui/Modal";
+import { ROLES_BASE, rolColor, rolLabel } from "../utils/roles";
 import { COLORS } from "../utils/status";
 
 /**
  * Roles y permisos.
  */
 export default function RolesPage() {
-  const { user } = useAuth();
+  const { can } = usePermisos();
   const toast = useToast();
-  const esAdmin = user?.rol === "administrador";
   const { data, loading, error, reload } = useApiData({ permisos: () => rolesApi.permisos() });
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [removing, setRemoving] = useState(null);
+  const [busy, setBusy] = useState(false);
 
   const roles = useMemo(() => data.permisos?.roles ?? [], [data.permisos]);
   const modulos = useMemo(() => data.permisos?.modulos ?? [], [data.permisos]);
   const totalUsuarios = roles.reduce((sum, r) => sum + r.total_usuarios, 0);
+
+  async function confirmRemove() {
+    setBusy(true);
+    try {
+      await rolesApi.remove(removing.id);
+      toast.success(`Rol ${rolLabel(removing.nombre)} eliminado`);
+      reload();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+      setRemoving(null);
+    }
+  }
+
+  /** Por qué un rol no se puede eliminar (null si se puede). */
+  const motivoNoEliminar = (r) =>
+    ROLES_BASE.includes(r.nombre)
+      ? "Es un rol del sistema y no se puede eliminar"
+      : r.total_usuarios > 0
+        ? "Tiene usuarios asignados: cámbiales el rol primero"
+        : null;
 
   return (
     <>
@@ -40,7 +64,7 @@ export default function RolesPage() {
         <>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <h2 className="section-title">Roles del sistema</h2>
-            {esAdmin && (
+            {can("roles", "crear") && (
               <Button icon={Plus} onClick={() => setCreating(true)}>
                 Nuevo rol
               </Button>
@@ -57,7 +81,16 @@ export default function RolesPage() {
                       <Shield size={17} strokeWidth={1.8} color={color} />
                     </div>
                     <div className="role-card__name">{rolLabel(r.nombre)}</div>
-                    {esAdmin && <IconButton icon={Pencil} title={`Editar ${rolLabel(r.nombre)}`} color={COLORS.navy} onClick={() => setEditing(r)} />}
+                    {can("roles", "editar") && <IconButton icon={Pencil} title={`Editar ${rolLabel(r.nombre)}`} color={COLORS.navy} onClick={() => setEditing(r)} />}
+                    {can("roles", "eliminar") && (
+                      <IconButton
+                        icon={Trash2}
+                        title={motivoNoEliminar(r) ?? `Eliminar ${rolLabel(r.nombre)}`}
+                        color={COLORS.red}
+                        disabled={Boolean(motivoNoEliminar(r))}
+                        onClick={() => setRemoving(r)}
+                      />
+                    )}
                   </div>
                   <p className={`role-card__desc${r.description ? "" : " role-card__desc--empty"}`}>{r.description || "Sin descripción"}</p>
                   <div className="role-card__meta">
@@ -125,6 +158,18 @@ export default function RolesPage() {
             </div>
           </Card>
         </>
+      )}
+
+      {removing && (
+        <ConfirmDialog
+          title="Eliminar rol"
+          message={`El rol ${rolLabel(removing.nombre)} se eliminará definitivamente. No tiene usuarios asignados.`}
+          confirmLabel="Eliminar"
+          danger
+          loading={busy}
+          onConfirm={confirmRemove}
+          onClose={() => setRemoving(null)}
+        />
       )}
 
       {(creating || editing) && (

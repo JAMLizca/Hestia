@@ -19,6 +19,7 @@ import {
   usePagination,
 } from "../components/ui";
 import { ConfirmDialog } from "../components/ui/Modal";
+import { usePermisos } from "../context/PermisosContext";
 import { useToast } from "../context/ToastContext";
 import ReservaDetailDrawer from "../features/reservas/ReservaDetailDrawer";
 import ReservaEditModal from "../features/reservas/ReservaEditModal";
@@ -28,6 +29,8 @@ import { formatMoney, formatShortDate, nights } from "../utils/format";
 import { ESTADOS_CANCELABLES, ESTADOS_EDITABLES, fullName, isToday, matches, nextStep, onlyDigits } from "../utils/hotel";
 import { canalLabel, COLORS, PRECHECKIN_ESTADOS, RESERVA_ESTADOS } from "../utils/status";
 
+// Pestañas del mockup, más las que dejaron de caber en "Todas": canceladas (incluye las que vencieron
+// solas) y huéspedes que no se presentaron.
 const TABS = [
   { value: "todas", label: "Todas" },
   { value: "confirmada", label: "Confirmada" },
@@ -43,6 +46,7 @@ const STEP_MESSAGES = { confirmar: "Reserva confirmada", checkin: "Check-in regi
 
 export default function ReservasPage() {
   const toast = useToast();
+  const { can } = usePermisos();
   const [params, setParams] = useSearchParams();
   const { data, loading, error, reload } = useApiData({
     reservas: () => reservasApi.list(),
@@ -56,7 +60,7 @@ export default function ReservasPage() {
   const [cancelTarget, setCancelTarget] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
   const [busy, setBusy] = useState(null);
-  const showForm = params.get("accion") === "nueva";
+  const showForm = params.get("accion") === "nueva" && can("reservas", "crear");
 
   const reservas = useMemo(() => data.reservas ?? [], [data.reservas]);
   const huespedes = useMemo(() => indexById(data.huespedes), [data.huespedes]);
@@ -169,27 +173,33 @@ export default function ReservasPage() {
         return (
           <div className="icon-actions">
             <IconButton icon={Eye} title="Ver detalle" color={COLORS.purple} onClick={() => setDetailId(r.id)} />
-            <IconButton
-              icon={Pencil}
-              title="Editar reserva"
-              color={COLORS.gold}
-              disabled={!ESTADOS_EDITABLES.includes(r.estado) || busy === r.id}
-              onClick={() => setEditTarget(r)}
-            />
-            <IconButton
-              icon={step ? STEP_ICONS[step.action] : CheckCircle2}
-              title={step ? step.label : "Sin acciones pendientes"}
-              color={COLORS.navy}
-              disabled={!step || busy === r.id}
-              onClick={() => advance(r)}
-            />
-            <IconButton
-              icon={Trash2}
-              title="Cancelar"
-              color={COLORS.red}
-              disabled={!ESTADOS_CANCELABLES.includes(r.estado) || busy === r.id}
-              onClick={() => setCancelTarget(r)}
-            />
+            {can("reservas", "editar") && (
+              <IconButton
+                icon={Pencil}
+                title="Editar reserva"
+                color={COLORS.gold}
+                disabled={!ESTADOS_EDITABLES.includes(r.estado) || busy === r.id}
+                onClick={() => setEditTarget(r)}
+              />
+            )}
+            {can("reservas", "estado") && (
+              <>
+                <IconButton
+                  icon={step ? STEP_ICONS[step.action] : CheckCircle2}
+                  title={step ? step.label : "Sin acciones pendientes"}
+                  color={COLORS.navy}
+                  disabled={!step || busy === r.id}
+                  onClick={() => advance(r)}
+                />
+                <IconButton
+                  icon={Trash2}
+                  title="Cancelar"
+                  color={COLORS.red}
+                  disabled={!ESTADOS_CANCELABLES.includes(r.estado) || busy === r.id}
+                  onClick={() => setCancelTarget(r)}
+                />
+              </>
+            )}
           </div>
         );
       },
@@ -209,9 +219,11 @@ export default function ReservasPage() {
         <Tabs options={TABS} value={tab} onChange={setTab} label="Filtrar por estado" />
         <SearchInput value={query} onChange={setQuery} placeholder="Huésped, teléfono, código…" />
         <div className="toolbar__end">
-          <Button icon={Plus} onClick={() => setFormOpen(true)} disabled={loading}>
-            Nueva reserva
-          </Button>
+          {can("reservas", "crear") && (
+            <Button icon={Plus} onClick={() => setFormOpen(true)} disabled={loading}>
+              Nueva reserva
+            </Button>
+          )}
         </div>
       </div>
 
@@ -225,7 +237,7 @@ export default function ReservasPage() {
           <EmptyState
             icon={CalendarDays}
             title={reservas.length ? "Sin resultados" : "Aún no hay reservas"}
-            text={reservas.length ? "Ninguna reserva coincide con el filtro o la búsqueda." : "Crea la primera reserva con el botón “Nueva reserva”."}
+            text={reservas.length ? "Ninguna reserva coincide con el filtro o la búsqueda." : can("reservas", "crear") ? "Crea la primera reserva con el botón “Nueva reserva”." : "Cuando se registren reservas aparecerán aquí."}
           />
         }
         footer={

@@ -1,13 +1,17 @@
 """
 Modelo SQLAlchemy de la tabla `tipos_habitacion`.
 """
-from sqlalchemy import Column, Integer, Numeric, String
+from sqlalchemy import CheckConstraint, Column, Integer, Numeric, String
 
 from app.db.base_class import Base
 
 
 class TipoHabitacion(Base):
     __tablename__ = "tipos_habitacion"
+    __table_args__ = (
+        CheckConstraint("capacidad_maxima >= 1", name="ck_tipos_habitacion_capacidad"),
+        CheckConstraint("precio_base >= 0", name="ck_tipos_habitacion_precio"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(80), unique=True, nullable=False)

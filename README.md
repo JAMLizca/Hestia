@@ -9,7 +9,7 @@ está en la carpeta [`frontend/`](frontend/).
 ## Requisitos previos
 
 - Python 3.11 o superior
-- MySQL 8 corriendo localmente
+- MySQL 8.0.16 o superior (o MariaDB 10.2+) corriendo localmente: las versiones anteriores no aplican las restricciones `CHECK` de la Fase 5
 - Node.js 18 o superior (solo para el frontend)
 - Git
 
@@ -79,6 +79,11 @@ tablas que faltan y no toca las existentes.
 > `python migraciones/fase3_reservas_web.py` (o `migraciones/2026-10_fase3_reservas_web.sql`).
 > Para la Fase 4 (pagos en línea) agrega columnas en `pagos` y `configuracion_hotel`:
 > `python migraciones/fase4_pagos.py` (o `migraciones/2026-10_fase4_pagos.sql`).
+> Para la Fase 5 (integridad en la base, temporada/preferencias, anulación de pagos) **haz antes una copia de la base** y ejecuta
+> `python migraciones/fase5_integridad.py` (no hay versión `.sql`: hay que revisar los datos existentes). Crea la tabla
+> `reserva_noches` (la que impide que dos reservas ocupen la misma habitación la misma noche), agrega las columnas nuevas y las
+> restricciones `CHECK`. Si ya había reservas solapadas o filas con estados inválidos, no las toca: las lista y termina con
+> código 1; se corrigen a mano y se vuelve a ejecutar.
 > Los scripts `.py` son idempotentes: se pueden ejecutar más de una vez.
 
 Después, crea los roles base y el primer administrador (el registro de
@@ -172,6 +177,45 @@ pequeño de prueba. Hestia elige solo el ambiente (sandbox o producción) según
   Wompi** (Hestia no los ejecuta).
 - Una reserva con un pago aprobado no se cancela desde la web: el huésped debe comunicarse con el hotel.
 
+## Página principal pública y rutas del frontend
+
+- `/` es la **página principal del hotel para sus huéspedes**: muestra las habitaciones (precio desde, capacidad, camas, m²), los
+  servicios, los horarios, cómo se confirma una reserva y los datos de contacto. Con las reservas en línea activas tiene un buscador
+  (llegada, salida, personas) que lista los tipos con cupo y su precio total; «Reservar» lleva a `/reservar` con las fechas y la
+  habitación ya elegidas. Con las reservas apagadas muestra los datos de contacto en lugar del buscador. Todo sale de la
+  Configuración del hotel y del catálogo: el nombre, la ciudad, el teléfono y los precios se cambian desde el panel, no en el código.
+- `/reservar` (formulario de reserva y pago del anticipo; con `?vista=consultar` abre «Consultar mi reserva»), `/pre-checkin/<token>`,
+  `/login` y el panel (`/dashboard`, ...). La landing que presenta la plataforma Hestia pasó a `/hestia`.
+- **Para que `/reservar` funcione hay que activar «Permitir reservas en línea»** en Configuración (viene apagado) y tener al menos
+  una habitación creada por recepción. Para cobrar el anticipo, ver «Pagos en línea con Wompi».
+- **Quién crea qué:** recepción crea, edita y elimina habitaciones y el catálogo de servicios; administrador y gerente solo los
+  consultan. Los tipos de habitación (nombre, capacidad y precio base) los gestionan administrador y gerente.
+
+## Fase 5: integridad, datos para ML y permisos en la interfaz
+
+- **Capas (RNF-04):** las rutas (`app/api/routes`) solo reciben la petición HTTP y limitan peticiones; toda la lógica vive en
+  `app/services/` y falla con excepciones de negocio (`app/core/errores.py`: 400, 401, 403, 404, 409, 410, 429, 502, 503)
+  que `main.py` convierte en la respuesta HTTP.
+- **Integridad (RNF-10):** restricciones `CHECK` sobre estados, canal, temporada, fechas, cantidades y montos, y la tabla
+  `reserva_noches` (`UNIQUE habitacion_id + fecha`) que la aplica una escucha de SQLAlchemy al guardar: aunque dos
+  recepcionistas reserven a la vez, la base rechaza la segunda con `409`.
+- **CRUD (RF-16):** `DELETE /usuarios/{id}` y `DELETE /roles/{id}`. Un usuario que ya registró reservas o validó pre-check-ins
+  no se elimina: se desactiva. Los roles base (`administrador`, `gerente`, `recepcionista`) y los roles con usuarios
+  no se eliminan. Los pagos **nunca se borran**: `PUT /reservas/{id}/pagos/{pago_id}` corrige monto o método y
+  `POST .../anular` los anula con un motivo obligatorio (administrador o gerente; el pago anulado deja de sumar). Los pagos de
+  Wompi no se corrigen ni anulan desde aquí (los reintegros se hacen en el panel de Wompi). Los consumos se corrigen
+  (`PUT .../servicios/{id}`, solo cantidad; conserva el precio congelado) o se quitan, sin dejar lo pagado por encima del total.
+- **Datos para ML (RF-20):** cada reserva guarda su `temporada` (por fecha de llegada: Semana Santa, 15-dic a 15-ene y
+  15-jun a 15-jul = alta; 16-jul a 31-ago y 1 a 15-oct = media; resto = baja; la regla es ajustable en
+  `app/services/temporada.py`) y las `preferencias` del huésped (piso, vista, cama,
+  habitación tranquila, accesible), que se capturan en el formulario de recepción y en `/reservar`.
+  `GET /api/v1/reportes/dataset-reservas?formato=csv|json&desde=&hasta=&solo_cerradas=` (administrador y gerente; pantalla
+  **Reportes**) exporta una fila por reserva, sin nombres, documentos, correos ni teléfonos. `anticipacion_dias` usa el reloj
+  de la base de datos.
+- **Permisos en la interfaz (RNF-03):** el menú, los botones y las rutas del frontend se calculan con la misma matriz que
+  aplica el backend (`GET /roles/permisos`): lo que el rol no puede hacer no se muestra, y entrar por URL a una pantalla
+  restringida muestra «Acceso restringido». El backend sigue siendo quien decide.
+
 ## Estructura del proyecto
 
 ```
@@ -180,6 +224,7 @@ hestia/
 │   ├── core/
 │   │   ├── config.py            # Variables de entorno (pydantic-settings)
 │   │   ├── limites.py           # Límite de peticiones por IP en las rutas públicas
+│   │   ├── errores.py           # Excepciones de negocio (ErrorNegocio y subclases)
 │   │   ├── permisos.py          # Matriz de permisos calculada desde las rutas
 │   │   ├── security.py          # Hash de contraseñas (bcrypt) y tokens JWT
 │   │   └── vencimiento.py       # Cancelación automática de reservas pendientes vencidas
@@ -191,7 +236,8 @@ hestia/
 │   │   ├── role.py, usuario.py, configuracion.py
 │   │   ├── tipo_habitacion.py, habitacion.py
 │   │   ├── huesped.py, reserva.py, precheckin.py
-│   │   └── servicio.py, reserva_servicio.py, pago.py
+│   │   └── servicio.py, reserva_servicio.py, pago.py, reserva_noche.py
+│   ├── services/                # Lógica de negocio (reservas, pagos, ocupación, reportes...)
 │   ├── schemas/                 # Esquemas Pydantic (entrada/salida de la API)
 │   │   └── role, usuario, tipo_habitacion, habitacion, huesped, reserva,
 │   │       servicio, reserva_servicio, pago, factura
@@ -201,7 +247,7 @@ hestia/
 │   │       ├── health.py, auth.py, roles.py, usuarios.py
 │   │       ├── tipos_habitacion.py, habitaciones.py, disponibilidad.py
 │   │       ├── huespedes.py, reservas.py, precheckin.py
-│   │       └── servicios.py, reserva_servicios.py, pagos.py, facturas.py
+│   │       └── servicios.py, reserva_servicios.py, pagos.py, facturas.py, reportes.py
 │   └── main.py                  # Instancia de FastAPI y registro de routers
 ├── frontend/                    # React + Vite
 ├── migraciones/                 # Scripts SQL para bases ya creadas (ALTER TABLE)
@@ -221,21 +267,23 @@ Todos los endpoints (salvo `/health` y `/auth/login`) requieren el header
 |--------|-----------|----------------------|
 | Salud | `GET /health` | — |
 | Autenticación | `POST /auth/login`, `GET /auth/me`, `PUT /auth/me/password`, `POST /auth/register` | `register`: administrador. `me/password`: cada usuario cambia la suya (pide la actual) |
-| Roles | `GET/POST /roles/`, `PUT /roles/{id}` (solo la descripción), `GET /roles/permisos` | crear y editar: administrador. `permisos` devuelve la matriz módulo × acción × rol y los usuarios por rol |
+| Roles | `GET/POST /roles/`, `PUT/DELETE /roles/{id}` (editar: solo la descripción), `GET /roles/permisos` | crear, editar y eliminar: administrador. `permisos` devuelve la matriz módulo × acción × rol y los usuarios por rol |
 | Configuración | `GET/PUT /configuracion/` | consultar: cualquier usuario; modificar: administrador |
-| Usuarios | `GET /usuarios/`, `GET/PUT /usuarios/{id}`, `PUT /usuarios/{id}/password` | solo administrador (el alta es `POST /auth/register`) |
+| Usuarios | `GET /usuarios/`, `GET/PUT/DELETE /usuarios/{id}`, `PUT /usuarios/{id}/password` | solo administrador; eliminar solo si nunca registró actividad (el alta es `POST /auth/register`) |
 | Tipos de habitación | `GET/POST /tipos-habitacion/`, `GET/PUT/DELETE /tipos-habitacion/{id}` | administrador, gerente |
-| Habitaciones | `GET/POST /habitaciones/`, `GET/PUT/DELETE /habitaciones/{id}` | crear/eliminar: administrador, gerente. Editar: también recepcionista, pero solo el `estado` |
+| Habitaciones | `GET/POST /habitaciones/`, `GET/PUT/DELETE /habitaciones/{id}` | consultar: cualquier usuario. Crear, editar y eliminar: **solo recepcionista** (administrador y gerente solo miran) |
 | Disponibilidad | `GET /disponibilidad/?fecha_checkin=&fecha_checkout=` | — |
 | Huéspedes | `GET/POST /huespedes/`, `GET/PUT/DELETE /huespedes/{id}` | cualquier usuario; eliminar: administrador, gerente |
 | Reservas | `GET/POST /reservas/` (filtros `huesped_id`, `habitacion_id`, `estado`, `codigo`), `GET/PUT/DELETE /reservas/{id}`, `POST /reservas/{id}/confirmar`, `/checkin`, `/checkout`, `/cancelar`, `/no-show` | cualquier usuario; eliminar: administrador |
 | Pre-check-in | `GET/POST /reservas/{id}/precheckin/` (crear o regenerar el enlace), `POST /reservas/{id}/precheckin/validar` | cualquier usuario |
 | Pre-check-in (público) | `GET/PUT /publico/precheckin/{token}` | sin sesión: lo usa el huésped con su enlace |
 | Reserva en línea (público) | `GET /publico/hotel`, `GET /publico/disponibilidad`, `POST /publico/reservas`, `POST /publico/reservas/consultar`, `POST /publico/reservas/cancelar`, `POST /publico/reservas/pagar`, `POST /publico/reservas/verificar-pago` | sin sesión; las de disponibilidad y creación responden `403` si el hotel no activó `reservas_web_activas` |
+| Catálogo público | `GET /publico/catalogo` | sin sesión; tipos de habitación (nombre, descripción, capacidad, camas, m², precio por noche) y servicios. Nunca números de habitación. Funciona aunque las reservas en línea estén apagadas |
 | Webhook de Wompi (público) | `POST /publico/wompi/eventos` | sin sesión; solo acepta avisos con checksum válido |
-| Servicios (catálogo) | `GET/POST /servicios/`, `GET/PUT/DELETE /servicios/{id}` | administrador, gerente |
-| Consumo de servicios | `GET/POST /reservas/{id}/servicios/`, `DELETE /reservas/{id}/servicios/{consumo_id}` | cualquier usuario |
-| Pagos | `GET/POST /reservas/{id}/pagos/` | cualquier usuario |
+| Servicios (catálogo) | `GET/POST /servicios/`, `GET/PUT/DELETE /servicios/{id}` | consultar: cualquier usuario. Crear, editar y eliminar: **solo recepcionista** |
+| Consumo de servicios | `GET/POST /reservas/{id}/servicios/`, `PUT/DELETE /reservas/{id}/servicios/{consumo_id}` | cualquier usuario |
+| Pagos | `GET/POST /reservas/{id}/pagos/`, `PUT /reservas/{id}/pagos/{pago_id}`, `POST .../{pago_id}/anular` | registrar: cualquier usuario; corregir y anular: administrador, gerente |
+| Reportes | `GET /reportes/dataset-reservas` | administrador, gerente |
 | Facturación | `GET /reservas/{id}/resumen` | — |
 
 ## Reglas de negocio
@@ -297,10 +345,10 @@ Todos los endpoints (salvo `/health` y `/auth/login`) requieren el header
   posterior en el catálogo no altera facturas ya generadas.
 - **Facturación:** `costo_total = costo_habitacion + costo_servicios`;
   `saldo_pendiente = costo_total − pagos`.
-- **Pagos:** el monto debe ser mayor que 0 (máximo 10 dígitos y 2 decimales), no
+- **Pagos:** no se borran: se corrigen o se anulan con motivo (ver «Fase 5»); el monto debe ser mayor que 0 (máximo 10 dígitos y 2 decimales), no
   puede superar el saldo pendiente y no se aceptan pagos de una reserva cancelada.
 - **Configuración:** datos del hotel, horarios de check-in/out, moneda y zona horaria en una sola fila (`configuracion_hotel`). Mientras no se guarde nada, `GET /configuracion/` devuelve valores por defecto. El nombre del hotel se muestra en el menú y la moneda en todos los montos del panel; las horas y la zona horaria son de referencia.
 - **Roles y permisos:** los permisos se asignan por nombre de rol con `require_roles` en cada ruta. `GET /roles/permisos` los calcula recorriendo las rutas reales, así que la pantalla de Roles siempre refleja lo que la API aplica (es de solo lectura). Un rol nuevo solo accede a las rutas abiertas a cualquier usuario autenticado. El nombre de un rol no se puede cambiar.
-- **Usuarios:** no se eliminan, se desactivan (`activo: false`); un usuario inactivo no puede iniciar sesión y su token deja de funcionar de inmediato. Un administrador no puede desactivarse ni cambiarse el rol a sí mismo, y siempre debe quedar al menos un administrador activo.
+- **Usuarios:** se desactivan (`activo: false`) o, si nunca registraron actividad, se eliminan; un usuario inactivo no puede iniciar sesión y su token deja de funcionar de inmediato. Un administrador no puede desactivarse ni cambiarse el rol a sí mismo, y siempre debe quedar al menos un administrador activo.
 - **Borrados:** no se eliminan tipos de habitación, habitaciones, huéspedes,
   servicios ni reservas que tengan registros asociados.

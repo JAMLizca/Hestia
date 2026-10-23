@@ -18,6 +18,7 @@ import {
   usePagination,
 } from "../components/ui";
 import { ConfirmDialog } from "../components/ui/Modal";
+import { usePermisos } from "../context/PermisosContext";
 import { useToast } from "../context/ToastContext";
 import ReservaDetailDrawer from "../features/reservas/ReservaDetailDrawer";
 import ConsumoFormModal from "../features/servicios/ConsumoFormModal";
@@ -57,6 +58,7 @@ function formatConsumoDate(value) {
 
 export default function ServiciosPage() {
   const toast = useToast();
+  const { can } = usePermisos();
   const [params, setParams] = useSearchParams();
   const { data, loading, error, reload } = useApiData({
     servicios: () => serviciosApi.list(),
@@ -71,7 +73,7 @@ export default function ServiciosPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [busy, setBusy] = useState(null);
   const [reservaId, setReservaId] = useState(null);
-  const consumoOpen = params.get("accion") === "consumo";
+  const consumoOpen = params.get("accion") === "consumo" && can("consumos", "crear");
 
   const catalogo = useMemo(() => data.servicios ?? [], [data.servicios]);
   const reservas = useMemo(() => data.consumos?.reservas ?? [], [data.consumos]);
@@ -160,13 +162,15 @@ export default function ServiciosPage() {
       render: (c) => (
         <div className="icon-actions">
           <IconButton icon={Eye} title={`Ver reserva #${c.reserva_id}`} color={COLORS.purple} onClick={() => setReservaId(c.reserva_id)} />
-          <IconButton
-            icon={Trash2}
-            title={c.activa ? "Eliminar consumo" : "La reserva ya no admite cambios"}
-            color={COLORS.red}
-            disabled={!c.activa}
-            onClick={() => setDeleteTarget({ kind: "consumo", item: c })}
-          />
+          {can("consumos", "eliminar") && (
+            <IconButton
+              icon={Trash2}
+              title={c.activa ? "Eliminar consumo" : "La reserva ya no admite cambios"}
+              color={COLORS.red}
+              disabled={!c.activa}
+              onClick={() => setDeleteTarget({ kind: "consumo", item: c })}
+            />
+          )}
         </div>
       ),
     },
@@ -183,8 +187,8 @@ export default function ServiciosPage() {
       label: "Acciones",
       render: (s) => (
         <div className="icon-actions">
-          <IconButton icon={Pencil} title="Editar" color={COLORS.navy} onClick={() => setServicioForm(s)} />
-          <IconButton icon={Trash2} title="Eliminar" color={COLORS.red} onClick={() => setDeleteTarget({ kind: "servicio", item: s })} />
+          {can("servicios", "editar") && <IconButton icon={Pencil} title="Editar" color={COLORS.navy} onClick={() => setServicioForm(s)} />}
+          {can("servicios", "eliminar") && <IconButton icon={Trash2} title="Eliminar" color={COLORS.red} onClick={() => setDeleteTarget({ kind: "servicio", item: s })} />}
         </div>
       ),
     },
@@ -203,13 +207,17 @@ export default function ServiciosPage() {
         <Tabs options={VIEWS} value={view} onChange={setView} label="Sección" />
         <div className="toolbar__end">
           {view === "consumos" ? (
-            <Button icon={Plus} onClick={() => setConsumoOpen(true)} disabled={loading}>
-              Registrar consumo
-            </Button>
+            can("consumos", "crear") && (
+              <Button icon={Plus} onClick={() => setConsumoOpen(true)} disabled={loading}>
+                Registrar consumo
+              </Button>
+            )
           ) : (
-            <Button icon={Plus} onClick={() => setServicioForm("nuevo")}>
-              Nuevo servicio
-            </Button>
+            can("servicios", "crear") && (
+              <Button icon={Plus} onClick={() => setServicioForm("nuevo")}>
+                Nuevo servicio
+              </Button>
+            )
           )}
         </div>
       </div>

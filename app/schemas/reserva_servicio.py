@@ -9,6 +9,12 @@ class ReservaServicioCreate(BaseModel):
     cantidad: int = Field(default=1, gt=0)
 
 
+class ReservaServicioUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    cantidad: int = Field(gt=0, le=1000)
+
+
 class ReservaServicioOut(BaseModel):
     id: int
     reserva_id: int

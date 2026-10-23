@@ -3,16 +3,18 @@ import { habitacionesApi } from "../../api/services";
 import { Button, ErrorBanner, InfoBanner } from "../../components/ui";
 import { cleanPayload, Field, Input, Select, Textarea } from "../../components/ui/Form";
 import { Modal } from "../../components/ui/Modal";
+import { usePermisos } from "../../context/PermisosContext";
 import { formatMoney } from "../../utils/format";
 import { HABITACION_ESTADOS } from "../../utils/status";
 
 const ESTADO_OPTIONS = Object.entries(HABITACION_ESTADOS).map(([value, s]) => ({ value, label: s.label }));
 
 /**
- * Crear (POST /habitaciones/, admin/gerente) o editar (PUT /habitaciones/{id}).
+ * Crear (POST /habitaciones/, solo recepción) o editar (PUT /habitaciones/{id}).
  * El backend no permite cambiar el número al editar (HabitacionUpdate no lo incluye).
  */
 export default function HabitacionFormModal({ habitacion, tipos, onClose, onSaved }) {
+  const { can } = usePermisos();
   const editing = Boolean(habitacion);
   const [values, setValues] = useState({
     numero: habitacion?.numero ?? "",
@@ -63,7 +65,7 @@ export default function HabitacionFormModal({ habitacion, tipos, onClose, onSave
     >
       {!tipos.length && (
         <div style={{ marginBottom: 16 }}>
-          <InfoBanner>Primero crea un tipo de habitación en la pestaña “Tipos de habitación”.</InfoBanner>
+          <InfoBanner>{can("tipos-habitacion", "crear") ? "Primero crea un tipo de habitación en la pestaña “Tipos de habitación”." : "Todavía no hay tipos de habitación. Pídele a un administrador o gerente que cree el primero."}</InfoBanner>
         </div>
       )}
       <form id="habitacion-form" onSubmit={handleSubmit}>

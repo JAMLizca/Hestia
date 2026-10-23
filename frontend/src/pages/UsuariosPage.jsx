@@ -1,4 +1,4 @@
-import { KeyRound, Lock, Pencil, Plus, Power, PowerOff, Users } from "lucide-react";
+import { KeyRound, Lock, Pencil, Plus, Power, PowerOff, Trash2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { rolesApi, usuariosApi } from "../api/services";
 import {
@@ -18,6 +18,7 @@ import {
 } from "../components/ui";
 import { ConfirmDialog } from "../components/ui/Modal";
 import { useAuth } from "../context/AuthContext";
+import { usePermisos } from "../context/PermisosContext";
 import { useToast } from "../context/ToastContext";
 import { PasswordModal, UsuarioFormModal } from "../features/usuarios/UsuarioFormModal";
 import { indexById, useApiData } from "../hooks/useApiData";
@@ -46,8 +47,8 @@ function formatDate(value) {
  * (La autorización real la hace el backend: esto solo mejora la experiencia.)
  */
 export default function UsuariosPage() {
-  const { user } = useAuth();
-  if (user?.rol !== "administrador") {
+  const { can } = usePermisos();
+  if (!can("usuarios", "ver")) {
     return (
       <EmptyState
         icon={Lock}
@@ -61,6 +62,7 @@ export default function UsuariosPage() {
 
 function UsuariosAdmin() {
   const { user: yo } = useAuth();
+  const { can } = usePermisos();
   const toast = useToast();
   const { data, loading, error, reload } = useApiData({
     usuarios: () => usuariosApi.list(),
@@ -72,6 +74,7 @@ function UsuariosAdmin() {
   const [editing, setEditing] = useState(null);
   const [passwordFor, setPasswordFor] = useState(null);
   const [toggling, setToggling] = useState(null);
+  const [removing, setRemoving] = useState(null);
   const [busy, setBusy] = useState(false);
 
   const usuarios = useMemo(() => data.usuarios ?? [], [data.usuarios]);
@@ -114,6 +117,22 @@ function UsuariosAdmin() {
     }
   }
 
+  async function confirmRemove() {
+    setBusy(true);
+    try {
+      await usuariosApi.remove(removing.id);
+      toast.success(`${removing.nombre} fue eliminado`);
+      setRemoving(null);
+      reload();
+    } catch (err) {
+      // 409: ya tiene historial (reservas o validaciones); el mensaje del servidor sugiere desactivarlo.
+      toast.error(err.message);
+      setRemoving(null);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const columns = [
     {
       key: "usuario",
@@ -144,9 +163,13 @@ function UsuariosAdmin() {
         const propio = u.id === yo?.id;
         return (
           <div className="icon-actions">
-            <IconButton icon={Pencil} title="Editar" color={COLORS.navy} onClick={() => setEditing(u)} />
-            <IconButton icon={KeyRound} title="Cambiar contraseña" color={COLORS.purple} onClick={() => setPasswordFor(u)} />
-            {u.activo ? (
+            {can("usuarios", "editar") && (
+              <>
+                <IconButton icon={Pencil} title="Editar" color={COLORS.navy} onClick={() => setEditing(u)} />
+                <IconButton icon={KeyRound} title="Cambiar contraseña" color={COLORS.purple} onClick={() => setPasswordFor(u)} />
+              </>
+            )}
+            {can("usuarios", "editar") && (u.activo ? (
               <IconButton
                 icon={PowerOff}
                 title={propio ? "No puedes desactivar tu propia cuenta" : "Desactivar"}
@@ -156,6 +179,15 @@ function UsuariosAdmin() {
               />
             ) : (
               <IconButton icon={Power} title="Activar" color={COLORS.green} onClick={() => setToggling(u)} />
+            ))}
+            {can("usuarios", "eliminar") && (
+              <IconButton
+                icon={Trash2}
+                title={propio ? "No puedes eliminar tu propia cuenta" : "Eliminar (solo si nunca registró actividad)"}
+                color={COLORS.red}
+                disabled={propio}
+                onClick={() => setRemoving(u)}
+              />
             )}
           </div>
         );
@@ -176,9 +208,11 @@ function UsuariosAdmin() {
         <Tabs options={TABS} value={tab} onChange={setTab} label="Filtrar por estado" />
         <SearchInput value={query} onChange={setQuery} placeholder="Buscar nombre, correo o rol..." />
         <div className="toolbar__end">
-          <Button icon={Plus} onClick={() => setCreating(true)} disabled={loading || !roles.length}>
-            Nuevo usuario
-          </Button>
+          {can("usuarios", "crear") && (
+            <Button icon={Plus} onClick={() => setCreating(true)} disabled={loading || !roles.length}>
+              Nuevo usuario
+            </Button>
+          )}
         </div>
       </div>
 
@@ -228,6 +262,18 @@ function UsuariosAdmin() {
             toast.success(`Contraseña de ${passwordFor.nombre} actualizada`);
             setPasswordFor(null);
           }}
+        />
+      )}
+
+      {removing && (
+        <ConfirmDialog
+          title="Eliminar usuario"
+          message={`${removing.nombre} se eliminará definitivamente. Solo es posible si nunca creó reservas ni validó pre-check-ins; si ya trabajó en el sistema, desactívalo para conservar el historial.`}
+          confirmLabel="Eliminar"
+          danger
+          loading={busy}
+          onConfirm={confirmRemove}
+          onClose={() => setRemoving(null)}
         />
       )}
 
