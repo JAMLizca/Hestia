@@ -7,9 +7,10 @@ from datetime import date
 from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db, liberar_pendientes_vencidas
+from app.api.deps import get_cuenta_actual, get_db, liberar_pendientes_vencidas
 from app.core.errores import NoEncontrado
 from app.core.limites import limitar_creacion, limitar_publico, registrar_creacion, registrar_fallo
+from app.models.cuenta_huesped import CuentaHuesped
 from app.models.reserva import Reserva
 from app.schemas.reserva_web import (
     CatalogoPublico,
@@ -64,10 +65,15 @@ def disponibilidad_publica(
     response_model=ReservaWebOut,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(limitar_creacion)],
-    summary="Crea una reserva pendiente desde la página pública",
+    summary="Crea una reserva pendiente desde la página pública (exige iniciar sesión con una cuenta de huésped)",
 )
-def crear_reserva_web(datos: ReservaWebCreate, request: Request, db: Session = Depends(get_db)):
-    salida = servicio.crear(db, datos)
+def crear_reserva_web(
+    datos: ReservaWebCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    cuenta: CuentaHuesped = Depends(get_cuenta_actual),
+):
+    salida = servicio.crear(db, datos, cuenta)
     registrar_creacion(request)  # solo cuentan las reservas realmente creadas
     return salida
 

@@ -1,23 +1,23 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { onUnauthorized, tokenStorage } from "../api/client";
-import { authApi } from "../api/services";
+import { authApi, cuentaApi } from "../api/services";
 
 const AuthContext = createContext(null);
 
 /**
- * El backend incluye el nombre del rol como claim "rol" dentro del JWT
- * (ver create_access_token en routes/auth.py). GET /auth/me solo devuelve rol_id,
- * así que el nombre se lee del token únicamente para mostrarlo en la interfaz.
- * La autorización real la sigue haciendo el backend.
+ * El JWT lleva claims que solo se leen para decidir qué mostrar en la interfaz (la autorización real la hace
+ * siempre el backend): "tipo" ("personal" o "cliente"; los tokens anteriores no lo traían y son de personal) y,
+ * para el personal, "rol". GET /auth/me solo devuelve rol_id, por eso el nombre del rol sale del token.
  */
-function readRoleFromToken(token) {
+function readClaims(token) {
   try {
-    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    return payload.rol ?? null;
+    return JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
   } catch {
-    return null;
+    return {};
   }
 }
+
+export const tipoDeToken = (token) => (readClaims(token).tipo === "cliente" ? "cliente" : "personal");
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => tokenStorage.get());
@@ -43,11 +43,16 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!token) return;
     let active = true;
-    authApi
-      .me()
+    const claims = readClaims(token);
+    const tipo = claims.tipo === "cliente" ? "cliente" : "personal";
+    (tipo === "cliente" ? cuentaApi.me() : authApi.me())
       .then((me) => {
         if (!active) return;
-        setUser({ ...me, rol: readRoleFromToken(token) });
+        setUser(
+          tipo === "cliente"
+            ? { ...me, tipo, rol: null, nombre: `${me.nombres} ${me.apellidos}`.trim() }
+            : { ...me, tipo, rol: claims.rol ?? null },
+        );
         setStatus("authenticated");
       })
       .catch((err) => {
@@ -63,15 +68,33 @@ export function AuthProvider({ children }) {
     };
   }, [token, expire]);
 
-  const login = useCallback(async (email, password) => {
-    const { access_token } = await authApi.login(email, password);
+  const guardarToken = useCallback((access_token) => {
     tokenStorage.set(access_token);
     setManualLogout(false);
     setStatus("loading");
     setToken(access_token);
+    return tipoDeToken(access_token);
   }, []);
 
-  const value = useMemo(() => ({ user, status, manualLogout, login, logout }), [user, status, manualLogout, login, logout]);
+  /** Un solo acceso para personal y huéspedes. Devuelve el tipo de sesión ("personal" | "cliente"). */
+  const login = useCallback(async (email, password) => guardarToken((await authApi.login(email, password)).access_token), [guardarToken]);
+
+  /** Crea una cuenta de huésped y deja la sesión iniciada. Devuelve "cliente". */
+  const register = useCallback(async (datos) => guardarToken((await cuentaApi.registro(datos)).access_token), [guardarToken]);
+
+  const value = useMemo(
+    () => ({
+      user,
+      status,
+      manualLogout,
+      login,
+      register,
+      logout,
+      esPersonal: status === "authenticated" && user?.tipo === "personal",
+      esCliente: status === "authenticated" && user?.tipo === "cliente",
+    }),
+    [user, status, manualLogout, login, register, logout],
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

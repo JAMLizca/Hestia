@@ -1,3 +1,4 @@
+/* Reserva en línea pública. Reutiliza las clases base de PreCheckinPage.css (.pc*). */
 .rv__tabs {
   display: flex;
   gap: 6px;
@@ -187,6 +188,7 @@
   color: var(--gray-500);
 }
 
+/* Campo trampa anti-bots: fuera de pantalla, no display:none (algunos bots lo detectan). */
 .rv__trap {
   position: absolute;
   left: -10000px;
@@ -245,4 +247,99 @@
   border: 1px solid var(--navy-700);
   background: transparent;
   color: var(--navy-700);
+}
+
+/* Marca y cuenta en la cabecera de las pantallas públicas */
+.pc__brand {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.rv__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.rv__acct {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.rv__acct a,
+.rv__acct button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--navy-900);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.rv__acct a:hover,
+.rv__acct button:hover {
+  color: var(--gold, #bea06c);
+}
+
+.rv__acct-name {
+  color: var(--gray-500, #6b7280);
+}
+
+.rv__acct .rv__acct-cta {
+  padding: 6px 12px;
+  border-radius: var(--radius-md, 10px);
+  background: var(--navy-900);
+  color: #fff;
+}
+
+.rv__acct .rv__acct-cta:hover {
+  color: #fff;
+  filter: brightness(1.15);
+}
+
+/* Aviso para iniciar sesión antes de reservar */
+.rv__gate .rv__row {
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.rv__gate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1 1 200px;
+  text-decoration: none;
+}
+
+/* Mis reservas */
+.mr__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mr__head h1 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.mr__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }

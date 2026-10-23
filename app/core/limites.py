@@ -77,6 +77,49 @@ def registrar_creacion(request: Request) -> None:
 
 
 
+MAX_FALLOS_LOGIN = 10  # contraseñas incorrectas por IP en la ventana
+VENTANA_LOGIN = 300
+MAX_REGISTROS = 10  # cuentas de huésped nuevas por IP cada hora
+VENTANA_REGISTRO = 3600
+_fallos_login: dict[str, deque] = defaultdict(deque)
+_registros: dict[str, deque] = defaultdict(deque)
+
+
+def _bloquear_si_excede(cola: deque, ahora: float, ventana: int, maximo: int, mensaje: str) -> None:
+    while cola and ahora - cola[0] > ventana:
+        cola.popleft()
+    if len(cola) >= maximo:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=mensaje)
+
+
+def limitar_login(request: Request) -> None:
+    """Dependencia de POST /auth/login: frena el adivinar contraseñas. Solo cuentan los intentos fallidos."""
+    with _candado:
+        _bloquear_si_excede(
+            _fallos_login[_ip(request)], time.monotonic(), VENTANA_LOGIN, MAX_FALLOS_LOGIN,
+            "Demasiados intentos fallidos. Espera unos minutos e inténtalo de nuevo.",
+        )
+
+
+def registrar_fallo_login(request: Request) -> None:
+    with _candado:
+        _fallos_login[_ip(request)].append(time.monotonic())
+
+
+def limitar_registro(request: Request) -> None:
+    """Dependencia de POST /cuenta/registro: evita crear cuentas en masa. Cuenta solo las cuentas creadas."""
+    with _candado:
+        _bloquear_si_excede(
+            _registros[_ip(request)], time.monotonic(), VENTANA_REGISTRO, MAX_REGISTROS,
+            "Se crearon varias cuentas desde esta conexión. Inténtalo más tarde o comunícate con el hotel.",
+        )
+
+
+def registrar_registro(request: Request) -> None:
+    with _candado:
+        _registros[_ip(request)].append(time.monotonic())
+
+
 def registrar_fallo(request: Request) -> None:
     with _candado:
         _fallos[_ip(request)].append(time.monotonic())
@@ -88,3 +131,5 @@ def reiniciar() -> None:
         _peticiones.clear()
         _fallos.clear()
         _creaciones.clear()
+        _fallos_login.clear()
+        _registros.clear()

@@ -105,9 +105,9 @@ function Eyebrow({ children, dark }) {
 }
 
 export default function LandingPage() {
-  const { status } = useAuth();
+  const { esPersonal } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
-  const loggedIn = status === "authenticated";
+  const loggedIn = esPersonal;
   const accessTo = loggedIn ? "/dashboard" : "/login";
   const accessLabel = loggedIn ? "Ir al panel" : "Iniciar sesión";
 

@@ -1,8 +1,9 @@
-import { BedDouble, CalendarDays, CheckCircle2, Clock, CreditCard, Loader2, Search, Users } from "lucide-react";
+import { CheckCircle2, Loader2, LogIn, Search, UserPlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { reservasWebApi } from "../api/services";
-import Logo from "../components/ui/Logo";
+import { cuentaApi, reservasWebApi } from "../api/services";
+import { useAuth } from "../context/AuthContext";
+import { Campo, Contacto, Pantalla, Resumen } from "../features/reservasWeb/Comunes";
 import { configureFormat, formatMoney, formatShortDate, nights as contarNoches, todayISO } from "../utils/format";
 import { PREFERENCIAS_BANDERAS, PREFERENCIAS_OPCIONES } from "../utils/status";
 import "../components/ui/ui.css";
@@ -18,14 +19,6 @@ const TIPOS_DOCUMENTO = [
   { value: "OTRO", label: "Otro documento" },
 ];
 
-const ESTADOS = {
-  pendiente: { label: "Pendiente de confirmación", tono: "warn" },
-  confirmada: { label: "Confirmada", tono: "ok" },
-  checkin: { label: "Hospedado", tono: "ok" },
-  checkout: { label: "Finalizada", tono: "muted" },
-  cancelada: { label: "Cancelada", tono: "muted" },
-  no_show: { label: "No se presentó", tono: "muted" },
-};
 
 // Se recuerda en la pestaña para poder confirmar el pago cuando Wompi devuelve al huésped a esta página.
 const CLAVE_RESERVA = "hestia_reserva_web";
@@ -59,151 +52,53 @@ function preferenciasEnvio(p) {
   return Object.keys(out).length ? out : null;
 }
 
-function Campo({ label, required, hint, full, children }) {
-  return (
-    <label className={`pc-field${full ? " pc-field--full" : ""}`}>
-      <span className="pc-field__label">
-        {label}
-        {required ? " *" : <small> (opcional)</small>}
-      </span>
-      {children}
-      {hint && <span className="pc-field__hint">{hint}</span>}
-    </label>
-  );
-}
+/** Dirección a la que se vuelve tras iniciar sesión: la misma búsqueda, con la habitación ya elegida. */
+const volverA = (f, tipo) => {
+  const q = new URLSearchParams({ llegada: f.checkin, salida: f.checkout, huespedes: String(f.huespedes) });
+  if (tipo) q.set("tipo", String(tipo.tipo_habitacion_id));
+  return { pathname: "/reservar", search: `?${q.toString()}` };
+};
 
-function Pantalla({ hotel, children }) {
-  return (
-    <main className="pc rv">
-      <header className="pc__brand">
-        <Logo size={32} />
-        <span>
-          hestia<span className="pc__dot">.</span>
-        </span>
-      </header>
-      {children}
-      <footer className="pc__footer">
-        {hotel?.nombre ? `${hotel.nombre} · ` : ""}Tus datos se usan solo para gestionar tu reserva.
-      </footer>
-    </main>
-  );
-}
-
-function Contacto({ hotel, extra }) {
-  const partes = [hotel?.telefono, hotel?.email].filter(Boolean);
-  return (
-    <p className="rv__contact">
-      {extra}
-      {partes.length > 0 ? ` Comunícate con el hotel: ${partes.join(" · ")}.` : " Comunícate directamente con el hotel."}
-    </p>
-  );
-}
-
-/** Resumen de una reserva (confirmación y consulta). */
-function Resumen({ r, hotel, onCancelar, cancelando, errorCancelar, onPagar, pagando, errorPago }) {
-  const estado = ESTADOS[r.estado] ?? { label: r.estado, tono: "muted" };
-  const [confirmar, setConfirmar] = useState(false);
-  return (
-    <section className="pc__card">
-      <div className="rv__summary-head">
-        <div>
-          <p className="pc__eyebrow">Código de reserva</p>
-          <p className="rv__code">{r.codigo}</p>
-        </div>
-        <span className={`rv__pill rv__pill--${estado.tono}`}>{estado.label}</span>
-      </div>
-      <dl className="pc__summary">
-        <div>
-          <dt>
-            <CalendarDays size={13} /> Estadía
-          </dt>
-          <dd>
-            {formatShortDate(r.fecha_checkin)} → {formatShortDate(r.fecha_checkout)} · {r.noches} {r.noches === 1 ? "noche" : "noches"}
-          </dd>
-        </div>
-        <div>
-          <dt>
-            <BedDouble size={13} /> Habitación
-          </dt>
-          <dd>{r.tipo_habitacion}</dd>
-        </div>
-        <div>
-          <dt>
-            <Users size={13} /> Huéspedes
-          </dt>
-          <dd>{r.num_huespedes}</dd>
-        </div>
-        <div>
-          <dt>
-            <Clock size={13} /> Total estimado
-          </dt>
-          <dd>{formatMoney(r.precio_total)}</dd>
-        </div>
-      </dl>
-      {Number(r.pagado) > 0 && (
-        <p className="rv__paid">
-          <CheckCircle2 size={15} /> Anticipo pagado: <strong>{formatMoney(r.pagado)}</strong>
-        </p>
-      )}
-      {r.estado === "pendiente" && r.puede_pagar && onPagar && (
-        <div className="rv__pay">
-          <p>
-            Para confirmar tu reserva paga el anticipo de <strong>{formatMoney(r.anticipo_monto)}</strong> con tarjeta, PSE o Nequi. El resto se paga en el hotel.
-          </p>
-          <button type="button" className="pc__submit" disabled={pagando} onClick={onPagar}>
-            {pagando ? <Loader2 className="pc__spin" size={16} /> : <CreditCard size={16} />} Pagar anticipo con Wompi
+/** Ver disponibilidad es libre; reservar exige una cuenta de huésped. */
+function AccesoParaReservar({ status, esPersonal, logout, volver }) {
+  if (status === "loading") {
+    return (
+      <section className="pc__card pc__state" aria-busy="true">
+        <Loader2 className="pc__spin" size={22} />
+        <p>Revisando tu sesión…</p>
+      </section>
+    );
+  }
+  if (esPersonal) {
+    return (
+      <section className="pc__card pc__state">
+        <h2>Tienes una sesión del personal</h2>
+        <p>Las reservas en línea se hacen con una cuenta de huésped. Para registrar una reserva de un cliente, usa el panel.</p>
+        <div className="rv__row" style={{ justifyContent: "center" }}>
+          <Link to="/reservas" className="rv__btn rv__btn--primary">
+            Ir a Reservas
+          </Link>
+          <button type="button" className="rv__btn" onClick={logout}>
+            Cerrar sesión
           </button>
-          {errorPago && (
-            <p className="pc__error" role="alert">
-              {errorPago}
-            </p>
-          )}
-          <small>Serás llevado al sitio seguro de Wompi; aquí no guardamos datos de tu tarjeta.</small>
         </div>
-      )}
-      {r.estado === "pendiente" && !r.puede_pagar && (
-        <p className="pc__notice">
-          El hotel debe confirmar tu reserva
-          {r.horas_vencimiento > 0 ? `; si no lo hace en ${r.horas_vencimiento} horas, se libera sola` : ""}. El pago se realiza directamente con el hotel; aquí no se cobra nada.
-        </p>
-      )}
-      {r.estado === "pendiente" && r.puede_pagar && r.horas_vencimiento > 0 && (
-        <p className="pc__help">Si no pagas el anticipo ni el hotel la confirma en {r.horas_vencimiento} horas, la reserva se libera sola.</p>
-      )}
-      {r.estado === "confirmada" && <p className="pc__notice">Tu reserva está confirmada. Check-in desde las {r.hora_checkin}.</p>}
-      {r.motivo_cancelacion && <p className="pc__help">Motivo: {r.motivo_cancelacion}</p>}
-      {r.precheckin_enlace && (
-        <a className={`pc__submit rv__cta${r.puede_pagar ? " rv__cta--sec" : ""}`} href={r.precheckin_enlace}>
-          Completar mi registro ahora
-        </a>
-      )}
-      {r.puede_cancelar && onCancelar && (
-        <div className="rv__cancel">
-          {!confirmar ? (
-            <button type="button" className="pc__link pc__link--danger" onClick={() => setConfirmar(true)}>
-              Cancelar esta reserva
-            </button>
-          ) : (
-            <>
-              <p className="pc__help">¿Seguro que quieres cancelar? Esta acción no se puede deshacer.</p>
-              <div className="rv__row">
-                <button type="button" className="rv__btn rv__btn--danger" disabled={cancelando} onClick={onCancelar}>
-                  {cancelando && <Loader2 className="pc__spin" size={14} />} Sí, cancelar
-                </button>
-                <button type="button" className="rv__btn" onClick={() => setConfirmar(false)}>
-                  No, mantenerla
-                </button>
-              </div>
-            </>
-          )}
-          {errorCancelar && (
-            <p className="pc__error" role="alert">
-              {errorCancelar}
-            </p>
-          )}
-        </div>
-      )}
-      <Contacto hotel={hotel ?? { telefono: r.hotel_telefono, email: r.hotel_email }} extra="¿Dudas o cambios?" />
+      </section>
+    );
+  }
+  return (
+    <section className="pc__card rv__gate">
+      <h2>3. Inicia sesión para reservar</h2>
+      <p className="pc__help">
+        Para reservar necesitas una cuenta. Así tienes tus reservas en un solo lugar y puedes pagarlas, consultarlas o cancelarlas cuando quieras. Tu búsqueda se conserva.
+      </p>
+      <div className="rv__row">
+        <Link to="/login?modo=registro" state={{ from: volver }} className="pc__submit rv__gate-btn">
+          <UserPlus size={16} /> Crear cuenta
+        </Link>
+        <Link to="/login" state={{ from: volver }} className="pc__submit rv__gate-btn rv__cta--sec">
+          <LogIn size={16} /> Ya tengo cuenta
+        </Link>
+      </div>
     </section>
   );
 }
@@ -226,7 +121,13 @@ function Reservar({ hotel }) {
   const [errorBusqueda, setErrorBusqueda] = useState("");
   const [tipos, setTipos] = useState(null);
   const [elegido, setElegido] = useState(null);
+  const { user, status, esCliente, esPersonal, logout } = useAuth();
   const [huesped, setHuesped] = useState({ tipo_documento: "CC", documento_identidad: "", nombres: "", apellidos: "", email: "", telefono: "" });
+  // Con la cuenta iniciada, los datos de contacto se rellenan solos (se pueden cambiar: el titular puede ser otra persona).
+  useEffect(() => {
+    if (!esCliente) return;
+    setHuesped((h) => ({ ...h, nombres: h.nombres || user.nombres, apellidos: h.apellidos || user.apellidos, email: h.email || user.email }));
+  }, [esCliente, user]);
   const [notas, setNotas] = useState("");
   const [prefs, setPrefs] = useState({ piso: "", vista: "", cama: "", tranquila: false, accesible: false });
   const [trampa, setTrampa] = useState("");
@@ -250,7 +151,7 @@ function Reservar({ hotel }) {
     setErrorPago("");
     setPagando(true);
     try {
-      const { url } = await reservasWebApi.pagar({ codigo: reserva.codigo, documento_identidad: huesped.documento_identidad.trim() });
+      const { url } = await cuentaApi.pagar(reserva.codigo);
       window.location.assign(url); // checkout de Wompi
     } catch (err) {
       setErrorPago(err.message);
@@ -297,7 +198,6 @@ function Reservar({ hotel }) {
         preferencias: preferenciasEnvio(prefs),
         sitio_web: trampa || null,
       });
-      recordar(r.codigo, huesped.documento_identidad.trim());
       setReserva(r);
       window.scrollTo({ top: 0 });
     } catch (err) {
@@ -314,7 +214,9 @@ function Reservar({ hotel }) {
         <section className="pc__card pc__state pc__state--ok">
           <CheckCircle2 size={40} strokeWidth={1.5} />
           <h1>¡Recibimos tu solicitud!</h1>
-          <p>Guarda tu código: lo necesitas, junto con tu documento, para consultar o cancelar la reserva.</p>
+          <p>
+            Guarda tu código. También la encuentras siempre en <Link to="/mis-reservas" className="pc__link">Mis reservas</Link>.
+          </p>
         </section>
         <Resumen r={reserva} hotel={hotel} onPagar={pagar} pagando={pagando} errorPago={errorPago} />
       </>
@@ -391,7 +293,11 @@ function Reservar({ hotel }) {
         </section>
       )}
 
-      {tipos && elegido && (
+      {tipos && elegido && !esCliente && (
+        <AccesoParaReservar status={status} esPersonal={esPersonal} logout={logout} volver={volverA(fechas, elegido)} />
+      )}
+
+      {tipos && elegido && esCliente && (
         <form className="pc__form" onSubmit={enviar}>
           <section className="pc__card">
             <h2>3. Tus datos</h2>
@@ -577,17 +483,24 @@ function Consultar({ hotel }) {
  * El webhook de Wompi suele confirmarlo antes; esto cubre el caso en que no llegue (p. ej. en desarrollo).
  */
 function Retorno({ hotel, codigo, transaccion }) {
+  const { status, esCliente } = useAuth();
   const [documento, setDocumento] = useState(() => recordada(codigo));
   const [estado, setEstado] = useState({ error: "", reserva: null });
   const [intentos, setIntentos] = useState(0);
+  // Con la cuenta iniciada no hace falta el documento: la reserva se identifica por la cuenta.
+  const listo = esCliente || Boolean(documento);
 
   useEffect(() => {
-    if (!documento) return undefined;
+    if (!listo) return undefined;
     let activo = true;
     // Sin id de transacción (el huésped volvió sin terminar) solo se consulta el estado de la reserva.
-    (transaccion
-      ? reservasWebApi.verificarPago({ codigo, documento_identidad: documento, transaccion_id: transaccion })
-      : reservasWebApi.consultar({ codigo, documento_identidad: documento })
+    (esCliente
+      ? transaccion
+        ? cuentaApi.verificarPago(codigo, transaccion)
+        : cuentaApi.reservas().then((lista) => lista.find((x) => x.codigo === codigo) ?? Promise.reject(new Error("No encontramos esa reserva en tu cuenta.")))
+      : transaccion
+        ? reservasWebApi.verificarPago({ codigo, documento_identidad: documento, transaccion_id: transaccion })
+        : reservasWebApi.consultar({ codigo, documento_identidad: documento })
     )
       .then((reserva) => {
         if (!activo) return;
@@ -599,7 +512,7 @@ function Retorno({ hotel, codigo, transaccion }) {
     return () => {
       activo = false;
     };
-  }, [codigo, documento, transaccion, intentos]);
+  }, [codigo, documento, transaccion, intentos, esCliente, listo]);
 
   const [pagando, setPagando] = useState(false);
   const [errorPago, setErrorPago] = useState("");
@@ -607,7 +520,7 @@ function Retorno({ hotel, codigo, transaccion }) {
     setErrorPago("");
     setPagando(true);
     try {
-      const { url } = await reservasWebApi.pagar({ codigo, documento_identidad: documento });
+      const { url } = esCliente ? await cuentaApi.pagar(codigo) : await reservasWebApi.pagar({ codigo, documento_identidad: documento });
       window.location.assign(url);
     } catch (err) {
       setErrorPago(err.message);
@@ -616,7 +529,15 @@ function Retorno({ hotel, codigo, transaccion }) {
   }
 
   const [borrador, setBorrador] = useState("");
-  if (!documento) {
+  if (status === "loading") {
+    return (
+      <section className="pc__card pc__state" aria-busy="true">
+        <Loader2 className="pc__spin" size={22} />
+        <p>Cargando…</p>
+      </section>
+    );
+  }
+  if (!listo) {
     return (
       <form
         className="pc__card"
@@ -663,8 +584,8 @@ function Retorno({ hotel, codigo, transaccion }) {
       </section>
       {r && <Resumen r={r} hotel={hotel} onPagar={pagar} pagando={pagando} errorPago={errorPago} />}
       <p style={{ textAlign: "center" }}>
-        <Link to="/reservar" className="pc__link">
-          Hacer otra reserva
+        <Link to={esCliente ? "/mis-reservas" : "/reservar"} className="pc__link">
+          {esCliente ? "Ver mis reservas" : "Hacer otra reserva"}
         </Link>
       </p>
     </>
@@ -672,8 +593,9 @@ function Retorno({ hotel, codigo, transaccion }) {
 }
 
 /**
- * Reserva en línea pública: el huésped busca disponibilidad por tipo de habitación y deja su solicitud.
- * No hay pago en línea; la reserva queda pendiente hasta que el hotel la confirme (routes/reservas_web.py).
+ * Reserva en línea pública: cualquiera puede buscar disponibilidad por tipo de habitación, pero para reservar hay que
+ * iniciar sesión con una cuenta de huésped. La reserva queda pendiente hasta que se paga el anticipo o el hotel la
+ * confirma (routes/reservas_web.py).
  */
 export default function ReservarPage() {
   const [hotel, setHotel] = useState(null);

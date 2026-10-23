@@ -134,3 +134,13 @@
   .hh-precio { justify-items: stretch; text-align: left; }
   .hh-precio .hh-btn { width: 100%; }
 }
+
+/* Cuenta del huésped en la navegación */
+.hh-btn--claro { border-color: rgba(255, 255, 255, 0.55); color: #fff; background: transparent; }
+.hh-btn--claro:hover { background: rgba(255, 255, 255, 0.12); }
+.hh-nav__salir { background: none; border: 0; padding: 6px 0; font: inherit; font-size: 15px; color: #e6e0d2; cursor: pointer; }
+.hh-nav__salir:hover { color: var(--hh-gold); }
+.hh-nav__links { gap: 20px; }
+@media (max-width: 860px) {
+  .hh-nav__salir { text-align: left; padding: 14px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+}

@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError, OperationalError
 
 from app.api.routes import (
     auth,
+    cuenta,
     configuracion,
     disponibilidad,
     facturas,
@@ -87,6 +88,7 @@ app.include_router(usuarios.router, prefix=settings.API_V1_PREFIX)
 app.include_router(precheckin.router, prefix=settings.API_V1_PREFIX)
 app.include_router(precheckin.publico, prefix=settings.API_V1_PREFIX)
 app.include_router(reservas_web.router, prefix=settings.API_V1_PREFIX)
+app.include_router(cuenta.router, prefix=settings.API_V1_PREFIX)
 app.include_router(wompi.router, prefix=settings.API_V1_PREFIX)
 app.include_router(reportes.router, prefix=settings.API_V1_PREFIX)
 

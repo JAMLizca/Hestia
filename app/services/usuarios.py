@@ -13,6 +13,7 @@ from app.models.reserva import Reserva
 from app.models.role import Role
 from app.models.usuario import Usuario
 from app.schemas.usuario import PasswordChange, UsuarioCreate, UsuarioPasswordUpdate, UsuarioUpdate
+from app.services import cuentas
 from app.services._comun import confirmar_cambios
 
 ROL_ADMIN = "administrador"
@@ -45,6 +46,8 @@ def _otros_admins_activos(db: Session, usuario_id: int) -> int:
 def crear(db: Session, datos: UsuarioCreate) -> Usuario:
     if db.query(Usuario).filter(Usuario.email == datos.email).first():
         raise SolicitudInvalida("Ya existe un usuario registrado con ese email")
+    if cuentas.correo_en_uso(db, datos.email):
+        raise SolicitudInvalida("Ese correo ya pertenece a una cuenta de huésped")
     if not db.query(Role).filter(Role.id == datos.rol_id).first():
         raise SolicitudInvalida(f"El rol con id {datos.rol_id} no existe")
     nuevo = Usuario(nombre=datos.nombre, email=datos.email, password_hash=hash_password(datos.password), rol_id=datos.rol_id)
@@ -64,6 +67,8 @@ def editar(db: Session, usuario_id: int, datos_in: UsuarioUpdate, actual: Usuari
 
     if "email" in datos and db.query(Usuario).filter(Usuario.email == datos["email"], Usuario.id != usuario_id).first():
         raise SolicitudInvalida("Ya existe un usuario registrado con ese email")
+    if "email" in datos and datos["email"] != usuario.email and cuentas.correo_en_uso(db, datos["email"], ignorar_usuario_id=usuario_id):
+        raise SolicitudInvalida("Ese correo ya pertenece a una cuenta de huésped")
 
     nuevo_rol = usuario.rol
     if "rol_id" in datos and datos["rol_id"] != usuario.rol_id:

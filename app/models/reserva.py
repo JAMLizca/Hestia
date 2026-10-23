@@ -7,6 +7,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.db.base_class import Base
+from app.models.cuenta_huesped import CuentaHuesped  # noqa: F401  (el mapper necesita conocerla)
 from app.models.reserva_noche import ReservaNoche  # noqa: F401  (el mapper necesita conocerla)
 
 ESTADOS = ("pendiente", "confirmada", "checkin", "checkout", "cancelada", "no_show")
@@ -33,6 +34,8 @@ class Reserva(Base):
     huesped_id = Column(Integer, ForeignKey("huespedes.id"), nullable=False)
     habitacion_id = Column(Integer, ForeignKey("habitaciones.id"), nullable=False)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    # Cuenta de huésped que hizo la reserva en línea (NULL si la tomó el personal).
+    cuenta_id = Column(Integer, ForeignKey("cuentas_huesped.id"), nullable=True, index=True)
 
     fecha_checkin_prevista = Column(Date, nullable=False)
     fecha_checkout_prevista = Column(Date, nullable=False)
@@ -68,4 +71,5 @@ class Reserva(Base):
     huesped = relationship("Huesped", backref="reservas")
     habitacion = relationship("Habitacion", backref="reservas")
     usuario = relationship("Usuario", backref="reservas")
+    cuenta = relationship("CuentaHuesped", backref="reservas")
     noches = relationship("ReservaNoche", back_populates="reserva", cascade="all, delete-orphan")
