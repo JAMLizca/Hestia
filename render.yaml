@@ -1,0 +1,41 @@
+# Blueprint de Render: un solo servicio web (API + sitio). La base de datos MySQL va fuera (Aiven).
+# Los valores marcados sync:false se piden en el panel de Render al crear el servicio.
+services:
+  - type: web
+    name: hestia
+    runtime: docker
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        value: defaultdb
+      - key: DB_SSL
+        value: "true"
+      - key: DB_SSL_CA_PEM
+        sync: false
+      - key: ADMIN_NOMBRE
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: WOMPI_PUBLIC_KEY
+        sync: false
+      - key: WOMPI_INTEGRITY_SECRET
+        sync: false
+      - key: WOMPI_EVENTS_SECRET
+        sync: false

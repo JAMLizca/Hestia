@@ -340,3 +340,37 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Volver a la página principal */
+.login__back {
+  position: absolute;
+  top: 24px;
+  left: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid #eceef1;
+  border-radius: var(--radius-md);
+  color: var(--navy-900);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.login__back:hover {
+  border-color: var(--login-gold);
+  background: #faf7f0;
+}
+
+@media (max-width: 900px) {
+  .login__back {
+    top: 16px;
+    left: 16px;
+  }
+
+  .login__form-wrap {
+    margin-top: 28px;
+  }
+}

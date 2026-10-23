@@ -12,3 +12,6 @@ env/
 .vscode/
 .idea/
 *.log
+
+# Frontend compilado (lo genera el Dockerfile)
+static/

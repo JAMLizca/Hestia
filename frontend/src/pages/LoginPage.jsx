@@ -1,6 +1,6 @@
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import logoCompleto from "../assets/logo-hestia-completo.webp";
 import Logo from "../components/ui/Logo";
 import { useAuth } from "../context/AuthContext";
@@ -89,6 +89,9 @@ export default function LoginPage() {
       </section>
 
       <section className="login__panel">
+        <Link to="/" className="login__back">
+          <ArrowLeft size={15} /> Volver al inicio
+        </Link>
         <div className="login__form-wrap">
           <div className="login__logo-card">
             <img src={logoCompleto} alt="Hestia — Gestión hotelera" />
