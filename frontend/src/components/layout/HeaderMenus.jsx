@@ -34,13 +34,19 @@ const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 function buildAlerts(reservas, habitaciones) {
   const hoy = todayISO();
   const llegadas = reservas.filter((r) => ["pendiente", "confirmada"].includes(r.estado) && dateOnly(r.fecha_checkin_prevista) === hoy).length;
-  const pendientes = reservas.filter((r) => r.estado === "pendiente").length;
+  const pendientes = reservas.filter((r) => r.estado === "pendiente" && r.canal !== "web").length;
+  const enLinea = reservas.filter((r) => r.estado === "pendiente" && r.canal === "web").length;
+  const porValidar = reservas.filter((r) => r.precheckin_estado === "completado" && ["pendiente", "confirmada"].includes(r.estado)).length;
+  const atrasadas = reservas.filter((r) => ["pendiente", "confirmada"].includes(r.estado) && dateOnly(r.fecha_checkin_prevista) < hoy).length;
   const salidas = reservas.filter((r) => r.estado === "checkin" && dateOnly(r.fecha_checkout_prevista) <= hoy).length;
   const limpieza = habitaciones.filter((h) => h.estado === "limpieza").length;
   const mantenimiento = habitaciones.filter((h) => h.estado === "mantenimiento").length;
 
   const alerts = [];
   if (llegadas) alerts.push({ id: "llegadas", to: "/reservas", color: COLORS.gold, text: `${plural(llegadas, "llegada prevista", "llegadas previstas")} hoy`, hint: "Pendientes de check-in" });
+  if (enLinea) alerts.push({ id: "en-linea", to: "/reservas", color: COLORS.gold, text: `${plural(enLinea, "reserva en línea", "reservas en línea")} por confirmar`, hint: "El huésped la pidió desde la web" });
+  if (porValidar) alerts.push({ id: "precheckin", to: "/reservas", color: COLORS.gold, text: `${plural(porValidar, "pre-check-in", "pre-check-ins")} por validar`, hint: "El huésped ya completó sus datos" });
+  if (atrasadas) alerts.push({ id: "atrasadas", to: "/reservas", color: COLORS.red, text: `${plural(atrasadas, "reserva con llegada vencida", "reservas con llegada vencida")}`, hint: "Haz el check-in o márcala “No se presentó”" });
   if (salidas) alerts.push({ id: "salidas", to: "/reservas", color: COLORS.orange, text: `${plural(salidas, "salida por registrar", "salidas por registrar")}`, hint: "Check-out de hoy o atrasado" });
   if (pendientes) alerts.push({ id: "pendientes", to: "/reservas", color: COLORS.navy, text: `${plural(pendientes, "reserva pendiente", "reservas pendientes")} de confirmar` });
   if (limpieza) alerts.push({ id: "limpieza", to: "/habitaciones", color: COLORS.cyan, text: `${plural(limpieza, "habitación", "habitaciones")} en limpieza`, hint: "Márcalas disponibles al terminar" });
@@ -139,7 +145,9 @@ export function HelpMenu({ open, onToggle, onClose }) {
           <div className="panel__title">Guía rápida</div>
           <div className="panel__section" style={{ borderTop: 0, paddingTop: 0 }}>
             <h4>Ciclo de una reserva</h4>
-            Pendiente → Confirmada → Check-in → Check-out. Solo se puede cancelar mientras está pendiente o confirmada.
+            Pendiente → Confirmada → Check-in → Check-out. Solo se puede cancelar mientras está pendiente o confirmada. Si el huésped no llega, márcala “No se presentó”.
+            <h4>Reservas por teléfono</h4>
+            Anota el canal y el código (HST-…) que el huésped puede citar al llamar. En el detalle, la pestaña Pre-check-in genera un enlace para que complete sus datos antes de llegar. Una reserva pendiente sin pagos vence sola pasado el plazo de Configuración.
             <h4>Habitaciones</h4>
             El check-in exige que la habitación esté disponible. Tras el check-out pasa a limpieza: márcala disponible antes de la siguiente llegada.
             <h4>Pagos</h4>

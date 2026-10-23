@@ -6,7 +6,7 @@ import { Badge, Button, Card, Chip, ErrorBanner, LoadingState, Person, StatCard,
 import { BedIcon, PercentIcon, ServiceBellIcon, SparklesIcon } from "../components/ui/icons";
 import { indexById, useApiData } from "../hooks/useApiData";
 import { formatShortDate } from "../utils/format";
-import { fullName, isToday, recentActivity, timeAgo, weeklyOccupancy } from "../utils/hotel";
+import { ESTADOS_ANULADOS, fullName, isToday, recentActivity, timeAgo, weeklyOccupancy } from "../utils/hotel";
 import { COLORS, HABITACION_ESTADOS, RESERVA_ESTADOS } from "../utils/status";
 import "./DashboardPage.css";
 
@@ -35,7 +35,7 @@ export default function DashboardPage() {
     const total = habitacionesList.length;
     const ocupadas = habitacionesList.filter((h) => h.estado === "ocupada").length;
     const enCheckin = reservas.filter((r) => r.estado === "checkin");
-    const llegadasHoy = reservas.filter((r) => isToday(r.fecha_checkin_prevista) && r.estado !== "cancelada");
+    const llegadasHoy = reservas.filter((r) => isToday(r.fecha_checkin_prevista) && !ESTADOS_ANULADOS.includes(r.estado));
     return {
       llegadasHoy: llegadasHoy.length,
       llegadasPendientes: llegadasHoy.filter((r) => r.estado === "pendiente" || r.estado === "confirmada").length,

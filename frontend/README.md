@@ -43,21 +43,27 @@ que empiece por `recepcion` entra como recepcionista (para probar permisos).
 | Landing (`/`) | Página pública del mockup: secciones, diagrama de arquitectura, acceso al panel | — |
 | Login | Inicio de sesión JWT, sesión persistente, cierre de sesión | `POST /auth/login`, `GET /auth/me` |
 | Dashboard | Indicadores del día, estado de habitaciones, reservas recientes, ocupación semanal, acciones rápidas, actividad reciente | `GET /reservas`, `/habitaciones`, `/huespedes`, `/servicios` |
-| Reservas | Filtros, búsqueda, paginación; nueva reserva con búsqueda de disponibilidad; confirmar, check-in, check-out, cancelar, eliminar (admin) | `/reservas`, `/disponibilidad`, `/reservas/{id}/confirmar\|checkin\|checkout\|cancelar` |
-| Detalle de reserva | Servicios consumidos (agregar/quitar), pagos, resumen de costos y saldo | `/reservas/{id}/servicios`, `/reservas/{id}/pagos`, `/reservas/{id}/resumen` |
+| Reservas | Pestañas por estado (incl. canceladas y “no se presentó”), búsqueda por huésped, teléfono, documento o código (HST-…), paginación; nueva reserva con búsqueda de huésped por teléfono, canal (recepción, teléfono, WhatsApp…), notas y búsqueda de disponibilidad; editar; confirmar, check-in, check-out, cancelar, no se presentó, eliminar (admin) | `/reservas`, `/disponibilidad`, `PUT /reservas/{id}`, `/reservas/{id}/confirmar\|checkin\|checkout\|cancelar\|no-show` |
+| Pre-check-in (`/pre-checkin/:token`) | Página pública, sin sesión y pensada para celular: el huésped completa sus datos y los de sus acompañantes antes de llegar | `/publico/precheckin/{token}` |
+| Reserva en línea (`/reservar`) | Página pública, sin sesión y pensada para celular: buscar fechas, elegir tipo de habitación, dejar los datos y consultar/cancelar con código + documento. Con anticipo opcional por Wompi (el pago ocurre en el sitio de Wompi y al volver se confirma). Solo funciona si el administrador la activa en Configuración | `/publico/hotel`, `/publico/disponibilidad`, `/publico/reservas` (+ `/consultar`, `/cancelar`, `/pagar`, `/verificar-pago`) |
+| Detalle de reserva | Servicios consumidos (agregar/quitar), pagos, resumen de costos y saldo; pestaña Pre-check-in: crear/copiar el enlace (o enviarlo por WhatsApp), ver lo que envió el huésped y validarlo | `/reservas/{id}/servicios`, `/reservas/{id}/pagos`, `/reservas/{id}/resumen`, `/reservas/{id}/precheckin` | `/reservas/{id}/servicios`, `/reservas/{id}/pagos`, `/reservas/{id}/resumen` |
 | Huéspedes | Registro, edición, perfil con historial de estadías, eliminar | `/huespedes`, `GET /reservas` |
 | Habitaciones | Vista en tarjetas (con foto) o tabla; CRUD de habitaciones y tipos, filtro por estado, marcar limpieza → disponible | `/habitaciones`, `/tipos-habitacion` |
 | Servicios | Consumos de todas las reservas, registrar consumo, catálogo CRUD | `/servicios`, `/reservas/{id}/servicios` |
-| Configuración | Datos del hotel (nombre, NIT, dirección, contacto), horarios de check-in/out, moneda y zona horaria. Todos consultan; solo el administrador guarda. El nombre aparece en el menú y la moneda en los montos | `/configuracion` |
+| Configuración | Datos del hotel (nombre, NIT, dirección, contacto), horarios de check-in/out, horas para que venza una reserva pendiente, moneda y zona horaria. Todos consultan; solo el administrador guarda. El nombre aparece en el menú y la moneda en los montos | `/configuracion` |
 | Roles | Tarjetas de roles con usuarios asignados y matriz de permisos por módulo (solo lectura, calculada por el backend); crear rol y editar descripción (administrador) | `/roles`, `/roles/permisos` |
 | Usuarios | Solo administrador: lista con filtros y búsqueda, crear, editar, cambiar contraseña, activar/desactivar | `/usuarios`, `/usuarios/{id}/password`, `POST /auth/register`, `/roles` |
 
 Todas las pantallas del mockup ya tienen su módulo.
 
+## Enlaces públicos (pre-check-in y reservas en línea)
+
+El enlace de pre-check-in que se le envía al huésped, y el de la página `/reservar` que muestra Configuración, se arman con el dominio desde el que abres el panel. En desarrollo
+eso es `localhost`, que el huésped no puede abrir: para enlaces reales define en `.env`
+`VITE_PUBLIC_URL=https://tu-dominio` (sin barra final) y vuelve a levantar el frontend.
+
 ## Pendientes del backend detectados
 
-- No existe `PUT /reservas/{id}`: el botón "Editar" del mockup se reemplazó
-  por la siguiente acción de estado disponible.
 - Los consumos de servicio no tienen estado (pendiente / en proceso /
   completado) como muestra el mockup de Servicios.
 - No hay endpoint global de consumos: el frontend los pide reserva por reserva.

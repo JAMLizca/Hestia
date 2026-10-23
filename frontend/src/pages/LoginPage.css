@@ -9,7 +9,7 @@
   background: #fff;
 }
 
-/* ── Panel izquierdo ─────────────────────────────── */
+/* Panel izquierdo */
 .login__hero {
   position: relative;
   display: flex;
@@ -111,7 +111,7 @@
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* ── Panel derecho ───────────────────────────────── */
+/* Panel derecho */
 .login__panel {
   position: relative;
   display: flex;
@@ -258,7 +258,7 @@
   font-size: 10.5px;
 }
 
-/* ── Responsive ──────────────────────────────────── */
+/* Responsive */
 @media (max-width: 900px) {
   .login {
     grid-template-columns: 1fr;

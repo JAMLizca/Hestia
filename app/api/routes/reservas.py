@@ -1,26 +1,48 @@
 """
 Endpoints de la entidad Reserva.
 
+Las reservas pendientes que superan el plazo configurado se cancelan solas antes de
+atender cualquier petición (ver app/core/vencimiento.py).
 """
+import secrets
 from datetime import date, datetime, timezone
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from app.api.deps import get_current_user, get_db, require_roles
+
+from app.api.deps import get_current_user, get_db, liberar_pendientes_vencidas, require_roles
 from app.models.habitacion import Habitacion
 from app.models.huesped import Huesped
 from app.models.reserva import Reserva
 from app.models.usuario import Usuario
-from app.schemas.reserva import EstadoReserva, ReservaCreate, ReservaOut
+from app.schemas.reserva import EstadoReserva, ReservaCreate, ReservaOut, ReservaUpdate
 
 router = APIRouter(
     prefix="/reservas",
     tags=["Reservas"],
-    dependencies=[Depends(get_current_user)],
+    dependencies=[Depends(get_current_user), Depends(liberar_pendientes_vencidas)],
 )
 
 # Solo estas reservas "bloquean" una habitación al validar disponibilidad.
 # Una reserva cancelada, o ya finalizada (checkout), no genera coflicto.
 ESTADOS_QUE_BLOQUEAN = ("pendiente", "confirmada", "checkin")
+
+
+# Sin 0/O ni 1/I/L: el código se dicta por teléfono y no debe confundirse.
+_ALFABETO_CODIGO = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+
+def _generar_codigo(db: Session) -> str:
+    """Código corto y legible (HST-K7M4QX) que el huésped puede citar al llamar."""
+    for _ in range(20):
+        codigo = "HST-" + "".join(secrets.choice(_ALFABETO_CODIGO) for _ in range(6))
+        if not db.query(Reserva.id).filter(Reserva.codigo == codigo).first():
+            return codigo
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="No se pudo generar un código de reserva único. Intenta de nuevo",
+    )
 
 
 def _obtener_o_404(db: Session, reserva_id: int) -> Reserva:
@@ -57,6 +79,7 @@ def listar_reservas(
     huesped_id: int | None = Query(default=None),
     habitacion_id: int | None = Query(default=None),
     estado: EstadoReserva | None = Query(default=None),
+    codigo: str | None = Query(default=None, description="Código de la reserva (ej. HST-K7M4QX)"),
     db: Session = Depends(get_db),
 ):
     query = db.query(Reserva)
@@ -66,6 +89,8 @@ def listar_reservas(
         query = query.filter(Reserva.habitacion_id == habitacion_id)
     if estado:
         query = query.filter(Reserva.estado == estado)
+    if codigo:
+        query = query.filter(Reserva.codigo == codigo.strip().upper())
     return query.all()
 
 
@@ -142,11 +167,92 @@ def crear_reserva(
         num_huespedes=reserva_in.num_huespedes,
         estado="pendiente",
         precio_total=precio_total,
+        codigo=_generar_codigo(db),
+        canal=reserva_in.canal,
+        notas=reserva_in.notas,
     )
     db.add(nueva_reserva)
     db.commit()
     db.refresh(nueva_reserva)
     return nueva_reserva
+
+
+# Qué se puede cambiar según el estado de la reserva.
+_CAMPOS_EDITABLES = {
+    "pendiente": {"habitacion_id", "fecha_checkin_prevista", "fecha_checkout_prevista", "num_huespedes", "canal", "notas"},
+    "confirmada": {"habitacion_id", "fecha_checkin_prevista", "fecha_checkout_prevista", "num_huespedes", "canal", "notas"},
+    "checkin": {"fecha_checkout_prevista", "num_huespedes", "notas"},
+}
+
+
+@router.put(
+    "/{reserva_id}",
+    response_model=ReservaOut,
+    summary="Edita una reserva (habitación, fechas, huéspedes, canal, notas)",
+)
+def editar_reserva(reserva_id: int, datos: ReservaUpdate, db: Session = Depends(get_db)):
+    """
+    Edición parcial. Mientras la reserva está pendiente o confirmada se puede cambiar casi
+    todo; en check-in solo la salida prevista, el número de huéspedes y las notas; en
+    cualquier otro estado, solo las notas. El precio se recalcula con la tarifa vigente.
+    """
+    reserva = _obtener_o_404(db, reserva_id)
+    cambios = datos.model_dump(exclude_unset=True)
+    # Un campo enviado con el mismo valor que ya tiene no es un cambio.
+    cambios = {k: v for k, v in cambios.items() if v != getattr(reserva, k)}
+    if not cambios:
+        return reserva
+
+    permitidos = _CAMPOS_EDITABLES.get(reserva.estado, {"notas"})
+    no_permitidos = set(cambios) - permitidos
+    if no_permitidos:
+        if reserva.estado in _CAMPOS_EDITABLES:
+            detalle = f"En una reserva '{reserva.estado}' no se puede cambiar: {', '.join(sorted(no_permitidos))}"
+        else:
+            detalle = f"Una reserva '{reserva.estado}' ya no se puede modificar; solo se pueden editar las notas"
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detalle)
+    for campo in ("habitacion_id", "fecha_checkin_prevista", "fecha_checkout_prevista", "num_huespedes", "canal"):
+        if campo in cambios and cambios[campo] is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"El campo '{campo}' no puede ser nulo")
+
+    habitacion_id = cambios.get("habitacion_id", reserva.habitacion_id)
+    checkin = cambios.get("fecha_checkin_prevista", reserva.fecha_checkin_prevista)
+    checkout = cambios.get("fecha_checkout_prevista", reserva.fecha_checkout_prevista)
+    num_huespedes = cambios.get("num_huespedes", reserva.num_huespedes)
+
+    habitacion = db.query(Habitacion).filter(Habitacion.id == habitacion_id).first()
+    if not habitacion:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"La habitación con id {habitacion_id} no existe")
+    if "habitacion_id" in cambios and habitacion.estado == "mantenimiento":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La habitación está en mantenimiento y no se puede reservar")
+    if checkout <= checkin:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La fecha de checkout debe ser posterior a la de checkin")
+    if "fecha_checkin_prevista" in cambios and checkin < date.today():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La fecha de check-in no puede ser pasada")
+
+    capacidad = habitacion.tipo_habitacion.capacidad_maxima
+    if num_huespedes > capacidad:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"La habitación admite máximo {capacidad} huéspedes")
+
+    if reserva.estado in ESTADOS_QUE_BLOQUEAN and _hay_solapamiento(db, habitacion_id, checkin, checkout, excluir_reserva_id=reserva.id):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="La habitación ya está reservada en ese rango de fechas")
+
+    precio_total = reserva.precio_total
+    if {"habitacion_id", "fecha_checkin_prevista", "fecha_checkout_prevista"} & set(cambios):
+        precio_total = habitacion.tipo_habitacion.precio_base * (checkout - checkin).days
+        pagado = sum((p.monto for p in reserva.pagos if p.estado == "pagado"), Decimal("0"))
+        if precio_total < pagado:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El nuevo total ({precio_total}) es menor que lo ya pagado ({pagado}). Gestiona primero ese pago",
+            )
+
+    for campo, valor in cambios.items():
+        setattr(reserva, campo, valor)
+    reserva.precio_total = precio_total
+    db.commit()
+    db.refresh(reserva)
+    return reserva
 
 
 @router.post(
@@ -233,6 +339,30 @@ def cancelar_reserva(reserva_id: int, db: Session = Depends(get_db)):
     return reserva
 
 
+@router.post(
+    "/{reserva_id}/no-show",
+    response_model=ReservaOut,
+    summary="Marca que el huésped no se presentó (reserva confirmada cuya llegada ya pasó)",
+)
+def no_show_reserva(reserva_id: int, db: Session = Depends(get_db)):
+    reserva = _obtener_o_404(db, reserva_id)
+    if reserva.estado not in ("pendiente", "confirmada"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Solo se puede marcar 'no se presentó' en una reserva pendiente o confirmada (actual: '{reserva.estado}')",
+        )
+    if reserva.fecha_checkin_prevista > date.today():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Aún no llega la fecha de check-in: si el huésped ya no vendrá, cancela la reserva",
+        )
+    # Libera la habitación para las fechas restantes; los pagos recibidos se conservan.
+    reserva.estado = "no_show"
+    db.commit()
+    db.refresh(reserva)
+    return reserva
+
+
 @router.delete(
     "/{reserva_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -246,5 +376,7 @@ def eliminar_reserva(reserva_id: int, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No se puede eliminar: la reserva tiene pagos o servicios asociados. Cancélala en su lugar",
         )
+    if reserva.precheckin:
+        db.delete(reserva.precheckin)
     db.delete(reserva)
     db.commit()

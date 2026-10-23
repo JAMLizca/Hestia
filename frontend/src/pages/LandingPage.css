@@ -1,7 +1,3 @@
-/* ──────────────────────────────────────────────────────────────
-   Landing pública — valores tomados del mockup Figma 1
-   (Playfair Display + Inter, azul #1E2D4A, crema #F5F0E8, dorado #C9A84C)
-   ────────────────────────────────────────────────────────────── */
 .landing {
   --lp-navy: #1e2d4a;
   --lp-deep: #13203a;
@@ -42,7 +38,7 @@
   text-align: left;
 }
 
-/* ── Navegación ───────────────────────────────────── */
+/* Navegación */
 .lp-nav {
   position: fixed;
   inset: 0 0 auto;
@@ -89,7 +85,7 @@
   color: var(--lp-navy);
 }
 
-/* ── Botones ──────────────────────────────────────── */
+/* Btn */
 .lp-btn {
   display: inline-flex;
   align-items: center;
@@ -156,7 +152,7 @@
   justify-content: center;
 }
 
-/* ── Etiquetas y títulos ──────────────────────────── */
+/* Etiquetas y títulos  */
 .lp-eyebrow {
   display: inline-flex;
   align-items: center;
@@ -220,7 +216,7 @@
   color: rgba(245, 240, 232, 0.68);
 }
 
-/* ── Hero ─────────────────────────────────────────── */
+/* Hero */
 .lp-hero {
   padding: 110px 0 90px;
   background: linear-gradient(150deg, #f5f0e8 0%, #ede8dc 60%, #ede5d8 100%);
@@ -500,7 +496,7 @@
   font-weight: 600;
 }
 
-/* ── Secciones ────────────────────────────────────── */
+/* Secciones */
 .lp-section {
   padding: 96px 0;
   scroll-margin-top: 70px;
@@ -1262,7 +1258,7 @@
   font-style: italic;
 }
 
-/* ── Responsive ───────────────────────────────────── */
+/* Responsive */
 @media (max-width: 1024px) {
   .lp-hero__grid,
   .lp-split,

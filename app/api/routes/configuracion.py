@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.api.deps import get_current_user, get_db, require_roles
 from app.models.configuracion import CONFIG_ID, ConfiguracionHotel
 from app.schemas.configuracion import (
@@ -25,13 +26,17 @@ router = APIRouter(
 )
 
 
+def _salida(config: ConfiguracionHotel) -> ConfiguracionOut:
+    return ConfiguracionOut.model_validate(config).model_copy(update={"pasarela_configurada": settings.WOMPI_CONFIGURADO})
+
+
 @router.get("/", response_model=ConfiguracionOut, summary="Consulta la configuración del hotel")
 def obtener_configuracion(db: Session = Depends(get_db)):
     """Devuelve los valores por defecto mientras el administrador no haya guardado nada."""
     config = db.get(ConfiguracionHotel, CONFIG_ID)
     if config is None:
-        return ConfiguracionOut(**VALORES_POR_DEFECTO)
-    return config
+        return ConfiguracionOut(**VALORES_POR_DEFECTO, pasarela_configurada=settings.WOMPI_CONFIGURADO)
+    return _salida(config)
 
 
 @router.put(
@@ -66,4 +71,4 @@ def actualizar_configuracion(datos: ConfiguracionUpdate, db: Session = Depends(g
             setattr(config, campo, valor)
         db.commit()
     db.refresh(config)
-    return config
+    return _salida(config)

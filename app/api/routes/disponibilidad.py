@@ -4,7 +4,7 @@ Endpoint de disponibilidad de habitaciones.
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user, get_db, liberar_pendientes_vencidas
 from app.models.habitacion import Habitacion
 from app.models.reserva import Reserva
 from app.schemas.habitacion import HabitacionOut
@@ -12,7 +12,7 @@ from app.schemas.habitacion import HabitacionOut
 router = APIRouter(
     prefix="/disponibilidad",
     tags=["Disponibilidad"],
-    dependencies=[Depends(get_current_user)],
+    dependencies=[Depends(get_current_user), Depends(liberar_pendientes_vencidas)],
 )
 
 ESTADOS_QUE_BLOQUEAN = ("pendiente", "confirmada", "checkin")

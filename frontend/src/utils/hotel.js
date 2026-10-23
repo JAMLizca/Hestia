@@ -1,21 +1,25 @@
 /**
  * Cálculos de presentación a partir de los datos reales de la API.
- * No reemplazan reglas del backend: solo agregan/filtran lo que ya devuelve.
  */
 import { parseDate, todayISO } from "./format";
-
-// Mismos estados que el backend usa para bloquear una habitación (reservas.py).
 export const ESTADOS_ACTIVOS = ["pendiente", "confirmada", "checkin"];
-// Estados en los que el backend permite agregar/quitar servicios (reserva_servicios.py).
 export const ESTADOS_MODIFICABLES = ["pendiente", "confirmada", "checkin"];
-// Estados que el backend permite cancelar (reservas.py → cancelar_reserva).
 export const ESTADOS_CANCELABLES = ["pendiente", "confirmada"];
+export const ESTADOS_ANULADOS = ["cancelada", "no_show"];
+export const ESTADOS_EDITABLES = ["pendiente", "confirmada", "checkin"];
+
+export function puedeMarcarNoShow(reserva) {
+  return ESTADOS_CANCELABLES.includes(reserva.estado) && dateOnly(reserva.fecha_checkin_prevista) <= todayISO();
+}
+
+export function onlyDigits(value = "") {
+  return String(value ?? "").replace(/\D/g, "");
+}
 
 export function dateOnly(value) {
   return value ? String(value).slice(0, 10) : "";
 }
 
-/** Para fechas con hora (datetime del backend) se compara la fecha local. */
 export function isToday(value) {
   if (!value) return false;
   const str = String(value);
@@ -28,7 +32,6 @@ export function fullName(huesped) {
   return huesped ? `${huesped.nombres} ${huesped.apellidos}`.trim() : "—";
 }
 
-/** Siguiente transición de estado disponible en el backend para una reserva. */
 export function nextStep(estado) {
   switch (estado) {
     case "pendiente":
@@ -43,8 +46,7 @@ export function nextStep(estado) {
 }
 
 /**
- * Estado que se muestra para un huésped (columna "Estado" del mockup de Huéspedes),
- * derivado de su reserva más relevante.
+ * Estado que se muestra para un huésped 
  */
 export function guestStatus(reservasHuesped = []) {
   if (!reservasHuesped.length) return { key: "sin-reservas", reserva: null };
@@ -66,7 +68,7 @@ export function guestStatus(reservasHuesped = []) {
   return { key: ultima.estado, reserva: ultima };
 }
 
-/** Lunes de la semana de `date`. */
+
 export function startOfWeek(date = new Date()) {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const day = (d.getDay() + 6) % 7; // 0 = lunes
@@ -74,10 +76,7 @@ export function startOfWeek(date = new Date()) {
   return d;
 }
 
-/**
- * Ocupación de cada noche de la semana actual: habitaciones con una reserva
- * activa (o ya finalizada) que cubre esa noche / total de habitaciones.
- */
+
 export function weeklyOccupancy(reservas = [], totalHabitaciones = 0, date = new Date()) {
   const monday = startOfWeek(date);
   const labels = ["L", "M", "M", "J", "V", "S", "D"];
@@ -87,7 +86,7 @@ export function weeklyOccupancy(reservas = [], totalHabitaciones = 0, date = new
     const iso = todayISO(day);
     const habitaciones = new Set(
       reservas
-        .filter((r) => r.estado !== "cancelada")
+        .filter((r) => !ESTADOS_ANULADOS.includes(r.estado))
         .filter((r) => dateOnly(r.fecha_checkin_prevista) <= iso && dateOnly(r.fecha_checkout_prevista) > iso)
         .map((r) => r.habitacion_id),
     );
@@ -96,7 +95,7 @@ export function weeklyOccupancy(reservas = [], totalHabitaciones = 0, date = new
   });
 }
 
-/** Actividad reciente: eventos con fecha real registrada por el backend. */
+/** Actividad reciente: eventos con fecha real registrada */
 export function recentActivity(reservas = [], { huespedes = {}, habitaciones = {} } = {}, limit = 4) {
   const events = [];
   reservas.forEach((r) => {
@@ -111,7 +110,7 @@ export function recentActivity(reservas = [], { huespedes = {}, habitaciones = {
     .slice(0, limit);
 }
 
-/** "Hace 5 min", "Hace 2 h", "Hace 3 días". */
+
 export function timeAgo(value, now = new Date()) {
   const date = parseDate(value);
   if (!date) return "";
@@ -124,7 +123,7 @@ export function timeAgo(value, now = new Date()) {
   return `Hace ${days} ${days === 1 ? "día" : "días"}`;
 }
 
-/** Texto de búsqueda normalizado (sin tildes, minúsculas). */
+
 export function normalize(text = "") {
   return String(text)
     .normalize("NFD")

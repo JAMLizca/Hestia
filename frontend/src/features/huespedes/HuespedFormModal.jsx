@@ -24,8 +24,8 @@ const EMPTY = {
 };
 
 /**
- * Registrar (POST /huespedes/) o editar (PUT /huespedes/{id}) un huésped.
- * El backend no permite cambiar el documento de identidad al editar (HuespedUpdate).
+ * Registrar, editar un huésped.
+ * El backend no permite cambiar el documento de identidad al editar.
  */
 export default function HuespedFormModal({ huesped, onClose, onSaved }) {
   const editing = Boolean(huesped);

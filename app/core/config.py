@@ -25,6 +25,14 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
+    # Pagos en línea con Wompi (https://wompi.com). Vacíos = sin pagos en línea.
+    # Las llaves salen del panel de Wompi: Desarrolladores → Secretos para integración técnica.
+    WOMPI_PUBLIC_KEY: str = ""        # pub_test_... (pruebas) o pub_prod_... (producción)
+    WOMPI_INTEGRITY_SECRET: str = ""  # firma del enlace de pago
+    WOMPI_EVENTS_SECRET: str = ""     # verifica los avisos (webhook) que envía Wompi
+    # Dirección pública del frontend: a ella vuelve el huésped después de pagar.
+    FRONTEND_URL: str = "http://localhost:5173"
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     @field_validator("SECRET_KEY")
@@ -36,6 +44,14 @@ class Settings(BaseSettings):
                 "caracteres (por ejemplo: python -c \"import secrets; print(secrets.token_urlsafe(48))\")"
             )
         return valor
+
+    @property
+    def WOMPI_API_URL(self) -> str:
+        return "https://sandbox.wompi.co/v1" if self.WOMPI_PUBLIC_KEY.startswith("pub_test_") else "https://production.wompi.co/v1"
+
+    @property
+    def WOMPI_CONFIGURADO(self) -> bool:
+        return bool(self.WOMPI_PUBLIC_KEY and self.WOMPI_INTEGRITY_SECRET)
 
     @property
     def DATABASE_URL(self) -> str:

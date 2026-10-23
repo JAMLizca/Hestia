@@ -33,7 +33,8 @@ NOTAS = {
     ("habitaciones", "editar"): {"recepcionista": "Solo el estado de la habitación"},
 }
 
-RUTAS_IGNORADAS = {"health", "auth"}  # 
+# "publico": enlaces sin sesión (pre-check-in del huésped); no pertenecen a ningún rol.
+RUTAS_IGNORADAS = {"health", "auth", "publico"}  # 
 
 def _iterar_rutas(rutas, prefijo=""):
     
@@ -79,6 +80,8 @@ def _clasificar(ruta: str, metodo: str):
             return ("pagos", accion)
         if anidado == "resumen":
             return ("facturacion", accion)
+        if anidado == "precheckin":  # crear/regenerar el enlace y validar los datos es editar la reserva
+            return ("reservas", "ver" if metodo == "GET" else "editar")
         if metodo == "POST":  # confirmar, checkin, checkout, cancelar
             return ("reservas", "estado")
     if primero == "usuarios" and segmentos[-1] == "password":

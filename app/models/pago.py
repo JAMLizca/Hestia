@@ -17,5 +17,8 @@ class Pago(Base):
     metodo_pago = Column(String(30), nullable=False)
     estado = Column(String(20), nullable=False, default="pagado")
     fecha_pago = Column(DateTime(timezone=True), server_default=func.now())
+    # Pagos en línea: referencia que se envía a la pasarela y id de la transacción que ella devuelve.
+    referencia = Column(String(64), unique=True, nullable=True)
+    transaccion_id = Column(String(64), nullable=True)
 
     reserva = relationship("Reserva", backref="pagos")

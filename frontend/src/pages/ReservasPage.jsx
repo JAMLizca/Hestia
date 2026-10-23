@@ -1,4 +1,4 @@
-import { CalendarDays, CheckCircle2, Eye, LogIn, LogOut, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, CheckCircle2, ClipboardCheck, Eye, LogIn, LogOut, Pencil, Plus, StickyNote, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { habitacionesApi, huespedesApi, reservasApi, tiposHabitacionApi } from "../api/services";
@@ -21,19 +21,21 @@ import {
 import { ConfirmDialog } from "../components/ui/Modal";
 import { useToast } from "../context/ToastContext";
 import ReservaDetailDrawer from "../features/reservas/ReservaDetailDrawer";
+import ReservaEditModal from "../features/reservas/ReservaEditModal";
 import ReservaFormModal from "../features/reservas/ReservaFormModal";
 import { indexById, useApiData } from "../hooks/useApiData";
 import { formatMoney, formatShortDate, nights } from "../utils/format";
-import { ESTADOS_CANCELABLES, fullName, isToday, matches, nextStep } from "../utils/hotel";
-import { COLORS, RESERVA_ESTADOS } from "../utils/status";
+import { ESTADOS_CANCELABLES, ESTADOS_EDITABLES, fullName, isToday, matches, nextStep, onlyDigits } from "../utils/hotel";
+import { canalLabel, COLORS, PRECHECKIN_ESTADOS, RESERVA_ESTADOS } from "../utils/status";
 
-// Pestañas del mockup (las reservas canceladas se ven en "Todas").
 const TABS = [
   { value: "todas", label: "Todas" },
   { value: "confirmada", label: "Confirmada" },
   { value: "checkin", label: "Check-in" },
   { value: "pendiente", label: "Pendiente" },
   { value: "checkout", label: "Check-out" },
+  { value: "cancelada", label: "Canceladas" },
+  { value: "no_show", label: "No se presentó" },
 ];
 
 const STEP_ICONS = { confirmar: CheckCircle2, checkin: LogIn, checkout: LogOut };
@@ -52,6 +54,7 @@ export default function ReservasPage() {
   const [query, setQuery] = useState("");
   const [detailId, setDetailId] = useState(() => Number(params.get("reserva")) || null);
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [editTarget, setEditTarget] = useState(null);
   const [busy, setBusy] = useState(null);
   const showForm = params.get("accion") === "nueva";
 
@@ -64,7 +67,7 @@ export default function ReservasPage() {
       total: reservas.length,
       confirmadas: reservas.filter((r) => r.estado === "confirmada").length,
       pendientes: reservas.filter((r) => r.estado === "pendiente").length,
-      checkinHoy: reservas.filter((r) => isToday(r.fecha_checkin_prevista) && r.estado !== "cancelada").length,
+      checkinHoy: reservas.filter((r) => isToday(r.fecha_checkin_prevista) && !["cancelada", "no_show"].includes(r.estado)).length,
     }),
     [reservas],
   );
@@ -73,7 +76,14 @@ export default function ReservasPage() {
     () =>
       reservas
         .filter((r) => tab === "todas" || r.estado === tab)
-        .filter((r) => matches(query, fullName(huespedes[r.huesped_id]), habitaciones[r.habitacion_id]?.numero, `#${r.id}`, r.id))
+        .filter((r) => {
+          const huesped = huespedes[r.huesped_id];
+          const digits = onlyDigits(query);
+          return (
+            matches(query, fullName(huesped), huesped?.documento_identidad, huesped?.telefono, habitaciones[r.habitacion_id]?.numero, `#${r.id}`, r.id, r.codigo) ||
+            (digits.length >= 4 && onlyDigits(huesped?.telefono).includes(digits))
+          );
+        })
         .sort((a, b) => b.id - a.id),
     [reservas, tab, query, huespedes, habitaciones],
   );
@@ -94,7 +104,7 @@ export default function ReservasPage() {
     setBusy(reserva.id);
     try {
       await reservasApi[step.action](reserva.id);
-      toast.success(`${STEP_MESSAGES[step.action]} · Reserva #${reserva.id}`);
+      toast.success(`${STEP_MESSAGES[step.action]} · Reserva ${reserva.codigo}`);
       reload();
     } catch (err) {
       toast.error(err.message);
@@ -107,7 +117,7 @@ export default function ReservasPage() {
     setBusy(cancelTarget.id);
     try {
       await reservasApi.cancelar(cancelTarget.id);
-      toast.success(`Reserva #${cancelTarget.id} cancelada`);
+      toast.success(`Reserva ${cancelTarget.codigo} cancelada`);
       reload();
     } catch (err) {
       toast.error(err.message);
@@ -118,7 +128,28 @@ export default function ReservasPage() {
   }
 
   const columns = [
-    { key: "id", label: "ID", className: "td-id", render: (r) => `#${r.id}` },
+    {
+      key: "codigo",
+      label: "Código",
+      className: "td-id",
+      render: (r) => (
+        <>
+          <span className="reserva-code">{r.codigo}</span>
+          {r.notas && <StickyNote size={12} strokeWidth={1.75} className="reserva-code__note" aria-label="Tiene notas" title={r.notas} />}
+          {["completado", "validado"].includes(r.precheckin_estado) && (
+            <ClipboardCheck
+              size={12}
+              strokeWidth={1.75}
+              className="reserva-code__note"
+              style={{ color: PRECHECKIN_ESTADOS[r.precheckin_estado].color }}
+              aria-label={`Pre-check-in: ${PRECHECKIN_ESTADOS[r.precheckin_estado].label}`}
+              title={`Pre-check-in: ${PRECHECKIN_ESTADOS[r.precheckin_estado].label}`}
+            />
+          )}
+          <span className="reserva-canal">{canalLabel(r.canal)}</span>
+        </>
+      ),
+    },
     { key: "huesped", label: "Huésped", primary: true, render: (r) => <Person name={fullName(huespedes[r.huesped_id])} /> },
     { key: "habitacion", label: "Habitación", render: (r) => <Chip>{habitaciones[r.habitacion_id]?.numero ?? "—"}</Chip> },
     { key: "checkin", label: "Check-in", render: (r) => formatShortDate(r.fecha_checkin_prevista) },
@@ -138,8 +169,13 @@ export default function ReservasPage() {
         return (
           <div className="icon-actions">
             <IconButton icon={Eye} title="Ver detalle" color={COLORS.purple} onClick={() => setDetailId(r.id)} />
-            {/* El mockup muestra "Editar", pero el backend no tiene PUT /reservas/{id};
-                en su lugar se ofrece la siguiente transición de estado disponible. */}
+            <IconButton
+              icon={Pencil}
+              title="Editar reserva"
+              color={COLORS.gold}
+              disabled={!ESTADOS_EDITABLES.includes(r.estado) || busy === r.id}
+              onClick={() => setEditTarget(r)}
+            />
             <IconButton
               icon={step ? STEP_ICONS[step.action] : CheckCircle2}
               title={step ? step.label : "Sin acciones pendientes"}
@@ -171,7 +207,7 @@ export default function ReservasPage() {
 
       <div className="toolbar">
         <Tabs options={TABS} value={tab} onChange={setTab} label="Filtrar por estado" />
-        <SearchInput value={query} onChange={setQuery} placeholder="Buscar huésped, habitación o ID..." />
+        <SearchInput value={query} onChange={setQuery} placeholder="Huésped, teléfono, código…" />
         <div className="toolbar__end">
           <Button icon={Plus} onClick={() => setFormOpen(true)} disabled={loading}>
             Nueva reserva
@@ -210,7 +246,7 @@ export default function ReservasPage() {
           onClose={() => setFormOpen(false)}
           onGuestCreated={reload}
           onCreated={(reserva) => {
-            toast.success(`Reserva #${reserva.id} creada en estado pendiente`);
+            toast.success(`Reserva ${reserva.codigo} creada en estado pendiente`);
             setFormOpen(false);
             reload();
             setDetailId(reserva.id);
@@ -228,10 +264,23 @@ export default function ReservasPage() {
         />
       )}
 
+      {editTarget && (
+        <ReservaEditModal
+          reserva={editTarget}
+          huesped={huespedes[editTarget.huesped_id]}
+          onClose={() => setEditTarget(null)}
+          onSaved={() => {
+            toast.success(`Reserva ${editTarget.codigo} actualizada`);
+            setEditTarget(null);
+            reload();
+          }}
+        />
+      )}
+
       {cancelTarget && (
         <ConfirmDialog
           title="Cancelar reserva"
-          message={`La reserva #${cancelTarget.id} de ${fullName(huespedes[cancelTarget.huesped_id])} pasará a estado cancelada.`}
+          message={`La reserva ${cancelTarget.codigo} de ${fullName(huespedes[cancelTarget.huesped_id])} pasará a estado cancelada.`}
           confirmLabel="Cancelar reserva"
           danger
           loading={busy === cancelTarget.id}

@@ -5,6 +5,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.core.security import decode_access_token
+from app.core.vencimiento import expirar_pendientes
 from app.db.session import get_db
 from app.models.usuario import Usuario
 
@@ -42,6 +43,15 @@ def get_current_user(
     return usuario
 
 
+def liberar_pendientes_vencidas(db: Session = Depends(get_db)) -> None:
+    """
+    Dependencia de las rutas de reservas y disponibilidad: antes de responder, cancela las
+    reservas pendientes vencidas (ver app/core/vencimiento.py). Se declara después de
+    `get_current_user` para que una petición sin sesión no ejecute nada.
+    """
+    expirar_pendientes(db)
+
+
 def require_roles(*roles_permitidos: str):
     def _verificar_rol(usuario: Usuario = Depends(get_current_user)) -> Usuario:
         if usuario.rol.nombre not in roles_permitidos:
@@ -55,4 +65,4 @@ def require_roles(*roles_permitidos: str):
     return _verificar_rol
 
 
-__all__ = ["get_db", "get_current_user", "require_roles"]
+__all__ = ["get_db", "get_current_user", "liberar_pendientes_vencidas", "require_roles"]

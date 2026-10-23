@@ -104,8 +104,6 @@ export default function HabitacionesPage() {
       toast.success(kind === "tipo" ? `Tipo “${item.nombre}” eliminado` : `Habitación ${item.numero} eliminada`);
       reload();
     } catch (err) {
-      // DELETE /habitaciones/{id} responde 422 por un error en la ruta del backend
-      // (declarada como {habitacion_idz}). Se informa en lugar de mostrar el detalle técnico.
       toast.error(
         kind === "habitacion" && err.status === 422
           ? "El backend no permite eliminar habitaciones todavía (error en la ruta DELETE /habitaciones). Reportado al equipo de backend."

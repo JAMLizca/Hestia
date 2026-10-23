@@ -50,8 +50,13 @@ export function AuthProvider({ children }) {
         setUser({ ...me, rol: readRoleFromToken(token) });
         setStatus("authenticated");
       })
-      .catch(() => {
-        if (active) expire();
+      .catch((err) => {
+        if (!active) return;
+        // Solo un 401 invalida el token. Si la petición falla por otra causa (red caída, o la página
+        // se está recargando y el navegador aborta la llamada) el token se conserva: borrarlo aquí
+        // cerraría la sesión al pulsar F5 justo después de iniciar sesión.
+        if (err?.status === 401) expire();
+        else setStatus("anonymous");
       });
     return () => {
       active = false;
