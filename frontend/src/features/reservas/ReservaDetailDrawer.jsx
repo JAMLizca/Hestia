@@ -1,4 +1,4 @@
-import { Ban, CreditCard, LogIn, LogOut, Plus, ReceiptText, Trash2, CheckCircle2, Utensils } from "lucide-react";
+import { Ban, CheckCircle2, CreditCard, LogIn, LogOut, Pencil, Phone, Plus, ReceiptText, Trash2, UserX, Utensils } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { pagosApi, reservaServiciosApi, reservasApi, serviciosApi } from "../../api/services";
 import { Badge, Button, Chip, EmptyState, ErrorBanner, IconButton, InfoBanner, LoadingState, TableView, Tabs } from "../../components/ui";
@@ -8,8 +8,10 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { indexById } from "../../hooks/useApiData";
 import { formatMoney, formatShortDate, nights, parseDate } from "../../utils/format";
-import { ESTADOS_CANCELABLES, ESTADOS_MODIFICABLES, nextStep } from "../../utils/hotel";
-import { categoriaColor, RESERVA_ESTADOS } from "../../utils/status";
+import { ESTADOS_CANCELABLES, ESTADOS_MODIFICABLES, nextStep, puedeMarcarNoShow } from "../../utils/hotel";
+import { canalLabel, categoriaColor, COLORS, PAGO_ESTADOS, RESERVA_ESTADOS } from "../../utils/status";
+import PreCheckinPanel from "./PreCheckinPanel";
+import ReservaEditModal from "./ReservaEditModal";
 import "./reservas.css";
 
 const STEP_ICONS = { confirmar: CheckCircle2, checkin: LogIn, checkout: LogOut };
@@ -26,13 +28,7 @@ function formatDateTime(value) {
   return date.toLocaleString("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-/**
- * Detalle de una reserva:
- *  - GET /reservas/{id}, /reservas/{id}/resumen, /servicios/, /pagos/
- *  - Acciones: confirmar, check-in, check-out, cancelar, eliminar (solo administrador)
- *  - Consumo de servicios (POST/DELETE /reservas/{id}/servicios/)
- *  - Pagos (POST /reservas/{id}/pagos/)
- */
+
 export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitaciones = {}, onClose, onChanged }) {
   const { user } = useAuth();
   const toast = useToast();
@@ -41,6 +37,7 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
   const [version, setVersion] = useState(0);
   const [busy, setBusy] = useState("");
   const [confirm, setConfirm] = useState(null);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -90,13 +87,28 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
   const StepIcon = step && STEP_ICONS[step.action];
   const modificable = reserva && ESTADOS_MODIFICABLES.includes(reserva.estado);
   const cancelable = reserva && ESTADOS_CANCELABLES.includes(reserva.estado);
+  const noShow = reserva && puedeMarcarNoShow(reserva);
+  const telefono = huesped?.telefono;
+  const etiqueta = reserva ? reserva.codigo ?? `#${reserva.id}` : "";
   const esAdmin = user?.rol === "administrador";
 
   return (
     <Drawer
-      title={reserva ? `Reserva #${reserva.id}` : "Reserva"}
+      title={reserva ? `Reserva ${etiqueta}` : "Reserva"}
       subtitle={reserva ? `${nombreHuesped ?? "—"} · Habitación ${numeroHabitacion ?? "—"}` : undefined}
-      headerExtra={estado && <div style={{ marginTop: 8 }}><Badge color={estado.color}>{estado.label}</Badge></div>}
+      headerExtra={
+        estado && (
+          <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+            <Badge color={estado.color}>{estado.label}</Badge>
+            {telefono && (
+              <a href={`tel:${telefono}`} className="muted" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12 }}>
+                <Phone size={12} strokeWidth={1.75} />
+                {telefono}
+              </a>
+            )}
+          </div>
+        )
+      }
       width={600}
       onClose={onClose}
     >
@@ -115,6 +127,14 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
                 {step.label}
               </Button>
             )}
+            <Button variant="outline" icon={Pencil} onClick={() => setEditing(true)}>
+              Editar
+            </Button>
+            {noShow && (
+              <Button variant="outline" icon={UserX} onClick={() => setConfirm("noshow")}>
+                No se presentó
+              </Button>
+            )}
             {cancelable && (
               <Button variant="danger" icon={Ban} onClick={() => setConfirm("cancelar")}>
                 Cancelar reserva
@@ -128,6 +148,16 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
           </div>
 
           <dl className="detail-grid">
+            <div>
+              <dt>Código</dt>
+              <dd>
+                <span className="reserva-code">{reserva.codigo}</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Canal</dt>
+              <dd>{canalLabel(reserva.canal)}</dd>
+            </div>
             <div>
               <dt>Check-in previsto</dt>
               <dd>{formatShortDate(reserva.fecha_checkin_prevista)}</dd>
@@ -155,6 +185,18 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
               <dt>Creada</dt>
               <dd>{formatDateTime(reserva.fecha_creacion)}</dd>
             </div>
+            {reserva.motivo_cancelacion && (
+              <div className="detail-grid__full">
+                <dt>Motivo de la cancelación</dt>
+                <dd>{reserva.motivo_cancelacion}</dd>
+              </div>
+            )}
+            {reserva.notas && (
+              <div className="detail-grid__full">
+                <dt>Notas</dt>
+                <dd style={{ whiteSpace: "pre-wrap" }}>{reserva.notas}</dd>
+              </div>
+            )}
           </dl>
 
           <div className="divider" />
@@ -168,6 +210,7 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
                 { value: "resumen", label: "Resumen y saldo" },
                 { value: "servicios", label: "Servicios", count: consumos.length },
                 { value: "pagos", label: "Pagos", count: pagos.length },
+                { value: "precheckin", label: "Pre-check-in" },
               ]}
             />
           </div>
@@ -184,6 +227,7 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
               run={run}
             />
           )}
+          {tab === "precheckin" && <PreCheckinPanel reserva={reserva} huesped={huesped} onChanged={refresh} />}
           {tab === "pagos" && (
             <PagosTab
               reservaId={reserva.id}
@@ -197,10 +241,36 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
         </>
       )}
 
+      {editing && reserva && (
+        <ReservaEditModal
+          reserva={reserva}
+          huesped={huesped}
+          onClose={() => setEditing(false)}
+          onSaved={() => {
+            setEditing(false);
+            toast.success("Reserva actualizada");
+            refresh();
+          }}
+        />
+      )}
+      {confirm === "noshow" && (
+        <ConfirmDialog
+          title="Marcar como “No se presentó”"
+          message={`La reserva ${etiqueta} dejará de ocupar la habitación. Los pagos recibidos se conservan.`}
+          confirmLabel="Marcar no se presentó"
+          danger
+          loading={busy === "noshow"}
+          onClose={() => setConfirm(null)}
+          onConfirm={async () => {
+            await run("noshow", () => reservasApi.noShow(reserva.id), "Reserva marcada como “No se presentó”");
+            setConfirm(null);
+          }}
+        />
+      )}
       {confirm === "cancelar" && (
         <ConfirmDialog
           title="Cancelar reserva"
-          message={`La reserva #${reserva.id} pasará a estado cancelada y la habitación quedará libre para esas fechas.`}
+          message={`La reserva ${etiqueta} pasará a estado cancelada y la habitación quedará libre para esas fechas.`}
           confirmLabel="Cancelar reserva"
           danger
           loading={busy === "cancelar"}
@@ -214,7 +284,7 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
       {confirm === "eliminar" && (
         <ConfirmDialog
           title="Eliminar reserva"
-          message={`La reserva #${reserva.id} se eliminará definitivamente. Esta acción no se puede deshacer.`}
+          message={`La reserva ${etiqueta} se eliminará definitivamente. Esta acción no se puede deshacer.`}
           confirmLabel="Eliminar definitivamente"
           danger
           loading={busy === "eliminar"}
@@ -238,7 +308,7 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
   );
 }
 
-/* ── Resumen de costos (GET /reservas/{id}/resumen) ─────────── */
+/* Resumen de costos  */
 function ResumenTab({ resumen }) {
   if (!resumen) return null;
   if (resumen.__error) return <ErrorBanner message={`No se pudo obtener el resumen de costos: ${resumen.__error}`} />;
@@ -283,7 +353,7 @@ function ResumenTab({ resumen }) {
   );
 }
 
-/* ── Servicios consumidos ───────────────────────────────────── */
+/* Servicios consumidos */
 function ServiciosTab({ reservaId, consumos, catalogo, modificable, estado, busy, run }) {
   const [servicioId, setServicioId] = useState("");
   const [cantidad, setCantidad] = useState(1);
@@ -380,7 +450,7 @@ function ServiciosTab({ reservaId, consumos, catalogo, modificable, estado, busy
   );
 }
 
-/* ── Pagos ──────────────────────────────────────────────────── */
+/* Pagos */
 function PagosTab({ reservaId, pagos, saldo, cancelada, busy, run }) {
   const [monto, setMonto] = useState(saldo > 0 ? String(saldo) : "");
   const [metodo, setMetodo] = useState("");
@@ -431,9 +501,9 @@ function PagosTab({ reservaId, pagos, saldo, cancelada, busy, run }) {
           rows={pagos}
           columns={[
             { key: "monto", label: "Monto", className: "td-strong", render: (p) => formatMoney(p.monto) },
-            { key: "metodo", label: "Método", render: (p) => p.metodo_pago },
+            { key: "metodo", label: "Método", render: (p) => (p.referencia ? <span title={`Referencia ${p.referencia}`}>{p.metodo_pago} · en línea</span> : p.metodo_pago) },
             { key: "fecha", label: "Fecha", render: (p) => formatDateTime(p.fecha_pago) },
-            { key: "estado", label: "Estado", render: (p) => <Badge color="#4CAF82">{p.estado}</Badge> },
+            { key: "estado", label: "Estado", render: (p) => <Badge color={(PAGO_ESTADOS[p.estado] ?? { color: COLORS.gray }).color}>{PAGO_ESTADOS[p.estado]?.label ?? p.estado}</Badge> },
           ]}
         />
       )}

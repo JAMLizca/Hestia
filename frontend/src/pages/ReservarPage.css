@@ -1,0 +1,248 @@
+.rv__tabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  background: var(--canvas);
+}
+
+.rv__tabs button {
+  flex: 1;
+  height: 38px;
+  border: 0;
+  border-radius: var(--radius-sm, 8px);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-500);
+  cursor: pointer;
+}
+
+.rv__tabs button.on {
+  background: var(--surface);
+  color: var(--navy-900);
+  box-shadow: 0 1px 2px rgba(26, 34, 53, 0.1);
+}
+
+.rv__types {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rv__type {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid var(--canvas);
+  border-radius: var(--radius-md);
+}
+
+.rv__type--on {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+
+.rv__type-main,
+.rv__type-price {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rv__type-price {
+  flex: none;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.rv__meta {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+.rv__desc {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--navy-700);
+}
+
+.rv__few {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--red);
+}
+
+.rv__btn {
+  height: 38px;
+  padding: 0 16px;
+  border: 1px solid var(--gray-300, #cfd4de);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy-700);
+  cursor: pointer;
+}
+
+.rv__btn--primary {
+  margin-top: 6px;
+  border-color: var(--navy-700);
+  background: var(--navy-700);
+  color: #fff;
+}
+
+.rv__btn--danger {
+  border-color: var(--red);
+  background: var(--red);
+  color: #fff;
+}
+
+.rv__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rv__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.rv__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--canvas);
+  font-size: 13px;
+}
+
+.rv__total strong {
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+
+.rv__summary-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.rv__code {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.rv__pill {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.rv__pill--warn {
+  background: rgba(214, 160, 60, 0.18);
+  color: #8a6212;
+}
+
+.rv__pill--ok {
+  background: rgba(60, 160, 110, 0.16);
+  color: #1f7a4d;
+}
+
+.rv__pill--muted {
+  background: var(--canvas);
+  color: var(--gray-500);
+}
+
+.rv__cta {
+  text-decoration: none;
+}
+
+.rv__cancel {
+  margin-top: 14px;
+}
+
+.rv__contact {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--gray-500);
+}
+
+.rv__trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+@media (max-width: 560px) {
+  .rv__type {
+    flex-direction: column;
+  }
+  .rv__type-price {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+  }
+  .rv .pc-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.rv__pay {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--gold);
+  border-radius: var(--radius-md);
+  background: rgba(201, 160, 82, 0.08);
+}
+
+.rv__pay p {
+  margin: 0 0 4px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.rv__pay small {
+  display: block;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--gray-500);
+}
+
+.rv__paid {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: #1f7a4d;
+}
+
+.rv__cta--sec {
+  border: 1px solid var(--navy-700);
+  background: transparent;
+  color: var(--navy-700);
+}

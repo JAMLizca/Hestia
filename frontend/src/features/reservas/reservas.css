@@ -20,6 +20,57 @@
   gap: 12px;
 }
 
+.reserva-form__guest-select {
+  margin-top: 12px;
+}
+
+.reserva-form__origin {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.reserva-code {
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--navy-900);
+}
+
+.reserva-code__note {
+  margin-left: 6px;
+  vertical-align: -2px;
+  color: var(--gold);
+}
+
+.reserva-canal {
+  display: block;
+  margin-top: 1px;
+  font-family: var(--font-body, inherit);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--gray-400);
+}
+
+.detail-grid__full {
+  grid-column: 1 / -1;
+}
+
+.reserva-edit__summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+  font-size: 13px;
+  color: var(--gray-500);
+}
+
+.reserva-edit__summary strong {
+  color: var(--navy-900);
+}
+
 .reserva-form__dates {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -187,4 +238,73 @@
     flex-direction: column;
     align-items: stretch;
   }
+}
+
+@media (max-width: 760px) {
+  .reserva-form__origin {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Pre-check-in (pestaña del detalle) ───────────── */
+.precheckin__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-size: 12.5px;
+}
+
+.precheckin__link {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: rgba(201, 160, 82, 0.08);
+}
+
+.precheckin__link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.precheckin__hint {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--gray-500);
+}
+
+.precheckin__title {
+  margin: 18px 0 10px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy-900);
+}
+
+.precheckin__diff {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--orange);
+}
+
+.precheckin__diff--alert {
+  color: var(--red);
+  font-weight: 600;
+}
+
+.precheckin__validate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--canvas);
 }

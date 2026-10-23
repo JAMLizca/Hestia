@@ -4,13 +4,13 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 const ToastContext = createContext(null);
 let nextId = 1;
 
-/** Mensajes breves de confirmación o error tras una acción (crear, confirmar, pagar…). */
+
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
   const push = useCallback((message, type) => {
     const id = nextId++;
-    // Máximo 3 avisos visibles: los más antiguos se descartan.
+    
     setToasts((list) => [...list, { id, message, type }].slice(-3));
     setTimeout(() => setToasts((list) => list.filter((t) => t.id !== id)), 4000);
   }, []);

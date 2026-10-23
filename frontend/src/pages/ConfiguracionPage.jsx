@@ -1,4 +1,4 @@
-import { Save, Undo2 } from "lucide-react";
+import { Copy, Save, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { configApi } from "../api/services";
 import { Button, Card, ErrorBanner, InfoBanner, LoadingState } from "../components/ui";
@@ -8,7 +8,7 @@ import { useConfig } from "../context/ConfigContext";
 import { useToast } from "../context/ToastContext";
 import { useApiData } from "../hooks/useApiData";
 
-// Opciones admitidas por el backend (schemas/configuracion.py).
+
 const MONEDAS = [
   { value: "COP", label: "COP — Peso colombiano" },
   { value: "USD", label: "USD — Dólar estadounidense" },
@@ -35,24 +35,28 @@ const ZONAS = [
 
 const TEXT_FIELDS = ["nombre", "razon_social", "nit", "direccion", "ciudad", "pais", "telefono", "email", "sitio_web"];
 
-/** De la respuesta de la API a valores de formulario (texto; la hora como HH:MM). */
+
 function toForm(config) {
   const values = Object.fromEntries(TEXT_FIELDS.map((k) => [k, config[k] ?? ""]));
   return {
     ...values,
     hora_checkin: (config.hora_checkin ?? "").slice(0, 5),
     hora_checkout: (config.hora_checkout ?? "").slice(0, 5),
+    horas_vencimiento_pendiente: String(config.horas_vencimiento_pendiente ?? 24),
+    reservas_web_activas: Boolean(config.reservas_web_activas),
+    anticipo_porcentaje: String(config.anticipo_porcentaje ?? 0),
     moneda: config.moneda,
     zona_horaria: config.zona_horaria,
   };
 }
 
-/** Del formulario al cuerpo del PUT: los textos vacíos se envían como null. */
 function toPayload(values) {
   const payload = { ...values };
   TEXT_FIELDS.forEach((k) => {
     payload[k] = values[k].trim() || null;
   });
+  payload.horas_vencimiento_pendiente = Number(values.horas_vencimiento_pendiente);
+  payload.anticipo_porcentaje = Number(values.anticipo_porcentaje);
   return payload;
 }
 
@@ -63,8 +67,7 @@ function formatUpdated(value) {
 }
 
 /**
- * Configuración general: datos del hotel, horarios y ajustes regionales. Todos los usuarios
- * pueden consultarla; solo el administrador puede guardar cambios.
+ * Configuración general: datos del hotel, horarios y ajustes regionales.
  */
 export default function ConfiguracionPage() {
   const { data, loading, error, reload } = useApiData({ config: () => configApi.get() });
@@ -90,6 +93,15 @@ function ConfigForm({ initial }) {
   const [saving, setSaving] = useState(false);
 
   const dirty = JSON.stringify(values) !== JSON.stringify(baseline);
+  const urlReservas = `${(import.meta.env.VITE_PUBLIC_URL || window.location.origin).replace(/\/$/, "")}/reservar`;
+  async function copiarUrl() {
+    try {
+      await navigator.clipboard.writeText(urlReservas);
+      toast.success("Enlace copiado");
+    } catch {
+      toast.error("No se pudo copiar; selecciónalo y cópialo a mano");
+    }
+  }
   const set = (key) => (e) => setValues((v) => ({ ...v, [key]: e.target.value }));
   const readOnly = !esAdmin;
 
@@ -157,6 +169,60 @@ function ConfigForm({ initial }) {
           </Field>
           <Field label="Hora de check-out" required>
             <Input type="time" value={values.hora_checkout} onChange={set("hora_checkout")} required disabled={readOnly} />
+          </Field>
+        </div>
+      </Card>
+
+      <Card title="Reservas" subtitle="Una reserva tomada por teléfono u otro canal que nadie confirma dejaría la habitación bloqueada.">
+        <div className="form-grid">
+          <div className="field field--full">
+            <span className="field__label">Reservas en línea</span>
+            <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
+              <input
+                type="checkbox"
+                checked={values.reservas_web_activas}
+                onChange={(e) => setValues((v) => ({ ...v, reservas_web_activas: e.target.checked }))}
+                disabled={readOnly}
+                style={{ width: 18, height: 18, accentColor: "var(--navy-700)" }}
+              />
+              Permitir reservas en línea
+            </label>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+              <Input value={urlReservas} readOnly aria-label="Enlace de la página de reservas" />
+              <Button type="button" variant="outline" icon={Copy} onClick={copiarUrl}>
+                Copiar
+              </Button>
+            </div>
+            <span className="field__hint">
+              Los huéspedes piden su reserva en la página pública, sin pago en línea: queda pendiente y tú la confirmas. Si no la confirmas a tiempo, vence sola.
+            </span>
+          </div>
+          <Field
+            label="Anticipo en línea (% del total)"
+            required
+            hint={
+              initial.pasarela_configurada
+                ? "Se cobra con Wompi al reservar en línea; la reserva se confirma sola al pagar. Usa 0 para no cobrar en línea."
+                : "Wompi aún no está configurado en el servidor (ver README, «Pagos en línea»). Mientras tanto no se cobra en línea."
+            }
+          >
+            <Input type="number" min={0} max={100} step={1} value={values.anticipo_porcentaje} onChange={set("anticipo_porcentaje")} required disabled={readOnly} />
+          </Field>
+          <Field
+            label="Horas para que venza una reserva pendiente"
+            required
+            hint="Pasado ese plazo, la reserva pendiente se cancela sola y la habitación queda libre. No aplica si ya tiene un pago. Usa 0 para que nunca venzan."
+          >
+            <Input
+              type="number"
+              min={0}
+              max={720}
+              step={1}
+              value={values.horas_vencimiento_pendiente}
+              onChange={set("horas_vencimiento_pendiente")}
+              required
+              disabled={readOnly}
+            />
           </Field>
         </div>
       </Card>

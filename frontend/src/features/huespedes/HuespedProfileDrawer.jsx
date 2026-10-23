@@ -5,10 +5,10 @@ import { Avatar, Badge, Button, Chip, EmptyState, TableView } from "../../compon
 import { ConfirmDialog, Drawer } from "../../components/ui/Modal";
 import { useToast } from "../../context/ToastContext";
 import { formatMoney, formatShortDate, nights, parseDate } from "../../utils/format";
-import { fullName } from "../../utils/hotel";
+import { ESTADOS_ANULADOS, fullName } from "../../utils/hotel";
 import { RESERVA_ESTADOS } from "../../utils/status";
 
-/** Perfil del huésped con su historial de estadías (reservas filtradas por huesped_id). */
+/** Perfil del huésped con su historial de estadías */
 export default function HuespedProfileDrawer({ huesped, reservas, habitaciones, onClose, onEdit, onNewReserva, onOpenReserva, onDeleted }) {
   const toast = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -17,7 +17,7 @@ export default function HuespedProfileDrawer({ huesped, reservas, habitaciones, 
   const historial = [...reservas].sort((a, b) => String(b.fecha_checkin_prevista).localeCompare(String(a.fecha_checkin_prevista)));
   const estadias = reservas.filter((r) => r.estado === "checkout").length;
   const totalNoches = reservas
-    .filter((r) => r.estado !== "cancelada")
+    .filter((r) => !ESTADOS_ANULADOS.includes(r.estado))
     .reduce((acc, r) => acc + nights(r.fecha_checkin_prevista, r.fecha_checkout_prevista), 0);
 
   async function remove() {

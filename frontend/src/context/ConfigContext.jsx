@@ -3,7 +3,6 @@ import { configApi } from "../api/services";
 import { configureFormat } from "../utils/format";
 import { useAuth } from "./AuthContext";
 
-/** Valores con los que se muestra el panel mientras llega la configuración (o si no se puede leer). */
 export const DEFAULT_CONFIG = {
   nombre: "Hotel Hestia",
   razon_social: null,
@@ -16,6 +15,10 @@ export const DEFAULT_CONFIG = {
   sitio_web: null,
   hora_checkin: "15:00:00",
   hora_checkout: "12:00:00",
+  horas_vencimiento_pendiente: 24,
+  reservas_web_activas: false,
+  anticipo_porcentaje: 0,
+  pasarela_configurada: false,
   moneda: "COP",
   zona_horaria: "America/Bogota",
   fecha_actualizacion: null,
@@ -23,12 +26,7 @@ export const DEFAULT_CONFIG = {
 
 const ConfigContext = createContext(null);
 
-/**
- * Configuración general del hotel (GET /configuracion/). Se carga al iniciar sesión y la usan
- * el menú lateral (nombre del hotel) y el formato de montos (moneda). Si la lectura falla
- * —por ejemplo, si la tabla aún no existe en la base de datos— el panel sigue funcionando con
- * los valores por defecto.
- */
+/*Configuracón general del hotel */
 export function ConfigProvider({ children }) {
   const { status } = useAuth();
   const [config, setConfig] = useState(DEFAULT_CONFIG);
@@ -40,14 +38,14 @@ export function ConfigProvider({ children }) {
       .get()
       .then((data) => active && setConfig({ ...DEFAULT_CONFIG, ...data }))
       .catch(() => {
-        /* se mantienen los valores por defecto */
+        
       });
     return () => {
       active = false;
     };
   }, [status]);
 
-  // Se aplica antes de dibujar a los hijos para que formatMoney ya use la moneda vigente.
+  
   configureFormat(config);
 
   const update = useCallback((data) => setConfig({ ...DEFAULT_CONFIG, ...data }), []);

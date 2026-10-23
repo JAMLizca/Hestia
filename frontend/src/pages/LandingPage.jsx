@@ -23,8 +23,6 @@ import { useAuth } from "../context/AuthContext";
 import "./LandingPage.css";
 
 const CURRENT_YEAR = new Date().getFullYear();
-
-/* Contenido tomado textualmente del mockup de la landing (Figma 1). */
 const NAV = [
   { href: "#inicio", label: "Inicio" },
   { href: "#plataforma", label: "Plataforma" },
@@ -65,7 +63,7 @@ const MODELOS = [
   },
 ];
 
-// Ilustraciones del mockup (no son datos del hotel).
+
 const BARRAS_14_DIAS = [1, 1, 2, 2, 3, 3, 3, 3, 2, 2, 1, 1, 1, 2];
 const ALTURAS_14_DIAS = [48, 55, 62, 68, 86, 92, 95, 88, 74, 66, 52, 50, 57, 70];
 const SEGMENTOS = [
@@ -115,7 +113,7 @@ export default function LandingPage() {
 
   return (
     <div className="landing">
-      {/* ── Navegación ─────────────────────────────── */}
+      {/* Navegación */}
       <nav className="lp-nav">
         <div className="lp-container lp-nav__inner">
           <a href="#inicio" className="lp-nav__logo" aria-label="Hestia — inicio">
@@ -137,7 +135,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* ── Hero ───────────────────────────────────── */}
+      {/* Hero */}
       <section id="inicio" className="lp-hero">
         <div className="lp-container lp-hero__grid">
           <div>
@@ -172,7 +170,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── El problema ────────────────────────────── */}
+      {/* El problema */}
       <section id="plataforma" className="lp-section lp-section--white">
         <div className="lp-container lp-center" style={{ maxWidth: 1000 }}>
           <Eyebrow>El problema</Eyebrow>
@@ -205,7 +203,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Funcionalidades ────────────────────────── */}
+      {/* Funcionalidades */}
       <section id="funcionalidades" className="lp-section lp-section--cream">
         <div className="lp-container">
           <div className="lp-center">
@@ -226,7 +224,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Inteligencia artificial ────────────────── */}
+      {/* IA */}
       <section id="inteligencia" className="lp-section lp-section--deep">
         <div className="lp-container lp-center" style={{ maxWidth: 1100 }}>
           <Eyebrow dark>Inteligencia Artificial</Eyebrow>
@@ -266,7 +264,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Modelos de IA ──────────────────────────── */}
+      {/* Modelos de IA */}
       <section className="lp-section lp-section--cream">
         <div className="lp-container" style={{ maxWidth: 1100 }}>
           <div className="lp-center">
@@ -336,7 +334,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── IA integrada ───────────────────────────── */}
+      {/* IA integrada  */}
       <section className="lp-section lp-section--white">
         <div className="lp-container lp-split" style={{ maxWidth: 1100 }}>
           <div>
@@ -389,7 +387,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── ¿Por qué Hestia? ───────────────────────── */}
+      {/* ¿Por qué Hestia? */}
       <section className="lp-section lp-section--cream">
         <div className="lp-container lp-split lp-split--why" style={{ maxWidth: 1100 }}>
           <div>
@@ -415,7 +413,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Cómo funciona ──────────────────────────── */}
+      {/* Cómo funciona */}
       <section id="como-funciona" className="lp-section lp-section--white">
         <div className="lp-container" style={{ maxWidth: 1100 }}>
           <div className="lp-center">
@@ -435,7 +433,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Arquitectura ───────────────────────────── */}
+      {/* Arquitectura  */}
       <section className="lp-section lp-section--cream">
         <div className="lp-container lp-center" style={{ maxWidth: 1100 }}>
           <Eyebrow>Arquitectura</Eyebrow>
@@ -453,7 +451,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Nosotros ───────────────────────────────── */}
+      {/*  Nosotros */}
       <section id="nosotros" className="lp-section lp-section--white">
         <div className="lp-container" style={{ maxWidth: 900 }}>
           <div className="lp-about">
@@ -474,7 +472,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── CTA ─────────────────────────────────────── */}
+      {/* CTAA */}
       <section id="contacto" className="lp-cta">
         <div className="lp-container lp-center" style={{ maxWidth: 700 }}>
           <Logo size={72} />
@@ -491,7 +489,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Footer ─────────────────────────────────── */}
+      {/* Footer */}
       <footer className="lp-footer">
         <div className="lp-container">
           <div className="lp-footer__grid">
@@ -519,7 +517,7 @@ export default function LandingPage() {
   );
 }
 
-/** Vista previa ilustrativa del panel (como en el mockup del hero). */
+/** Vista previa ilustrativa del panel  */
 function HeroMockup() {
   const menu = ["Dashboard", "Reservas", "Habitaciones", "Huéspedes", "Servicios", "Usuarios", "Inteligencia"];
   const kpis = [

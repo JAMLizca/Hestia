@@ -56,7 +56,9 @@ function parseDetail(payload, status) {
     return detail
       .map((item) => {
         const campo = Array.isArray(item.loc) ? item.loc.filter((p) => p !== "body").join(".") : "";
-        return campo ? `${campo}: ${item.msg}` : item.msg;
+        // Pydantic antepone "Value error, " a los mensajes de nuestros validadores propios.
+        const mensaje = String(item.msg).replace(/^Value error, /, "");
+        return campo ? `${campo}: ${mensaje}` : mensaje;
       })
       .join(" · ");
   }

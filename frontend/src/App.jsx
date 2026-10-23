@@ -12,6 +12,8 @@ import HabitacionesPage from "./pages/HabitacionesPage";
 import HuespedesPage from "./pages/HuespedesPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
+import PreCheckinPage from "./pages/PreCheckinPage";
+import ReservarPage from "./pages/ReservarPage";
 import ReservasPage from "./pages/ReservasPage";
 import RolesPage from "./pages/RolesPage";
 import ServiciosPage from "./pages/ServiciosPage";
@@ -28,7 +30,6 @@ const PAGES = {
   "/usuarios": UsuariosPage,
 };
 
-// Pantallas del mockup que aún dependen de endpoints que el backend no tiene (hoy ninguna).
 const PENDING_REASONS = {};
 
 export default function App() {
@@ -40,6 +41,10 @@ export default function App() {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
+              {/* Público: el huésped abre el enlace que le envía el hotel, sin iniciar sesión. */}
+              <Route path="/pre-checkin/:token" element={<PreCheckinPage />} />
+              {/* Público: reserva en línea (si el hotel la tiene activada en Configuración). */}
+              <Route path="/reservar" element={<ReservarPage />} />
 
               <Route element={<ProtectedRoute />}>
                 <Route element={<AppLayout />}>

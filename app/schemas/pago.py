@@ -23,5 +23,6 @@ class PagoOut(BaseModel):
     metodo_pago: str
     estado: str
     fecha_pago: datetime
+    referencia: str | None = None
 
     model_config = ConfigDict(from_attributes=True)

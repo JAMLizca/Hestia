@@ -2,11 +2,12 @@ import { BedDouble, Search, UserPlus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { disponibilidadApi, reservasApi } from "../../api/services";
 import { Button, EmptyState, ErrorBanner, InfoBanner, LoadingState } from "../../components/ui";
-import { Field, Input, Select } from "../../components/ui/Form";
+import { Field, Input, Select, Textarea } from "../../components/ui/Form";
 import { Modal } from "../../components/ui/Modal";
 import { indexById } from "../../hooks/useApiData";
 import { formatMoney, nights, todayISO } from "../../utils/format";
-import { fullName } from "../../utils/hotel";
+import { fullName, matches, onlyDigits } from "../../utils/hotel";
+import { CANALES } from "../../utils/status";
 import HuespedFormModal from "../huespedes/HuespedFormModal";
 import "./reservas.css";
 
@@ -17,13 +18,16 @@ function addDays(iso, days) {
 
 /**
  * Nueva reserva:
- * 1. Huésped (existente o registro rápido).
+ * 1. Huésped (se busca por nombre, documento o teléfono, o se registra uno nuevo), canal y notas.
  * 2. Fechas + tipo → GET /disponibilidad/ devuelve las habitaciones libres.
  * 3. POST /reservas/ — el backend valida solapamientos y calcula el precio.
  */
 export default function ReservaFormModal({ huespedes, tipos, initialHuespedId, onClose, onCreated, onGuestCreated }) {
   const [guests, setGuests] = useState(huespedes);
   const [huespedId, setHuespedId] = useState(initialHuespedId ? String(initialHuespedId) : "");
+  const [guestQuery, setGuestQuery] = useState("");
+  const [canal, setCanal] = useState("presencial");
+  const [notas, setNotas] = useState("");
   const [checkin, setCheckin] = useState(todayISO());
   const [checkout, setCheckout] = useState(addDays(todayISO(), 1));
   const [numHuespedes, setNumHuespedes] = useState(1);
@@ -75,6 +79,8 @@ export default function ReservaFormModal({ huespedes, tipos, initialHuespedId, o
         fecha_checkin_prevista: checkin,
         fecha_checkout_prevista: checkout,
         num_huespedes: Number(numHuespedes),
+        canal,
+        notas: notas.trim() || null,
       });
       onCreated(reserva);
     } catch (err) {
@@ -83,10 +89,20 @@ export default function ReservaFormModal({ huespedes, tipos, initialHuespedId, o
     }
   }
 
-  const guestOptions = guests
+  // Con búsqueda activa solo se listan las coincidencias (y siempre el huésped ya elegido).
+  const digits = onlyDigits(guestQuery);
+  const guestMatches = (h) =>
+    String(h.id) === huespedId ||
+    matches(guestQuery, fullName(h), h.documento_identidad, h.telefono) ||
+    (digits.length >= 4 && onlyDigits(h.telefono).includes(digits));
+  const visibleGuests = guests.filter(guestMatches);
+  const guestOptions = visibleGuests
     .slice()
     .sort((a, b) => fullName(a).localeCompare(fullName(b)))
-    .map((h) => ({ value: String(h.id), label: `${fullName(h)} — ${h.tipo_documento} ${h.documento_identidad}` }));
+    .map((h) => ({
+      value: String(h.id),
+      label: `${fullName(h)} — ${h.tipo_documento} ${h.documento_identidad}${h.telefono ? ` · ${h.telefono}` : ""}`,
+    }));
 
   if (showGuestForm) {
     return (
@@ -105,7 +121,7 @@ export default function ReservaFormModal({ huespedes, tipos, initialHuespedId, o
   return (
     <Modal
       title="Nueva reserva"
-      subtitle="Selecciona el huésped, las fechas y una habitación disponible"
+      subtitle="Selecciona el huésped, el canal, las fechas y una habitación disponible"
       width={720}
       onClose={onClose}
       footer={
@@ -121,19 +137,38 @@ export default function ReservaFormModal({ huespedes, tipos, initialHuespedId, o
     >
       <div className="reserva-form">
         <section>
-          <h4 className="reserva-form__step">1. Huésped</h4>
+          <h4 className="reserva-form__step">1. Huésped y origen</h4>
           <div className="reserva-form__guest">
-            <Field label="Huésped" required>
-              <Select
-                options={guestOptions}
-                placeholder={guests.length ? "Selecciona un huésped" : "No hay huéspedes registrados"}
-                value={huespedId}
-                onChange={(e) => setHuespedId(e.target.value)}
-              />
+            <Field label="Buscar huésped" hint="Por nombre, documento o teléfono (útil cuando llaman).">
+              <Input type="search" value={guestQuery} onChange={(e) => setGuestQuery(e.target.value)} placeholder="Ej. 300 123 4567" />
             </Field>
             <Button variant="outline" icon={UserPlus} onClick={() => setShowGuestForm(true)}>
               Registrar nuevo
             </Button>
+          </div>
+          <div className="reserva-form__guest-select">
+            <Field label="Huésped" required>
+              <Select
+                options={guestOptions}
+                placeholder={
+                  !guests.length
+                    ? "No hay huéspedes registrados"
+                    : guestQuery && !visibleGuests.length
+                      ? "Ningún huésped coincide: regístralo"
+                      : `Selecciona un huésped${guestQuery ? ` (${visibleGuests.length} coincidencias)` : ""}`
+                }
+                value={huespedId}
+                onChange={(e) => setHuespedId(e.target.value)}
+              />
+            </Field>
+          </div>
+          <div className="reserva-form__origin">
+            <Field label="Canal" required>
+              <Select options={CANALES} value={canal} onChange={(e) => setCanal(e.target.value)} />
+            </Field>
+            <Field label="Notas" hint="Hora de llegada, peticiones, quién llamó…">
+              <Textarea rows={2} maxLength={500} value={notas} onChange={(e) => setNotas(e.target.value)} />
+            </Field>
           </div>
         </section>
 

@@ -12,8 +12,11 @@ from app.api.routes import (
     health,
     huespedes,
     pagos,
+    precheckin,
     reserva_servicios,
     reservas,
+    reservas_web,
+    wompi,
     roles,
     servicios,
     tipos_habitacion,
@@ -48,6 +51,10 @@ app.include_router(reserva_servicios.router, prefix=settings.API_V1_PREFIX)
 app.include_router(pagos.router, prefix=settings.API_V1_PREFIX)
 app.include_router(facturas.router, prefix=settings.API_V1_PREFIX)
 app.include_router(usuarios.router, prefix=settings.API_V1_PREFIX)
+app.include_router(precheckin.router, prefix=settings.API_V1_PREFIX)
+app.include_router(precheckin.publico, prefix=settings.API_V1_PREFIX)
+app.include_router(reservas_web.router, prefix=settings.API_V1_PREFIX)
+app.include_router(wompi.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/", tags=["Raíz"])

@@ -23,8 +23,7 @@ class RoleBase(BaseModel):
 
 class RoleCreate(RoleBase):
     """
-    Datos para crear un rol. El nombre se guarda en minúsculas y sin espacios
-    sobrantes porque los permisos se comparan por nombre ("administrador", ...).
+   Crear un rol. El nombre se guarda en minúsculas y sin espacios.
     """
 
     @field_validator("nombre", mode="before")
@@ -34,7 +33,6 @@ class RoleCreate(RoleBase):
 
 
 class RoleUpdate(BaseModel):
-    """Solo se puede editar la descripción: renombrar un rol rompería sus permisos."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -47,7 +45,6 @@ class RoleUpdate(BaseModel):
 
 
 class RoleOut(RoleBase):
-    """Datos que la API devuelve al consultar un rol."""
 
     id: int
 
@@ -55,8 +52,6 @@ class RoleOut(RoleBase):
 
 
 class RolResumen(RoleOut):
-    """Rol con la cantidad de usuarios que lo tienen (pantalla de Roles)."""
-
     total_usuarios: int
     usuarios_activos: int
 

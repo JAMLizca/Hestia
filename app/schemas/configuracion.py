@@ -36,12 +36,15 @@ VALORES_POR_DEFECTO = {
     "sitio_web": None,
     "hora_checkin": time(15, 0),
     "hora_checkout": time(12, 0),
+    "horas_vencimiento_pendiente": 24,
+    "reservas_web_activas": False,
+    "anticipo_porcentaje": 0,
     "moneda": "COP",
     "zona_horaria": "America/Bogota",
 }
 
 # Campos que no admiten null (columnas NOT NULL).
-CAMPOS_OBLIGATORIOS = ("nombre", "hora_checkin", "hora_checkout", "moneda", "zona_horaria")
+CAMPOS_OBLIGATORIOS = ("nombre", "hora_checkin", "hora_checkout", "horas_vencimiento_pendiente", "reservas_web_activas", "anticipo_porcentaje", "moneda", "zona_horaria")
 
 
 def _limpiar(valor):
@@ -64,6 +67,9 @@ class ConfiguracionBase(BaseModel):
     sitio_web: str | None = Field(default=None, max_length=200)
     hora_checkin: time
     hora_checkout: time
+    horas_vencimiento_pendiente: int = Field(ge=0, le=720)
+    reservas_web_activas: bool
+    anticipo_porcentaje: int = Field(ge=0, le=100)
     moneda: Moneda
     zona_horaria: ZonaHoraria
 
@@ -84,6 +90,9 @@ class ConfiguracionUpdate(BaseModel):
     sitio_web: str | None = Field(default=None, max_length=200)
     hora_checkin: time | None = None
     hora_checkout: time | None = None
+    horas_vencimiento_pendiente: int | None = Field(default=None, ge=0, le=720)
+    reservas_web_activas: bool | None = None
+    anticipo_porcentaje: int | None = Field(default=None, ge=0, le=100)
     moneda: Moneda | None = None
     zona_horaria: ZonaHoraria | None = None
 
@@ -99,5 +108,7 @@ class ConfiguracionOut(ConfiguracionBase):
     """Configuración vigente. `fecha_actualizacion` es null si aún no se ha guardado nada."""
 
     fecha_actualizacion: datetime | None = None
+    # Solo lectura: las llaves de Wompi están en el .env del servidor (nunca viajan por la API).
+    pasarela_configurada: bool = False
 
     model_config = ConfigDict(from_attributes=True)
