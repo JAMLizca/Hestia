@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     # Sin valor por defecto: debe definirse en `.env` (puede ser vacía).
     DB_PASSWORD: str 
     DB_NAME: str = "hestia_db"
+    # Servicios de MySQL en la nube (Aiven, TiDB, etc.) exigen conexión cifrada.
+    DB_SSL: bool = False
+    # Certificado de la autoridad (ca.pem) para verificar el servidor: ruta a un archivo, o su contenido
+    # pegado en DB_SSL_CA_PEM (útil en plataformas donde solo hay variables de entorno).
+    DB_SSL_CA: str = ""
+    DB_SSL_CA_PEM: str = ""
 
     # Sin valor por defecto: con una clave conocida cualquiera puede falsificar tokens.
     SECRET_KEY: str

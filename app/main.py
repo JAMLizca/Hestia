@@ -1,8 +1,10 @@
 """
 Punto de inicio de la API
 """
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.exc import IntegrityError, OperationalError
 
 from app.api.routes import (
@@ -93,6 +95,23 @@ app.include_router(wompi.router, prefix=settings.API_V1_PREFIX)
 app.include_router(reportes.router, prefix=settings.API_V1_PREFIX)
 
 
-@app.get("/", tags=["Raíz"])
-def raiz():
-    return {"mensaje": "Bienvenido a la API de Hestia", "documentacion": "/docs"}
+# Si existe la carpeta `static/` (el frontend ya compilado, como en el despliegue con Docker), la API
+# también sirve el sitio: así navegador y API comparten origen y no hace falta CORS.
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+
+if (STATIC_DIR / "index.html").is_file():
+
+    @app.get("/{ruta:path}", include_in_schema=False)
+    def sitio(ruta: str):
+        if ruta.startswith(("api/", "docs", "redoc", "openapi.json")):
+            raise HTTPException(status_code=404, detail="No encontrado")
+        archivo = (STATIC_DIR / ruta).resolve()
+        if ruta and archivo.is_file() and STATIC_DIR in archivo.parents:
+            return FileResponse(archivo)
+        return FileResponse(STATIC_DIR / "index.html")  # rutas de React Router (/reservar, /login…)
+
+else:
+
+    @app.get("/", tags=["Raíz"])
+    def raiz():
+        return {"mensaje": "Bienvenido a la API de Hestia", "documentacion": "/docs"}
