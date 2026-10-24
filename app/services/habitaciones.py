@@ -39,8 +39,8 @@ def editar(db: Session, habitacion_id: int, datos_in: HabitacionUpdate) -> Habit
     habitacion = obtener(db, habitacion_id)
     datos = datos_in.model_dump(exclude_unset=True)
 
-    # Estos dos campos son NOT NULL en la base de datos: un null explícito daría error 500.
-    for campo in ("tipo_habitacion_id", "estado"):
+    # Estos campos son NOT NULL en la base de datos: un null explícito daría error 500.
+    for campo in ("numero", "tipo_habitacion_id", "estado"):
         if campo in datos and datos[campo] is None:
             raise SolicitudInvalida(f"El campo '{campo}' no puede ser nulo")
 
@@ -50,6 +50,11 @@ def editar(db: Session, habitacion_id: int, datos_in: HabitacionUpdate) -> Habit
         alojado = db.query(db.query(Reserva).filter(Reserva.habitacion_id == habitacion_id, Reserva.estado == "checkin").exists()).scalar()
         if alojado and datos["estado"] != "ocupada":
             raise Conflicto("La habitación tiene un huésped alojado (check-in activo); registra primero el check-out")
+
+    # Cambiar el número es seguro: las reservas apuntan a la habitación por su id, no por el número.
+    if "numero" in datos and datos["numero"] != habitacion.numero:
+        if db.query(Habitacion).filter(Habitacion.numero == datos["numero"], Habitacion.id != habitacion_id).first():
+            raise SolicitudInvalida(f"Ya existe una habitación con el número '{datos['numero']}'")
 
     if "tipo_habitacion_id" in datos and not db.query(TipoHabitacion).filter(TipoHabitacion.id == datos["tipo_habitacion_id"]).first():
         raise SolicitudInvalida(f"El tipo de habitación con id {datos['tipo_habitacion_id']} no existe")

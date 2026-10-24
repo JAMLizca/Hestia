@@ -11,7 +11,7 @@ _TODOS = (ADMIN, GERENTE, RECEPCION, AUDITOR)
 
 # (módulo, acción) -> roles que pueden. Para cambiar un permiso se edita solo esta tabla.
 #   - El administrador tiene todo MENOS operar Reservas, Habitaciones, Huéspedes y Servicios (incluye sus consumos): ahí solo ve.
-#   - Recepción opera el día a día (reservas, huéspedes, habitaciones, servicios, consumos, pagos).
+#   - Recepción opera el día a día (reservas, huéspedes, habitaciones y sus tipos, servicios, consumos, pagos).
 #   - Gerente supervisa: cambia estados de reservas, corrige pagos, gestiona tipos de habitación, ve reportes.
 #   - Auditor solo consulta.
 PERMISOS: dict[tuple[str, str], tuple[str, ...]] = {
@@ -34,8 +34,8 @@ PERMISOS: dict[tuple[str, str], tuple[str, ...]] = {
     ("habitaciones", "editar"): (RECEPCION,),
     ("habitaciones", "eliminar"): (RECEPCION,),
     ("tipos-habitacion", "ver"): _TODOS,
-    ("tipos-habitacion", "crear"): (ADMIN, GERENTE),
-    ("tipos-habitacion", "editar"): (ADMIN, GERENTE),
+    ("tipos-habitacion", "crear"): (ADMIN, GERENTE, RECEPCION),
+    ("tipos-habitacion", "editar"): (ADMIN, GERENTE, RECEPCION),
     ("tipos-habitacion", "eliminar"): (ADMIN, GERENTE),
     ("disponibilidad", "ver"): _TODOS,
     ("huespedes", "ver"): _TODOS,

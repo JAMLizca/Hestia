@@ -11,7 +11,7 @@ const ESTADO_OPTIONS = Object.entries(HABITACION_ESTADOS).map(([value, s]) => ({
 
 /**
  * Crear (POST /habitaciones/, solo recepción) o editar (PUT /habitaciones/{id}).
- * El backend no permite cambiar el número al editar (HabitacionUpdate no lo incluye).
+ * Al editar se puede cambiar el número (o nombre corto), el tipo, el piso, el estado y las características.
  */
 export default function HabitacionFormModal({ habitacion, tipos, onClose, onSaved }) {
   const { can } = usePermisos();
@@ -35,7 +35,7 @@ export default function HabitacionFormModal({ habitacion, tipos, onClose, onSave
       const payload = cleanPayload(values, { numbers: ["tipo_habitacion_id", "piso"] });
       let saved;
       if (editing) {
-        delete payload.numero;
+        if (payload.numero === habitacion.numero) delete payload.numero; // solo se envía si cambió
         saved = await habitacionesApi.update(habitacion.id, payload);
       } else {
         saved = await habitacionesApi.create(payload);
@@ -70,13 +70,13 @@ export default function HabitacionFormModal({ habitacion, tipos, onClose, onSave
       )}
       <form id="habitacion-form" onSubmit={handleSubmit}>
         <div className="form-grid">
-          <Field label="Número" required hint={editing ? "El número no se puede modificar." : undefined}>
-            <Input value={values.numero} onChange={set("numero")} required disabled={editing} autoFocus={!editing} />
+          <Field label="Número o nombre" required hint="Hasta 10 caracteres, único (ej.: 101, Suite 2).">
+            <Input value={values.numero} onChange={set("numero")} required maxLength={10} autoFocus={!editing} />
           </Field>
           <Field label="Piso">
             <Input type="number" value={values.piso} onChange={set("piso")} />
           </Field>
-          <Field label="Tipo de habitación" required>
+          <Field label="Tipo de habitación" required hint={editing ? "Cambiar el tipo no modifica el precio de las reservas ya creadas." : undefined}>
             <Select
               required
               placeholder="Selecciona un tipo"
