@@ -1,34 +1,13 @@
-import { CalendarDays, CheckCircle2, Clock, Loader2, Plus, ShieldCheck, Trash2, Users } from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock, Home, Loader2, Plus, ShieldCheck, Trash2, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { precheckinApi } from "../api/services";
 import Logo from "../components/ui/Logo";
+import { Campo } from "../features/reservasWeb/Comunes";
+import { MOTIVOS, PERSONA_VACIA, Persona } from "../features/reservasWeb/Registro";
 import { formatShortDate } from "../utils/format";
 import "../components/ui/ui.css";
 import "./PreCheckinPage.css";
-
-const TIPOS_DOCUMENTO = [
-  { value: "CC", label: "Cédula de ciudadanía" },
-  { value: "CE", label: "Cédula de extranjería" },
-  { value: "TI", label: "Tarjeta de identidad" },
-  { value: "PA", label: "Pasaporte" },
-  { value: "PEP", label: "Permiso especial de permanencia" },
-  { value: "OTRO", label: "Otro documento" },
-];
-
-const MOTIVOS = [
-  { value: "turismo", label: "Turismo" },
-  { value: "negocios", label: "Negocios" },
-  { value: "familia", label: "Visita a familiares" },
-  { value: "salud", label: "Salud" },
-  { value: "estudio", label: "Estudio" },
-  { value: "otro", label: "Otro" },
-];
-
-const PERSONA_VACIA = { tipo_documento: "CC", documento_identidad: "", nombres: "", apellidos: "", nacionalidad: "", fecha_nacimiento: "" };
-
-const hoy = () => new Date().toISOString().slice(0, 10);
-
 
 function valoresIniciales(info) {
   const previo = info.datos;
@@ -66,49 +45,12 @@ function valoresIniciales(info) {
   };
 }
 
-function Campo({ label, required, hint, full, children }) {
+/** Botón para salir del registro y volver a la página principal del hotel. */
+function VolverAlInicio() {
   return (
-    <label className={`pc-field${full ? " pc-field--full" : ""}`}>
-      <span className="pc-field__label">
-        {label}
-        {required ? " *" : <small> (opcional)</small>}
-      </span>
-      {children}
-      {hint && <span className="pc-field__hint">{hint}</span>}
-    </label>
-  );
-}
-
-/** Campos de una persona (titular o acompañante). */
-function Persona({ valores, onChange, prefijo }) {
-  const set = (campo) => (e) => onChange({ ...valores, [campo]: e.target.value });
-  return (
-    <div className="pc-grid">
-      <Campo label="Tipo de documento" required>
-        <select className="input" value={valores.tipo_documento} onChange={set("tipo_documento")} required name={`${prefijo}-tipo`}>
-          {TIPOS_DOCUMENTO.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
-      </Campo>
-      <Campo label="Número de documento" required>
-        <input className="input" value={valores.documento_identidad} onChange={set("documento_identidad")} required minLength={3} maxLength={30} autoComplete="off" name={`${prefijo}-documento`} />
-      </Campo>
-      <Campo label="Nombres" required>
-        <input className="input" value={valores.nombres} onChange={set("nombres")} required maxLength={100} autoComplete="given-name" name={`${prefijo}-nombres`} />
-      </Campo>
-      <Campo label="Apellidos" required>
-        <input className="input" value={valores.apellidos} onChange={set("apellidos")} required maxLength={100} autoComplete="family-name" name={`${prefijo}-apellidos`} />
-      </Campo>
-      <Campo label="Nacionalidad" required>
-        <input className="input" value={valores.nacionalidad} onChange={set("nacionalidad")} required minLength={2} maxLength={60} placeholder="Ej. Colombiana" name={`${prefijo}-nacionalidad`} />
-      </Campo>
-      <Campo label="Fecha de nacimiento" required>
-        <input className="input" type="date" value={valores.fecha_nacimiento} onChange={set("fecha_nacimiento")} required max={hoy()} name={`${prefijo}-nacimiento`} />
-      </Campo>
-    </div>
+    <Link to="/" className="pc__submit pc__home">
+      <Home size={16} /> Volver al inicio
+    </Link>
   );
 }
 
@@ -116,10 +58,12 @@ function Pantalla({ children }) {
   return (
     <main className="pc">
       <header className="pc__brand">
-        <Logo size={32} />
-        <span>
-          hestia<span className="pc__dot">.</span>
-        </span>
+        <Link to="/" className="rv__brand" aria-label="Ir a la página principal">
+          <Logo size={32} />
+          <span>
+            hestia<span className="pc__dot">.</span>
+          </span>
+        </Link>
       </header>
       {children}
       <footer className="pc__footer">Registro previo a la llegada · Tus datos se usan solo para el registro de alojamiento del hotel.</footer>
@@ -161,6 +105,7 @@ export default function PreCheckinPage() {
         <section className="pc__card pc__state">
           <h1>No pudimos abrir este enlace</h1>
           <p>{loadError}</p>
+          <VolverAlInicio />
         </section>
       </Pantalla>
     );
@@ -184,6 +129,7 @@ export default function PreCheckinPage() {
           <p>
             {info.hotel_nombre} validó tus datos para la reserva <strong>{info.codigo}</strong>. Te esperamos el {formatShortDate(info.fecha_checkin)}.
           </p>
+          <VolverAlInicio />
         </section>
       </Pantalla>
     );
@@ -197,6 +143,7 @@ export default function PreCheckinPage() {
           <p>
             Recibimos tus datos para la reserva <strong>{info.codigo}</strong>. El hotel los revisará y te estará esperando el {formatShortDate(info.fecha_checkin)} desde las {info.hora_checkin}.
           </p>
+          <VolverAlInicio />
           <button type="button" className="pc__link" onClick={() => setSent(false)}>
             Corregir algún dato
           </button>

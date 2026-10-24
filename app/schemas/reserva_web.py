@@ -5,9 +5,9 @@ from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, ValidationError, field_validator, model_validator
 
-from app.schemas.precheckin import TipoDocumento
+from app.schemas.precheckin import Acompanante, MotivoViaje, PreCheckinEnvio, Titular
 from app.schemas.reserva import PreferenciasReserva
 
 MAX_NOCHES = 30
@@ -73,19 +73,9 @@ class _Contacto(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
 
-class HuespedWeb(_Contacto):
-    tipo_documento: TipoDocumento
-    documento_identidad: str = Field(min_length=3, max_length=30)
-    nombres: str = Field(min_length=1, max_length=100)
-    apellidos: str = Field(min_length=1, max_length=100)
-    email: EmailStr
-    telefono: str = Field(min_length=7, max_length=30)
-    nacionalidad: str | None = Field(default=None, max_length=60)
-
-    @field_validator("nacionalidad", mode="before")
-    @classmethod
-    def _vacio_a_none(cls, v):
-        return (v.strip() or None) if isinstance(v, str) else v
+# El titular de la reserva en línea es el mismo de un pre-check-in (documento, nombre, nacionalidad, nacimiento,
+# teléfono, correo y procedencia): reservar y registrarse son un solo paso.
+HuespedWeb = Titular
 
 
 class ReservaWebCreate(_Contacto):
@@ -94,6 +84,10 @@ class ReservaWebCreate(_Contacto):
     fecha_checkout: date
     num_huespedes: int = Field(ge=1, le=MAX_HUESPEDES)
     huesped: HuespedWeb
+    # Registro de alojamiento (lo que antes era el pre-check-in aparte): acompañantes y datos de la llegada.
+    acompanantes: list[Acompanante] = Field(default_factory=list, max_length=MAX_HUESPEDES - 1)
+    hora_llegada: time | None = None
+    motivo_viaje: MotivoViaje | None = None
     notas: str | None = Field(default=None, max_length=500)
     preferencias: PreferenciasReserva | None = None
     # Campo trampa: está oculto en el formulario; solo lo llenan los bots.
@@ -103,6 +97,30 @@ class ReservaWebCreate(_Contacto):
     @classmethod
     def _notas(cls, v):
         return (v.strip() or None) if isinstance(v, str) else v
+
+    def registro(self) -> PreCheckinEnvio:
+        """Los datos del registro de alojamiento, en el formato del pre-check-in (valida que no se repitan documentos)."""
+        return PreCheckinEnvio(
+            titular=self.huesped.model_dump(),
+            acompanantes=[a.model_dump() for a in self.acompanantes],
+            hora_llegada=self.hora_llegada,
+            motivo_viaje=self.motivo_viaje,
+            notas=self.notas,
+        )
+
+    @model_validator(mode="after")
+    def _registro_coherente(self):
+        maximo = self.num_huespedes - 1
+        if len(self.acompanantes) > maximo:
+            raise ValueError(
+                f"La reserva es para {self.num_huespedes} {'persona' if self.num_huespedes == 1 else 'personas'}: "
+                f"puedes registrar hasta {maximo} {'acompañante' if maximo == 1 else 'acompañantes'}."
+            )
+        try:
+            self.registro()
+        except ValidationError as exc:
+            raise ValueError(exc.errors()[0]["msg"].removeprefix("Value error, ")) from None
+        return self
 
 
 class ConsultaWeb(_Contacto):
@@ -126,6 +144,8 @@ class ReservaWebOut(BaseModel):
     puede_cancelar: bool
     motivo_cancelacion: str | None = None
     precheckin_enlace: str | None = None
+    # Estado del registro de alojamiento: enviado (falta que el huésped lo complete) | completado | validado.
+    registro: str | None = None
     # Pago en línea del anticipo (solo si el hotel lo tiene activo).
     puede_pagar: bool = False
     anticipo_monto: Decimal | None = None

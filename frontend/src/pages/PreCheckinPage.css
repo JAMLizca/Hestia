@@ -293,3 +293,14 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Botón «Volver al inicio» (es un enlace con aspecto de botón) */
+.pc__home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+  text-decoration: none;
+}
+.pc__home svg { color: currentColor; }

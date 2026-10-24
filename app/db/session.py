@@ -9,6 +9,21 @@ from app.core.config import settings
 
 
 
+def _normalizar_pem(texto: str) -> str:
+    """Repara un certificado pegado en una sola línea, con espacios o con «\\n» literales en vez de saltos de línea."""
+    import re
+    import textwrap
+
+    bloques = re.findall(r"-----BEGIN CERTIFICATE-----(.*?)-----END CERTIFICATE-----", texto, re.S)
+    if not bloques:
+        return texto
+    salida = []
+    for cuerpo in bloques:
+        cuerpo = re.sub(r"\\n|\s+", "", cuerpo)
+        salida.append("-----BEGIN CERTIFICATE-----\n" + "\n".join(textwrap.wrap(cuerpo, 64)) + "\n-----END CERTIFICATE-----\n")
+    return "".join(salida)
+
+
 def _argumentos_conexion() -> dict:
     """Conexión cifrada (TLS) cuando DB_SSL=true. Con certificado de la CA se verifica el servidor."""
     if not settings.DB_SSL:
@@ -18,7 +33,7 @@ def _argumentos_conexion() -> dict:
         import tempfile
 
         archivo = tempfile.NamedTemporaryFile("w", suffix=".pem", delete=False)
-        archivo.write(settings.DB_SSL_CA_PEM.replace("\\n", "\n"))
+        archivo.write(_normalizar_pem(settings.DB_SSL_CA_PEM))
         archivo.close()
         ca = archivo.name
     if ca:

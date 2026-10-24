@@ -170,7 +170,25 @@ export function Resumen({ r, hotel, onCancelar, cancelando, errorCancelar, onPag
       )}
       {r.estado === "confirmada" && <p className="pc__notice">Tu reserva está confirmada. Check-in desde las {r.hora_checkin}.</p>}
       {r.motivo_cancelacion && <p className="pc__help">Motivo: {r.motivo_cancelacion}</p>}
-      {r.precheckin_enlace && (
+      {r.registro === "completado" && (
+        <p className="pc__help rv__registro">
+          <CheckCircle2 size={14} /> Tu registro de alojamiento ya está enviado: el hotel lo revisará antes de tu llegada.
+          {r.precheckin_enlace && (
+            <>
+              {" "}
+              <a className="pc__link" href={r.precheckin_enlace}>
+                Revisar o corregir
+              </a>
+            </>
+          )}
+        </p>
+      )}
+      {r.registro === "validado" && (
+        <p className="pc__help rv__registro">
+          <CheckCircle2 size={14} /> El hotel ya validó tu registro. Solo falta tu documento en recepción.
+        </p>
+      )}
+      {r.registro === "enviado" && r.precheckin_enlace && (
         <a className={`pc__submit rv__cta${r.puede_pagar ? " rv__cta--sec" : ""}`} href={r.precheckin_enlace}>
           Completar mi registro ahora
         </a>

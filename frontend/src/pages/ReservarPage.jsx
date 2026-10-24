@@ -1,23 +1,16 @@
-import { CheckCircle2, Loader2, LogIn, Search, UserPlus } from "lucide-react";
+import { CheckCircle2, Loader2, LogIn, Plus, Search, Trash2, UserPlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { cuentaApi, reservasWebApi } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { Campo, Contacto, Pantalla, Resumen } from "../features/reservasWeb/Comunes";
+import { MOTIVOS, PERSONA_VACIA, Persona } from "../features/reservasWeb/Registro";
 import { configureFormat, formatMoney, formatShortDate, nights as contarNoches, todayISO } from "../utils/format";
 import { PREFERENCIAS_BANDERAS, PREFERENCIAS_OPCIONES } from "../utils/status";
 import "../components/ui/ui.css";
 import "./PreCheckinPage.css";
 import "./ReservarPage.css";
 
-const TIPOS_DOCUMENTO = [
-  { value: "CC", label: "Cédula de ciudadanía" },
-  { value: "CE", label: "Cédula de extranjería" },
-  { value: "TI", label: "Tarjeta de identidad" },
-  { value: "PA", label: "Pasaporte" },
-  { value: "PEP", label: "Permiso especial de permanencia" },
-  { value: "OTRO", label: "Otro documento" },
-];
 
 
 // Se recuerda en la pestaña para poder confirmar el pago cuando Wompi devuelve al huésped a esta página.
@@ -122,7 +115,10 @@ function Reservar({ hotel }) {
   const [tipos, setTipos] = useState(null);
   const [elegido, setElegido] = useState(null);
   const { user, status, esCliente, esPersonal, logout } = useAuth();
-  const [huesped, setHuesped] = useState({ tipo_documento: "CC", documento_identidad: "", nombres: "", apellidos: "", email: "", telefono: "" });
+  const [huesped, setHuesped] = useState({ ...PERSONA_VACIA, email: "", telefono: "", procedencia: "" });
+  // Registro de alojamiento (antes era un paso aparte, el pre-check-in): acompañantes y datos de la llegada.
+  const [acompanantes, setAcompanantes] = useState([]);
+  const [llegada, setLlegada] = useState({ hora_llegada: "", motivo_viaje: "" });
   // Con la cuenta iniciada, los datos de contacto se rellenan solos (se pueden cambiar: el titular puede ser otra persona).
   useEffect(() => {
     if (!esCliente) return;
@@ -144,6 +140,7 @@ function Reservar({ hotel }) {
   };
 
   const noches = contarNoches(fechas.checkin, fechas.checkout);
+  const maxAcompanantes = Math.max(0, Number(fechas.huespedes) - 1);
   const [pagando, setPagando] = useState(false);
   const [errorPago, setErrorPago] = useState("");
 
@@ -193,7 +190,10 @@ function Reservar({ hotel }) {
         fecha_checkin: fechas.checkin,
         fecha_checkout: fechas.checkout,
         num_huespedes: Number(fechas.huespedes),
-        huesped,
+        huesped: { ...huesped, procedencia: huesped.procedencia.trim() || null },
+        acompanantes: acompanantes.slice(0, Math.max(0, Number(fechas.huespedes) - 1)),
+        hora_llegada: llegada.hora_llegada || null,
+        motivo_viaje: llegada.motivo_viaje || null,
         notas: notas.trim() || null,
         preferencias: preferenciasEnvio(prefs),
         sitio_web: trampa || null,
@@ -213,9 +213,13 @@ function Reservar({ hotel }) {
       <>
         <section className="pc__card pc__state pc__state--ok">
           <CheckCircle2 size={40} strokeWidth={1.5} />
-          <h1>¡Recibimos tu solicitud!</h1>
+          <h1>¡Recibimos tu reserva y tu registro!</h1>
           <p>
-            Guarda tu código. También la encuentras siempre en <Link to="/mis-reservas" className="pc__link">Mis reservas</Link>.
+            Ya no tienes que completar nada más antes de llegar. Guarda tu código: también la encuentras siempre en{" "}
+            <Link to="/mis-reservas" className="pc__link">
+              Mis reservas
+            </Link>
+            .
           </p>
         </section>
         <Resumen r={reserva} hotel={hotel} onPagar={pagar} pagando={pagando} errorPago={errorPago} />
@@ -300,37 +304,67 @@ function Reservar({ hotel }) {
       {tipos && elegido && esCliente && (
         <form className="pc__form" onSubmit={enviar}>
           <section className="pc__card">
-            <h2>3. Tus datos</h2>
+            <h2>3. Tus datos y tu registro</h2>
             <p className="pc__help">
-              Titular de la reserva.{" "}
+              Titular de la reserva. Con estos datos queda hecho tu registro de alojamiento: en recepción solo confirmaremos tu documento.{" "}
               {hotel.pagos_activos
                 ? `Al terminar podrás pagar un anticipo del ${hotel.anticipo_porcentaje}% para asegurar tu habitación; el resto se paga en el hotel.`
                 : "El hotel la confirmará contigo; no se cobra nada en línea."}
             </p>
-            <div className="pc-grid">
-              <Campo label="Tipo de documento" required>
-                <select className="input" value={huesped.tipo_documento} onChange={setH("tipo_documento")} name="tipo-documento">
-                  {TIPOS_DOCUMENTO.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </Campo>
-              <Campo label="Número de documento" required>
-                <input className="input" value={huesped.documento_identidad} onChange={setH("documento_identidad")} required minLength={3} maxLength={30} autoComplete="off" name="documento" />
-              </Campo>
-              <Campo label="Nombres" required>
-                <input className="input" value={huesped.nombres} onChange={setH("nombres")} required maxLength={100} autoComplete="given-name" name="nombres" />
-              </Campo>
-              <Campo label="Apellidos" required>
-                <input className="input" value={huesped.apellidos} onChange={setH("apellidos")} required maxLength={100} autoComplete="family-name" name="apellidos" />
-              </Campo>
+            <Persona valores={huesped} onChange={(p) => setHuesped((h) => ({ ...h, ...p }))} prefijo="titular" />
+            <div className="pc-grid pc-grid--spaced">
               <Campo label="Correo electrónico" required>
                 <input className="input" type="email" value={huesped.email} onChange={setH("email")} required maxLength={150} autoComplete="email" name="email" />
               </Campo>
               <Campo label="Teléfono móvil" required>
                 <input className="input" type="tel" value={huesped.telefono} onChange={setH("telefono")} required minLength={7} maxLength={30} autoComplete="tel" name="telefono" />
+              </Campo>
+              <Campo label="Ciudad y país de procedencia" full>
+                <input className="input" value={huesped.procedencia} onChange={setH("procedencia")} maxLength={100} placeholder="Ej. Medellín, Colombia" name="procedencia" />
+              </Campo>
+            </div>
+          </section>
+
+          {maxAcompanantes > 0 && (
+            <section className="pc__card">
+              <h2>Acompañantes</h2>
+              <p className="pc__help">
+                Tu reserva es para {fechas.huespedes} personas. Registra a las demás (hasta {maxAcompanantes}); si alguien aún no está definido, puedes dejarlo para recepción.
+              </p>
+              {acompanantes.slice(0, maxAcompanantes).map((persona, i) => (
+                <div className="pc__companion" key={i}>
+                  <div className="pc__companion-head">
+                    <strong>Acompañante {i + 1}</strong>
+                    <button type="button" className="pc__link pc__link--danger" onClick={() => setAcompanantes((l) => l.filter((_, k) => k !== i))}>
+                      <Trash2 size={13} /> Quitar
+                    </button>
+                  </div>
+                  <Persona valores={persona} onChange={(p) => setAcompanantes((l) => l.map((x, k) => (k === i ? p : x)))} prefijo={`acomp${i}`} />
+                </div>
+              ))}
+              {acompanantes.length < maxAcompanantes && (
+                <button type="button" className="pc__add" onClick={() => setAcompanantes((l) => [...l, { ...PERSONA_VACIA, tipo_documento: huesped.tipo_documento }])}>
+                  <Plus size={15} /> Agregar acompañante
+                </button>
+              )}
+            </section>
+          )}
+
+          <section className="pc__card">
+            <h2>Tu llegada</h2>
+            <div className="pc-grid">
+              <Campo label="Hora estimada de llegada" hint={`El check-in es desde las ${hotel.hora_checkin}.`}>
+                <input className="input" type="time" value={llegada.hora_llegada} onChange={(e) => setLlegada((l) => ({ ...l, hora_llegada: e.target.value }))} name="hora-llegada" />
+              </Campo>
+              <Campo label="Motivo del viaje">
+                <select className="input" value={llegada.motivo_viaje} onChange={(e) => setLlegada((l) => ({ ...l, motivo_viaje: e.target.value }))} name="motivo">
+                  <option value="">Prefiero no decir</option>
+                  {MOTIVOS.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
               </Campo>
               {[
                 ["piso", "Piso"],
@@ -360,7 +394,7 @@ function Reservar({ hotel }) {
                 </small>
               </div>
               <Campo label="Algo que debamos saber" full hint={`${notas.length}/500`}>
-                <textarea className="input" rows={3} maxLength={500} value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Hora de llegada, cama extra, alergias…" name="notas" />
+                <textarea className="input" rows={3} maxLength={500} value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Cama extra, alergias, celebración…" name="notas" />
               </Campo>
             </div>
             {/* Campo trampa: las personas no lo ven; los bots suelen llenarlo. */}
@@ -381,7 +415,7 @@ function Reservar({ hotel }) {
             </div>
             <label className="pc__consent">
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required name="consentimiento" />
-              <span>Autorizo a {hotel?.nombre ?? "el hotel"} a tratar mis datos personales para gestionar esta reserva y contactarme sobre ella.</span>
+              <span>Autorizo a {hotel?.nombre ?? "el hotel"} a tratar mis datos personales y los de mis acompañantes para el registro de alojamiento y la gestión de esta reserva.</span>
             </label>
             {error && (
               <p className="pc__error" role="alert">
@@ -647,7 +681,7 @@ export default function ReservarPage() {
         <p className="pc__eyebrow">{[hotel.nombre, hotel.ciudad].filter(Boolean).join(" · ")}</p>
         <h1>Reserva tu estadía</h1>
         <p className="pc__lead">
-          Check-in desde las {hotel.hora_checkin} · Check-out hasta las {hotel.hora_checkout}
+          Reserva y registro en un solo paso: así tu llegada es más rápida. Check-in desde las {hotel.hora_checkin} · Check-out hasta las {hotel.hora_checkout}
           {hotel.direccion ? ` · ${hotel.direccion}` : ""}
         </p>
         <div className="rv__tabs" role="tablist">
