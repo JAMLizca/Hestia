@@ -107,8 +107,8 @@ export default function RolesPage() {
           </div>
 
           <InfoBanner>
-            La matriz muestra lo que el sistema aplica hoy y no se edita desde aquí: los permisos están definidos en el código de la API.
-            Un rol nuevo solo accede a lo que está abierto a cualquier usuario autenticado.
+            La matriz muestra lo que el sistema aplica hoy y no se edita desde aquí: los permisos están definidos en una sola tabla del código de la API (app/core/permisos.py).
+            Un rol nuevo no puede hacer nada hasta que se le asignen permisos en el código (app/core/permisos.py).
           </InfoBanner>
 
           <Card padded={false} title={undefined}>

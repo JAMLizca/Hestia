@@ -7,12 +7,12 @@ El alta de usuarios sigue siendo `POST /auth/register`.
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db, require_roles
+from app.api.deps import get_current_user, get_db
 from app.models.usuario import Usuario
 from app.schemas.usuario import UsuarioDetalleOut, UsuarioPasswordUpdate, UsuarioUpdate
 from app.services import usuarios as servicio
 
-router = APIRouter(prefix="/usuarios", tags=["Usuarios"], dependencies=[Depends(require_roles(servicio.ROL_ADMIN))])
+router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
 
 @router.get("/", response_model=list[UsuarioDetalleOut], summary="Lista los usuarios (solo administrador)")

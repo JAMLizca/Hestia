@@ -8,9 +8,10 @@ from app.models.role import Role
 from app.models.usuario import Usuario
 
 ROLES_BASE = {
-    "administrador": "Acceso total: usuarios, roles, configuración y toda la operación del hotel.",
-    "gerente": "Gestiona habitaciones, tipos, servicios y huéspedes; supervisa la operación.",
-    "recepcionista": "Atiende reservas, check-in/out, huéspedes, consumos y pagos; solo cambia el estado de las habitaciones.",
+    "administrador": "Administra usuarios, roles, configuración, tipos de habitación y pagos; en reservas, habitaciones, huéspedes y servicios solo consulta.",
+    "gerente": "Supervisa: cambia estados de reservas, corrige pagos, gestiona tipos de habitación, ve reportes.",
+    "recepcionista": "Opera el día a día: crea y edita reservas, huéspedes, habitaciones y servicios; registra consumos y pagos.",
+    "auditor": "Solo consulta: ve toda la operación y los reportes, sin crear ni modificar nada.",
 }
 
 

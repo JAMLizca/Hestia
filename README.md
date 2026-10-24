@@ -238,6 +238,29 @@ disponibilidad sigue siendo público; **reservar exige haber iniciado sesión**.
 - **Migración:** `python migraciones/fase6_cuentas.py` (crea `cuentas_huesped` y `reservas.cuenta_id`). Haz copia de la
   base antes. Es repetible.
 
+## Roles y permisos
+
+Cuatro roles del personal. Todos los permisos están en **una sola tabla** (`PERMISOS` en `app/core/permisos.py`):
+la API la aplica a cada petición (sin sesión → 401, sin permiso → 403) y la pantalla *Roles* muestra esa misma
+tabla. Lo que no está en la tabla se niega, así que un rol nuevo o una ruta nueva no pueden hacer nada hasta
+que se agreguen. Para cambiar un permiso se edita únicamente esa tabla.
+
+| Módulo | Administrador | Gerente | Recepcionista | Auditor |
+|---|---|---|---|---|
+| Reservas | solo ver | ver, cambiar estado, eliminar | ver, crear, editar, cambiar estado | solo ver |
+| Habitaciones | solo ver | solo ver | ver, crear, editar, eliminar | solo ver |
+| Huéspedes | solo ver | ver, editar, eliminar | ver, crear, editar | solo ver |
+| Servicios (catálogo y consumos) | solo ver | solo ver | todo | solo ver |
+| Pagos | ver, registrar, corregir, anular | ver, corregir, anular | ver, registrar | solo ver |
+| Tipos de habitación | todo | todo | solo ver | solo ver |
+| Facturación, disponibilidad | ver | ver | ver | ver |
+| Usuarios | todo | — | — | — |
+| Roles | todo (los demás consultan la matriz) | ver | ver | ver |
+| Reportes y datos | ver | ver | — | ver |
+| Configuración | ver y editar | ver | ver | ver |
+
+El rol `auditor` se crea con `python seed_roles.py` (idempotente; el despliegue con Docker lo hace solo al arrancar).
+
 ## Estructura del proyecto
 
 ```

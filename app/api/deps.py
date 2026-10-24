@@ -1,7 +1,7 @@
 """Dependencias reutilizables para los endpoints de la API.
 """
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.core.security import decode_access_token
@@ -12,12 +12,15 @@ from app.models.usuario import Usuario
 
 # tokenUrl le indica a Swagger dónde está el endpoint de login para el botón "Authorize".
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+# Igual, pero sin exigir el token: la verificación de permisos corre en TODAS las rutas y las públicas no llevan sesión.
+oauth2_opcional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 TIPO_PERSONAL = "personal"
 TIPO_CLIENTE = "cliente"
 
 
 def get_current_user(
+    request: Request,
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ) -> Usuario:
@@ -25,6 +28,10 @@ def get_current_user(
     Decodifica el JWT recibido en el header `Authorization: Bearer <token>`
     y carga el usuario correspondiente desde la DB.
     """
+    # verificar_permiso (dependencia global) ya lo cargó en esta misma petición: no se consulta dos veces.
+    ya_cargado = getattr(request.state, "usuario", None)
+    if ya_cargado is not None:
+        return ya_cargado
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -49,6 +56,31 @@ def get_current_user(
     if usuario is None or not usuario.activo:
         raise credentials_exception
     return usuario
+
+
+def verificar_permiso(
+    request: Request,
+    token: str | None = Depends(oauth2_opcional),
+    db: Session = Depends(get_db),
+) -> None:
+    """
+    Dependencia global: aplica la tabla de permisos (app/core/permisos.py) a cada ruta del personal.
+    Sin sesión válida → 401; con sesión pero sin permiso para (módulo, acción) → 403.
+    Las rutas públicas, el login y las del huésped no están en la matriz y pasan sin tocarse.
+    """
+    from app.core.config import settings
+    from app.core.permisos import clasificar_peticion, roles_permitidos
+
+    ruta = getattr(request.scope.get("route"), "path", "")
+    if not ruta.startswith(settings.API_V1_PREFIX):
+        return
+    clave = clasificar_peticion(ruta[len(settings.API_V1_PREFIX):], request.method)
+    if clave is None:
+        return
+    usuario = get_current_user(request=request, token=token or "", db=db)
+    request.state.usuario = usuario
+    if usuario.rol.nombre not in roles_permitidos(*clave):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permisos para realizar esta acción")
 
 
 def get_cuenta_actual(
