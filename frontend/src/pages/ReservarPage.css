@@ -343,3 +343,11 @@
   flex-direction: column;
   gap: 16px;
 }
+
+.rv__registro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}

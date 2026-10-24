@@ -227,6 +227,10 @@ disponibilidad sigue siendo público; **reservar exige haber iniciado sesión**.
 - **Cuentas aparte del personal** (tabla `cuentas_huesped`). El token del huésped lleva `tipo: "cliente"` y el backend
   lo rechaza en todas las rutas del panel; el del personal no sirve en las rutas de huésped. Un mismo correo no puede
   ser de las dos cosas.
+- **Reserva y registro en un solo paso.** El formulario de `/reservar` pide también lo que antes se pedía en el
+  pre-check-in (nacionalidad, fecha de nacimiento, procedencia, acompañantes, hora de llegada y motivo del viaje). La
+  reserva nace con su registro en estado `completado`; recepción lo valida desde el detalle de la reserva, como siempre.
+  El enlace `/pre-checkin/<token>` sigue existiendo para las reservas tomadas por teléfono u otro canal.
 - **Mis reservas** (`/mis-reservas`): lista las reservas hechas con la cuenta; desde ahí se paga el anticipo y se
   cancela. Las reservas que ya existían (teléfono, anteriores) siguen consultándose con código + documento.
 - **Límites:** 10 contraseñas incorrectas por IP en 5 minutos (después, `429`); 10 cuentas nuevas por IP por hora;

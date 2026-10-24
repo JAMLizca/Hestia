@@ -11,7 +11,7 @@ Todo está detrás del interruptor `reservas_web_activas` de Configuración (apa
 La limitación por IP (anti-abuso) es una preocupación HTTP y vive en las rutas.
 """
 import secrets
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
 from sqlalchemy import func
@@ -180,6 +180,7 @@ def salida(reserva: Reserva, config: dict, con_enlace: bool = True) -> ReservaWe
         puede_cancelar=puede_cancelar,
         motivo_cancelacion=reserva.motivo_cancelacion,
         precheckin_enlace=enlace,
+        registro=pc.estado if pc else None,
         hotel_telefono=config["telefono"],
         hotel_email=config["email"],
     )
@@ -253,7 +254,7 @@ def crear(db: Session, datos: ReservaWebCreate, cuenta: CuentaHuesped) -> Reserv
     if nuevo_huesped:
         huesped = Huesped(
             documento_identidad=h.documento_identidad, tipo_documento=h.tipo_documento, nombres=h.nombres, apellidos=h.apellidos,
-            email=h.email, telefono=h.telefono, nacionalidad=h.nacionalidad,
+            email=h.email, telefono=h.telefono, nacionalidad=h.nacionalidad, fecha_nacimiento=h.fecha_nacimiento,
         )
         db.add(huesped)
         db.flush()
@@ -299,10 +300,13 @@ def crear(db: Session, datos: ReservaWebCreate, cuenta: CuentaHuesped) -> Reserv
     )
     db.add(reserva)
     db.flush()
-    # Con un huésped nuevo se entrega de una vez el enlace para completar el registro. Si el documento ya
-    # existía no se hace: el formulario precargaría nombres de alguien que solo se conoce por su documento.
-    if nuevo_huesped:
-        db.add(PreCheckin(reserva_id=reserva.id, estado="enviado", token=secrets.token_urlsafe(24)))
+    # Reservar y registrarse son un solo paso: el registro de alojamiento viaja con la reserva y queda "completado".
+    # Recepción lo valida después (con ese paso se aplican los datos al huésped; mientras tanto no se modifica un
+    # huésped que ya existía).
+    db.add(PreCheckin(
+        reserva_id=reserva.id, estado="completado", token=secrets.token_urlsafe(24),
+        datos=datos.registro().model_dump(mode="json"), fecha_completado=datetime.now(timezone.utc),
+    ))
     confirmar_cambios(db)
     db.refresh(reserva)
     return salida(reserva, config)
