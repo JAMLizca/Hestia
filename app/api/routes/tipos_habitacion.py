@@ -22,16 +22,16 @@ def obtener_tipo(tipo_id: int, db: Session = Depends(get_db)):
     return servicio.obtener(db, tipo_id)
 
 
-@router.post("/", response_model=TipoHabitacionOut, status_code=status.HTTP_201_CREATED, summary="Crea un nuevo tipo de habitación (admin/gerente)")
+@router.post("/", response_model=TipoHabitacionOut, status_code=status.HTTP_201_CREATED, summary="Crea un nuevo tipo de habitación")
 def crear_tipo(tipo_in: TipoHabitacionCreate, db: Session = Depends(get_db)):
     return servicio.crear(db, tipo_in)
 
 
-@router.put("/{tipo_id}", response_model=TipoHabitacionOut, summary="Actualiza un tipo de habitación (admin/gerente)")
+@router.put("/{tipo_id}", response_model=TipoHabitacionOut, summary="Actualiza un tipo de habitación")
 def actualizar_tipo(tipo_id: int, tipo_in: TipoHabitacionUpdate, db: Session = Depends(get_db)):
     return servicio.editar(db, tipo_id, tipo_in)
 
 
-@router.delete("/{tipo_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Elimina un tipo de habitación (admin/gerente)")
+@router.delete("/{tipo_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Elimina un tipo de habitación")
 def eliminar_tipo(tipo_id: int, db: Session = Depends(get_db)):
     servicio.eliminar(db, tipo_id)

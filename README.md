@@ -252,7 +252,7 @@ que se agreguen. Para cambiar un permiso se edita únicamente esa tabla.
 | Huéspedes | solo ver | ver, editar, eliminar | ver, crear, editar | solo ver |
 | Servicios (catálogo y consumos) | solo ver | solo ver | todo | solo ver |
 | Pagos | ver, registrar, corregir, anular | ver, corregir, anular | ver, registrar | solo ver |
-| Tipos de habitación | todo | todo | solo ver | solo ver |
+| Tipos de habitación | todo | todo | ver, crear, editar | solo ver |
 | Facturación, disponibilidad | ver | ver | ver | ver |
 | Usuarios | todo | — | — | — |
 | Roles | todo (los demás consultan la matriz) | ver | ver | ver |
@@ -315,7 +315,7 @@ Todos los endpoints (salvo `/health` y `/auth/login`) requieren el header
 | Roles | `GET/POST /roles/`, `PUT/DELETE /roles/{id}` (editar: solo la descripción), `GET /roles/permisos` | crear, editar y eliminar: administrador. `permisos` devuelve la matriz módulo × acción × rol y los usuarios por rol |
 | Configuración | `GET/PUT /configuracion/` | consultar: cualquier usuario; modificar: administrador |
 | Usuarios | `GET /usuarios/`, `GET/PUT/DELETE /usuarios/{id}`, `PUT /usuarios/{id}/password` | solo administrador; eliminar solo si nunca registró actividad (el alta es `POST /auth/register`) |
-| Tipos de habitación | `GET/POST /tipos-habitacion/`, `GET/PUT/DELETE /tipos-habitacion/{id}` | administrador, gerente |
+| Tipos de habitación | `GET/POST /tipos-habitacion/`, `GET/PUT/DELETE /tipos-habitacion/{id}` | ver: todos; crear y editar: administrador, gerente, recepcionista; eliminar: administrador, gerente |
 | Habitaciones | `GET/POST /habitaciones/`, `GET/PUT/DELETE /habitaciones/{id}` | consultar: cualquier usuario. Crear, editar y eliminar: **solo recepcionista** (administrador y gerente solo miran) |
 | Disponibilidad | `GET /disponibilidad/?fecha_checkin=&fecha_checkout=` | — |
 | Huéspedes | `GET/POST /huespedes/`, `GET/PUT/DELETE /huespedes/{id}` | cualquier usuario; eliminar: administrador, gerente |
