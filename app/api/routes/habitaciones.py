@@ -4,7 +4,7 @@ Endpoints CRUD de habitaciones. Consultar: cualquier usuario autenticado. Crear,
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db, require_roles
+from app.api.deps import get_current_user, get_db
 from app.schemas.habitacion import EstadoHabitacion, HabitacionCreate, HabitacionOut, HabitacionUpdate
 from app.services import habitaciones as servicio
 
@@ -26,7 +26,6 @@ def obtener_habitacion(habitacion_id: int, db: Session = Depends(get_db)):
     response_model=HabitacionOut,
     status_code=status.HTTP_201_CREATED,
     summary="Crea una nueva habitación (solo recepción)",
-    dependencies=[Depends(require_roles("recepcionista"))],
 )
 def crear_habitacion(habitacion_in: HabitacionCreate, db: Session = Depends(get_db)):
     return servicio.crear(db, habitacion_in)
@@ -36,7 +35,6 @@ def crear_habitacion(habitacion_in: HabitacionCreate, db: Session = Depends(get_
     "/{habitacion_id}",
     response_model=HabitacionOut,
     summary="Actualiza una habitación (solo recepción)",
-    dependencies=[Depends(require_roles("recepcionista"))],
 )
 def actualizar_habitacion(habitacion_id: int, habitacion_in: HabitacionUpdate, db: Session = Depends(get_db)):
     return servicio.editar(db, habitacion_id, habitacion_in)
@@ -46,7 +44,6 @@ def actualizar_habitacion(habitacion_id: int, habitacion_in: HabitacionUpdate, d
     "/{habitacion_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Elimina una habitación (solo recepción)",
-    dependencies=[Depends(require_roles("recepcionista"))],
 )
 def eliminar_habitacion(habitacion_id: int, db: Session = Depends(get_db)):
     servicio.eliminar(db, habitacion_id)

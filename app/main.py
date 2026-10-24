@@ -28,6 +28,9 @@ from app.api.routes import (
     tipos_habitacion,
     usuarios,
 )
+from fastapi import Depends
+
+from app.api.deps import verificar_permiso
 from app.core.config import settings
 from app.core.errores import ErrorInterno, ErrorNegocio
 
@@ -42,6 +45,7 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    dependencies=[Depends(verificar_permiso)],  # tabla de permisos por rol (app/core/permisos.py)
 )
 
 @app.exception_handler(ErrorNegocio)

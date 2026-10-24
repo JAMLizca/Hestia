@@ -4,7 +4,7 @@ Endpoints de autenticación: registro, login (JWT) y perfil del usuario atual.
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from app.api.deps import TIPO_CLIENTE, TIPO_PERSONAL, get_current_user, get_db, require_roles
+from app.api.deps import TIPO_CLIENTE, TIPO_PERSONAL, get_current_user, get_db
 from app.core.errores import ErrorNegocio
 from app.core.limites import limitar_login, registrar_fallo_login
 from app.core.security import create_access_token
@@ -21,7 +21,6 @@ router = APIRouter(prefix="/auth", tags=["Autenticación"])
     response_model=UsuarioOut,
     status_code=status.HTTP_201_CREATED,
     summary="Registra un nuevo usuario del staff (solo administrador)",
-    dependencies=[Depends(require_roles("administrador"))],
 )
 def registrar_usuario(usuario_in: UsuarioCreate, db: Session = Depends(get_db)):
     """

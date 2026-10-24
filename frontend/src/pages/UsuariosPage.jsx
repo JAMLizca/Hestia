@@ -32,7 +32,7 @@ const TABS = [
   { value: "inactivos", label: "Inactivos" },
 ];
 
-const ROL_COLORS = { administrador: COLORS.purple, gerente: COLORS.gold, recepcionista: COLORS.cyan };
+const ROL_COLORS = { administrador: COLORS.purple, gerente: COLORS.gold, recepcionista: COLORS.cyan, auditor: COLORS.green };
 
 function formatDate(value) {
   if (!value) return "—";

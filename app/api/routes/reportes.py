@@ -7,10 +7,10 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db, require_roles
+from app.api.deps import get_db
 from app.services import reportes as servicio
 
-router = APIRouter(prefix="/reportes", tags=["Reportes"], dependencies=[Depends(require_roles("administrador", "gerente"))])
+router = APIRouter(prefix="/reportes", tags=["Reportes"])
 
 
 @router.get("/dataset-reservas", summary="Exporta el dataset de reservas para analítica y Machine Learning")

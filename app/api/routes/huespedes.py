@@ -4,7 +4,7 @@ Endpoints CRUD de huéspedes. Las reglas están en app/services/huespedes.py.
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db, require_roles
+from app.api.deps import get_current_user, get_db
 from app.schemas.huesped import HuespedCreate, HuespedOut, HuespedUpdate
 from app.services import huespedes as servicio
 
@@ -35,7 +35,6 @@ def actualizar_huesped(huesped_id: int, huesped_in: HuespedUpdate, db: Session =
     "/{huesped_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Elimina un huésped (solo administrador/gerente)",
-    dependencies=[Depends(require_roles("administrador", "gerente"))],
 )
 def eliminar_huesped(huesped_id: int, db: Session = Depends(get_db)):
     servicio.eliminar(db, huesped_id)

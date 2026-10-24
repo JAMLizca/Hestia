@@ -12,7 +12,7 @@ from app.schemas.role import RoleCreate, RoleUpdate
 from app.services._comun import confirmar_cambios
 
 # Los permisos del código se asignan por el nombre de estos roles: borrarlos dejaría rutas sin quién las use.
-ROLES_BASE = ("administrador", "gerente", "recepcionista")
+ROLES_BASE = ("administrador", "gerente", "recepcionista", "auditor")
 
 
 def listar(db: Session) -> list[Role]:

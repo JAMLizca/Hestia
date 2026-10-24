@@ -8,7 +8,7 @@ la moneda); solo el administrador puede modificarla. Las reglas están en app/se
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db, require_roles
+from app.api.deps import get_current_user, get_db
 from app.schemas.configuracion import ConfiguracionOut, ConfiguracionUpdate
 from app.services import configuracion as servicio
 
@@ -24,7 +24,6 @@ def obtener_configuracion(db: Session = Depends(get_db)):
     "/",
     response_model=ConfiguracionOut,
     summary="Actualiza la configuración del hotel (solo administrador)",
-    dependencies=[Depends(require_roles("administrador"))],
 )
 def actualizar_configuracion(datos: ConfiguracionUpdate, db: Session = Depends(get_db)):
     return servicio.actualizar(db, datos)

@@ -31,7 +31,7 @@ export default function RoleFormModal({ rol, onClose, onSaved }) {
   return (
     <Modal
       title={editing ? "Editar rol" : "Nuevo rol"}
-      subtitle={editing ? rolLabel(rol.nombre) : "Un rol nuevo solo accede a lo que está abierto a cualquier usuario autenticado"}
+      subtitle={editing ? rolLabel(rol.nombre) : "Un rol nuevo no puede hacer nada hasta que se le asignen permisos en el código (app/core/permisos.py)"}
       width={520}
       onClose={onClose}
       footer={

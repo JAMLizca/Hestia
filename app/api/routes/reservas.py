@@ -7,7 +7,7 @@ atender cualquier petición (ver app/core/vencimiento.py).
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db, liberar_pendientes_vencidas, require_roles
+from app.api.deps import get_current_user, get_db, liberar_pendientes_vencidas
 from app.models.usuario import Usuario
 from app.schemas.reserva import EstadoReserva, ReservaCreate, ReservaOut, ReservaUpdate
 from app.services import reservas as servicio
@@ -83,7 +83,6 @@ def no_show_reserva(reserva_id: int, db: Session = Depends(get_db)):
     "/{reserva_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Elimina definitivamente una reserva (solo administrador)",
-    dependencies=[Depends(require_roles("administrador"))],
 )
 def eliminar_reserva(reserva_id: int, db: Session = Depends(get_db)):
     servicio.eliminar(db, reserva_id)
