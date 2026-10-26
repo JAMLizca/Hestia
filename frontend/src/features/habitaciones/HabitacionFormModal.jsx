@@ -5,7 +5,9 @@ import { cleanPayload, Field, Input, Select, Textarea } from "../../components/u
 import { Modal } from "../../components/ui/Modal";
 import { usePermisos } from "../../context/PermisosContext";
 import { formatMoney } from "../../utils/format";
+import { conFoto, FOTOS_DISPONIBLES, fotoElegida, largoMarcador, textoCaracteristicas } from "../../utils/fotosHabitacion";
 import { HABITACION_ESTADOS } from "../../utils/status";
+import FotoSelector from "./FotoSelector";
 
 const ESTADO_OPTIONS = Object.entries(HABITACION_ESTADOS).map(([value, s]) => ({ value, label: s.label }));
 
@@ -21,8 +23,9 @@ export default function HabitacionFormModal({ habitacion, tipos, onClose, onSave
     tipo_habitacion_id: habitacion ? String(habitacion.tipo_habitacion_id) : "",
     piso: habitacion?.piso ?? "",
     estado: habitacion?.estado ?? "disponible",
-    caracteristicas: habitacion?.caracteristicas ?? "",
+    caracteristicas: textoCaracteristicas(habitacion?.caracteristicas),
   });
+  const [foto, setFoto] = useState(fotoElegida(habitacion?.caracteristicas));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const set = (key) => (e) => setValues((v) => ({ ...v, [key]: e.target.value }));
@@ -32,7 +35,7 @@ export default function HabitacionFormModal({ habitacion, tipos, onClose, onSave
     setError("");
     setSaving(true);
     try {
-      const payload = cleanPayload(values, { numbers: ["tipo_habitacion_id", "piso"] });
+      const payload = cleanPayload({ ...values, caracteristicas: conFoto(values.caracteristicas, foto) }, { numbers: ["tipo_habitacion_id", "piso"] });
       let saved;
       if (editing) {
         if (payload.numero === habitacion.numero) delete payload.numero; // solo se envía si cambió
@@ -89,8 +92,18 @@ export default function HabitacionFormModal({ habitacion, tipos, onClose, onSave
             <Select options={ESTADO_OPTIONS} value={values.estado} onChange={set("estado")} />
           </Field>
           <Field label="Características" full>
-            <Textarea value={values.caracteristicas} onChange={set("caracteristicas")} placeholder="Ej.: balcón, vista a la ciudad" />
+            <Textarea
+              value={values.caracteristicas}
+              onChange={set("caracteristicas")}
+              maxLength={255 - largoMarcador(foto)}
+              placeholder="Ej.: balcón, vista a la ciudad"
+            />
           </Field>
+          {FOTOS_DISPONIBLES.length > 0 && (
+            <Field label="Foto de la habitación" full hint="Automática usa la foto del tipo de habitación. Elige otra si esta habitación es distinta.">
+              <FotoSelector value={foto} onChange={setFoto} nombreTipo={tipos.find((t) => String(t.id) === values.tipo_habitacion_id)?.nombre} />
+            </Field>
+          )}
         </div>
         {error && (
           <div style={{ marginTop: 16 }}>

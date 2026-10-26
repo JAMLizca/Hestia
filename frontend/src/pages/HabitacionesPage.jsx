@@ -18,6 +18,7 @@ import {
   Tabs,
   usePagination,
 } from "../components/ui";
+import { textoCaracteristicas } from "../utils/fotosHabitacion";
 import { ConfirmDialog } from "../components/ui/Modal";
 import { usePermisos } from "../context/PermisosContext";
 import { useToast } from "../context/ToastContext";
@@ -71,7 +72,7 @@ export default function HabitacionesPage() {
     () =>
       habitaciones
         .filter((h) => estado === "todas" || h.estado === estado)
-        .filter((h) => matches(query, h.numero, tiposById[h.tipo_habitacion_id]?.nombre, h.caracteristicas, h.piso))
+        .filter((h) => matches(query, h.numero, tiposById[h.tipo_habitacion_id]?.nombre, textoCaracteristicas(h.caracteristicas), h.piso))
         .sort((a, b) => String(a.numero).localeCompare(String(b.numero), "es", { numeric: true })),
     [habitaciones, estado, query, tiposById],
   );
@@ -130,7 +131,7 @@ export default function HabitacionesPage() {
       label: "Estado",
       render: (h) => <Badge color={HABITACION_ESTADOS[h.estado]?.color}>{HABITACION_ESTADOS[h.estado]?.label ?? h.estado}</Badge>,
     },
-    { key: "caracteristicas", label: "Características", className: "td-wrap", render: (h) => h.caracteristicas || "—" },
+    { key: "caracteristicas", label: "Características", className: "td-wrap", render: (h) => textoCaracteristicas(h.caracteristicas) || "—" },
     {
       key: "acciones",
       label: "Acciones",

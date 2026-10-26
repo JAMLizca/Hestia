@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { reservasWebApi } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import fotoHabitacion from "../assets/habitacion.webp";
+import { fotoDeTipo } from "../utils/fotosHabitacion";
 import { configureFormat, formatMoney, formatShortDate, nights as contarNoches, todayISO } from "../utils/format";
 import "./HotelHomePage.css";
 
@@ -313,7 +314,7 @@ export default function HotelHomePage() {
               <ul className="hh-tarjetas">
                 {catalogo.tipos.map((t) => (
                   <li key={t.tipo_habitacion_id} className="hh-tarjeta">
-                    <img src={fotoHabitacion} alt={`Habitación ${t.nombre}`} loading="lazy" />
+                    <img src={fotoDeTipo(t.nombre)} alt={`Habitación ${t.nombre}`} loading="lazy" />
                     <div className="hh-tarjeta__cuerpo">
                       <h3>{t.nombre}</h3>
                       {t.descripcion && <p>{t.descripcion}</p>}
