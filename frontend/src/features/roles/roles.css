@@ -164,3 +164,42 @@
     color: var(--gray-500);
   }
 }
+
+/* Matriz de permisos dentro de un desplegable */
+.perm-details {
+  flex-shrink: 0; /* el contenedor es flex en columna: sin esto, overflow:hidden lo comprime a 1px */
+  background: #fff;
+  border: 1px solid var(--border, #e6e1d6);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.perm-details > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 16px 20px 16px 44px;
+  cursor: pointer;
+  list-style: none;
+  position: relative;
+  user-select: none;
+}
+.perm-details > summary::-webkit-details-marker { display: none; }
+.perm-details > summary::before {
+  content: "";
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-70%) rotate(-45deg);
+  transition: transform 0.15s ease;
+  opacity: 0.6;
+}
+.perm-details[open] > summary::before { transform: translateY(-40%) rotate(45deg); }
+.perm-details[open] > summary { border-bottom: 1px solid var(--border, #e6e1d6); }
+.perm-details__title { font-weight: 600; font-size: 15px; }
+.perm-details__hint { font-size: 12.5px; opacity: 0.65; }
+.perm-details > .card, .perm-details > div { border: 0; border-radius: 0; box-shadow: none; }

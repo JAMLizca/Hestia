@@ -69,7 +69,7 @@ def verificar_permiso(
     Las rutas públicas, el login y las del huésped no están en la matriz y pasan sin tocarse.
     """
     from app.core.config import settings
-    from app.core.permisos import clasificar_peticion, roles_permitidos
+    from app.core.permisos import clasificar_peticion, rol_puede
 
     ruta = getattr(request.scope.get("route"), "path", "")
     if not ruta.startswith(settings.API_V1_PREFIX):
@@ -79,7 +79,7 @@ def verificar_permiso(
         return
     usuario = get_current_user(request=request, token=token or "", db=db)
     request.state.usuario = usuario
-    if usuario.rol.nombre not in roles_permitidos(*clave):
+    if not rol_puede(usuario.rol.nombre, *clave):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permisos para realizar esta acción")
 
 

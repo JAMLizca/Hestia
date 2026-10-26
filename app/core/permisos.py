@@ -65,6 +65,12 @@ PERMISOS: dict[tuple[str, str], tuple[str, ...]] = {
 def roles_permitidos(modulo: str, accion: str) -> tuple[str, ...]:
     return PERMISOS.get((modulo, accion), ())
 
+
+def rol_puede(nombre_rol: str | None, modulo: str, accion: str) -> bool:
+    """¿Puede ese rol hacer (módulo, acción)? El nombre se compara sin mayúsculas ni espacios sobrantes:
+    un rol creado a mano como «Auditor» es el mismo que «auditor»."""
+    return (nombre_rol or "").strip().lower() in roles_permitidos(modulo, accion)
+
 # Orden y nombre de los módulos conocidos. Un módulo nuevo se agrega solo al final.
 MODULOS = {
     "reservas": "Reservas",
@@ -168,7 +174,7 @@ def construir_matriz(app, prefijo: str, nombres_roles: list[str]) -> list[dict]:
         for accion in ACCIONES:
             if (modulo, accion) not in existentes:
                 continue
-            permitidos = [n for n in nombres_roles if n in roles_permitidos(modulo, accion)]
+            permitidos = [n for n in nombres_roles if rol_puede(n, modulo, accion)]
             notas = {r: t for r, t in NOTAS.get((modulo, accion), {}).items() if r in permitidos}
             acciones.append({"accion": accion, "etiqueta": ACCIONES[accion], "roles": permitidos, "notas": notas})
         if acciones:
