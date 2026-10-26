@@ -2,19 +2,25 @@ import { Database, Download, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { reportesApi } from "../api/services";
 import { saveBlob } from "../api/client";
-import { Button, Card, ErrorBanner, InfoBanner } from "../components/ui";
+import { Button, Card, ErrorBanner } from "../components/ui";
 import { Field, Input } from "../components/ui/Form";
 import { useToast } from "../context/ToastContext";
+import "./ReportesPage.css";
 
-// Qué trae cada fila del archivo, agrupado como se explica en pantalla.
-const COLUMNAS = [
-  ["Reserva", "código, canal, estado y temporada (alta, media o baja)"],
-  ["Fechas", "creación, llegada y salida; noches, anticipación en días, día de la semana y mes de llegada"],
-  ["Estancia", "huéspedes, tipo de habitación, piso, precio por noche y total"],
-  ["Dinero", "consumo de servicios, total pagado y si quedó saldada"],
-  ["Huésped", "nacionalidad y si ya había reservado antes (sin datos personales)"],
-  ["Preferencias", "piso, vista, cama, habitación tranquila y accesible"],
-  ["Resultado", "cancelada y no_show (1 o 0): lo que un modelo de predicción aprende a anticipar"],
+// Diccionario del archivo: los nombres son las columnas reales (los mismos que verás en pandas, Excel o R).
+const GRUPOS = [
+  { titulo: "Reserva", texto: "Identifica la reserva y de dónde vino.", columnas: ["reserva_codigo", "canal", "estado", "temporada"], nota: "temporada: alta, media o baja" },
+  {
+    titulo: "Fechas",
+    texto: "Cuándo se reservó, cuándo llega y sale, y qué tan anticipada fue.",
+    columnas: ["fecha_creacion", "fecha_checkin", "fecha_checkout", "noches", "anticipacion_dias", "dia_semana_llegada", "mes_llegada", "llegada_fin_de_semana"],
+    nota: "dia_semana_llegada: 0 = lunes … 6 = domingo",
+  },
+  { titulo: "Estancia", texto: "Qué se reservó y a qué precio.", columnas: ["num_huespedes", "tipo_habitacion", "piso", "precio_noche", "precio_total"] },
+  { titulo: "Dinero", texto: "Cuánto se consumió y cuánto se pagó.", columnas: ["costo_servicios", "total_pagado", "pagado_completo"], nota: "pagado_completo: 1 si quedó saldada" },
+  { titulo: "Huésped", texto: "Nacionalidad e historial, sin datos personales.", columnas: ["huesped_nacionalidad", "huesped_recurrente", "reservas_previas_huesped"] },
+  { titulo: "Preferencias", texto: "Lo que el huésped pidió para su estadía.", columnas: ["pref_piso", "pref_vista", "pref_cama", "pref_tranquila", "pref_accesible"] },
+  { titulo: "Resultado", texto: "Lo que un modelo de predicción aprende a anticipar.", columnas: ["cancelada", "no_show"], nota: "1 = sí, 0 = no", destacado: true },
 ];
 
 /**
@@ -79,22 +85,32 @@ export default function ReportesPage() {
         </div>
       </Card>
 
-      <Card title="Qué incluye cada fila">
-        <dl className="detail-grid">
-          {COLUMNAS.map(([titulo, texto]) => (
-            <div key={titulo} className="detail-grid__full">
-              <dt>{titulo}</dt>
-              <dd>{texto}</dd>
-            </div>
-          ))}
-        </dl>
-        <div style={{ marginTop: 16 }}>
-          <InfoBanner>
-            <ShieldCheck size={14} style={{ verticalAlign: "-2px", marginRight: 6 }} />
+      <details className="rep-dic">
+        <summary>
+          <span className="rep-dic__title">Qué incluye cada fila</span>
+          <span className="rep-dic__hint">{GRUPOS.reduce((n, g) => n + g.columnas.length, 0)} columnas · toca para ver el diccionario</span>
+        </summary>
+        <div className="rep-dic__body">
+          <div className="rep-dic__grid">
+            {GRUPOS.map((g) => (
+              <section key={g.titulo} className={`rep-dic__group${g.destacado ? " rep-dic__group--key" : ""}`}>
+                <h3>{g.titulo}</h3>
+                <p>{g.texto}</p>
+                <div className="rep-dic__chips">
+                  {g.columnas.map((c) => (
+                    <code key={c}>{c}</code>
+                  ))}
+                </div>
+                {g.nota && <small>{g.nota}</small>}
+              </section>
+            ))}
+          </div>
+          <div className="rep-dic__privacy">
+            <ShieldCheck size={14} />
             El archivo no incluye nombres, documentos, correos ni teléfonos de los huéspedes.
-          </InfoBanner>
+          </div>
         </div>
-      </Card>
+      </details>
     </>
   );
 }
