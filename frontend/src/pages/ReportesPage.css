@@ -1,0 +1,75 @@
+/* Diccionario de columnas del dataset, en un desplegable */
+.rep-dic {
+  flex-shrink: 0;
+  background: #fff;
+  border: 1px solid var(--border, #e6e1d6);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.rep-dic > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 16px 20px 16px 44px;
+  cursor: pointer;
+  list-style: none;
+  position: relative;
+  user-select: none;
+}
+.rep-dic > summary::-webkit-details-marker { display: none; }
+.rep-dic > summary::before {
+  content: "";
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-70%) rotate(-45deg);
+  transition: transform 0.15s ease;
+  opacity: 0.6;
+}
+.rep-dic[open] > summary::before { transform: translateY(-40%) rotate(45deg); }
+.rep-dic[open] > summary { border-bottom: 1px solid var(--border, #e6e1d6); }
+.rep-dic__title { font-weight: 600; font-size: 15px; }
+.rep-dic__hint { font-size: 12.5px; opacity: 0.65; }
+.rep-dic__body { padding: 18px 20px 20px; }
+.rep-dic__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+.rep-dic__group {
+  border: 1px solid var(--border, #e6e1d6);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: var(--canvas, #faf8f2);
+}
+.rep-dic__group--key { border-color: var(--gold-500, #c9a45c); background: #fffaf0; }
+.rep-dic__group h3 { margin: 0; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gray-400, #8a8a8a); }
+.rep-dic__group p { margin: 4px 0 10px; font-size: 13px; color: var(--navy-900, #1b2540); }
+.rep-dic__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rep-dic__chips code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid var(--border, #e6e1d6);
+  color: var(--navy-900, #1b2540);
+}
+.rep-dic__group small { display: block; margin-top: 10px; font-size: 11.5px; color: var(--gray-400, #8a8a8a); }
+.rep-dic__privacy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #eef6f1;
+  color: #2f6b4f;
+  font-size: 13px;
+}
+.rep-dic__privacy svg { flex-shrink: 0; }
