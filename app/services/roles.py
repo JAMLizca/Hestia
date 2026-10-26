@@ -47,7 +47,7 @@ def editar(db: Session, role_id: int, datos: RoleUpdate) -> Role:
 
 def eliminar(db: Session, role_id: int) -> None:
     rol = obtener(db, role_id)
-    if rol.nombre in ROLES_BASE:
+    if rol.nombre.strip().lower() in ROLES_BASE:
         raise Conflicto(f"El rol '{rol.nombre}' es parte del sistema y no se puede eliminar")
     usuarios = db.query(Usuario).filter(Usuario.rol_id == role_id).count()
     if usuarios:

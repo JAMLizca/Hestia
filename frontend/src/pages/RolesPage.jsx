@@ -1,7 +1,7 @@
 import { Pencil, Plus, Shield, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { rolesApi } from "../api/services";
-import { Button, Card, ErrorBanner, IconButton, InfoBanner, LoadingState, MiniStat, StatGrid, hexAlpha } from "../components/ui";
+import { Button, Card, ErrorBanner, IconButton, LoadingState, MiniStat, StatGrid, hexAlpha } from "../components/ui";
 import { usePermisos } from "../context/PermisosContext";
 import { useToast } from "../context/ToastContext";
 import RoleFormModal from "../features/roles/RoleFormModal";
@@ -106,11 +106,11 @@ export default function RolesPage() {
             })}
           </div>
 
-          <InfoBanner>
-            La matriz muestra lo que el sistema aplica hoy y no se edita desde aquí: los permisos están definidos en una sola tabla del código de la API (app/core/permisos.py).
-            Un rol nuevo no puede hacer nada hasta que se le asignen permisos en el código (app/core/permisos.py).
-          </InfoBanner>
-
+          <details className="perm-details">
+            <summary>
+              <span className="perm-details__title">Permisos por módulo</span>
+              <span className="perm-details__hint">{modulos.length} módulos · toca para ver qué puede hacer cada rol</span>
+            </summary>
           <Card padded={false} title={undefined}>
             <div className="perm" style={{ "--roles": roles.length }}>
               <div className="perm__row perm__row--head" role="row">
@@ -157,6 +157,7 @@ export default function RolesPage() {
               </div>
             </div>
           </Card>
+          </details>
         </>
       )}
 
