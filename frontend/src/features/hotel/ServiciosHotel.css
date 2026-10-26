@@ -1,0 +1,48 @@
+/* Servicios del hotel (página pública): pestañas por categoría + tarjetas. */
+.hhs { margin-top: 28px; }
+
+.hhs__tabs {
+  display: flex; gap: 8px; padding: 2px 2px 10px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none;
+}
+.hhs__tabs::-webkit-scrollbar { display: none; }
+.hhs__tab {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; scroll-snap-align: start;
+  font: inherit; font-size: 14px; font-weight: 600; color: var(--hh-navy, #1e2d4a); background: #fff;
+  border: 1.5px solid var(--hh-line, #ddd4c8); border-radius: 999px; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.hhs__tab:hover { border-color: var(--hh-gold, #c9a84c); }
+.hhs__tab:focus-visible, .hhs__mas:focus-visible { outline: 2px solid var(--hh-gold, #c9a84c); outline-offset: 2px; }
+.hhs__tab--on { color: #fff; background: var(--hh-navy, #1e2d4a); border-color: var(--hh-navy, #1e2d4a); }
+.hhs__n {
+  min-width: 22px; padding: 1px 7px; font-size: 12px; font-weight: 700; text-align: center;
+  color: var(--hh-gold-dark, #8a6d1f); background: var(--hh-sand, #ede5d8); border-radius: 999px;
+}
+.hhs__tab--on .hhs__n { color: var(--hh-navy, #1e2d4a); background: var(--hh-gold, #c9a84c); }
+
+.hhs__lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; margin-top: 12px; padding: 0; list-style: none; }
+.hhs__item {
+  display: flex; flex-direction: column; gap: 6px; padding: 16px 18px;
+  background: #fff; border: 1px solid var(--hh-line, #ddd4c8); border-radius: 14px; transition: box-shadow 0.15s, transform 0.15s;
+}
+.hhs__item:hover { box-shadow: 0 8px 22px rgba(19, 32, 58, 0.08); transform: translateY(-1px); }
+.hhs__cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.hhs__cab strong { font-size: 15.5px; line-height: 1.3; color: var(--hh-navy, #1e2d4a); }
+.hhs__precio { flex-shrink: 0; font-weight: 700; font-size: 15px; color: var(--hh-gold-dark, #8a6d1f); white-space: nowrap; }
+.hhs__item p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--hh-text, #55627f); }
+
+.hhs__mas {
+  display: none; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 14px; padding: 12px;
+  font: inherit; font-size: 14px; font-weight: 600; color: var(--hh-navy, #1e2d4a); background: #fff;
+  border: 1.5px solid var(--hh-line, #ddd4c8); border-radius: 12px; cursor: pointer;
+}
+.hhs__mas svg { transition: transform 0.2s; }
+.hhs__mas[data-abierto] svg { transform: rotate(180deg); }
+
+@media (max-width: 640px) {
+  .hhs { margin-top: 20px; }
+  .hhs__tabs { margin-right: -16px; padding-right: 16px; } /* las pestañas llegan al borde de la pantalla */
+  .hhs__lista { grid-template-columns: 1fr; gap: 10px; }
+  .hhs__item { padding: 14px 16px; }
+  .hhs__lista:not([data-abierto]) .hhs__item--extra { display: none; }
+  .hhs__mas { display: flex; }
+}
