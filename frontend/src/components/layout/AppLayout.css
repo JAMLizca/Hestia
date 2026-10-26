@@ -21,6 +21,13 @@
   overflow-y: auto;
 }
 
+/* Los bloques de página (tablas, tarjetas con overflow:hidden) deben crecer
+   con su contenido y no comprimirse hasta caber en la pantalla: el scroll
+   lo da <main>. Sin esto, en móvil solo se veían las 2 primeras filas. */
+.app-layout__main > * {
+  flex-shrink: 0;
+}
+
 .app-layout__backdrop {
   position: fixed;
   inset: 0;
