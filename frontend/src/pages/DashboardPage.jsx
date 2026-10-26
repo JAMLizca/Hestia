@@ -2,9 +2,10 @@ import { ArrowRight, CalendarCheck, CalendarDays, LogIn, LogOut, User, UserPlus 
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { habitacionesApi, huespedesApi, reservasApi, serviciosApi } from "../api/services";
-import { Badge, Button, Card, Chip, ErrorBanner, LoadingState, Person, StatCard, StatGrid, TableView, hexAlpha } from "../components/ui";
+import { Badge, Button, Card, ErrorBanner, LoadingState, Person, StatCard, StatGrid, TableView, hexAlpha } from "../components/ui";
 import { BedIcon, PercentIcon, ServiceBellIcon, SparklesIcon } from "../components/ui/icons";
 import { usePermisos } from "../context/PermisosContext";
+import HestiaIntelligence from "../features/inteligencia/HestiaIntelligence";
 import { indexById, useApiData } from "../hooks/useApiData";
 import { formatShortDate } from "../utils/format";
 import { ESTADOS_ANULADOS, fullName, isToday, recentActivity, timeAgo, weeklyOccupancy } from "../utils/hotel";
@@ -231,19 +232,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <section className="intelligence">
-        <div>
-          <div className="intelligence__eyebrow">
-            <SparklesIcon size={12} color={COLORS.gold} /> Hestia Intelligence
-          </div>
-          <h2 className="intelligence__title">Información inteligente para apoyar la toma de decisiones.</h2>
-          <p className="intelligence__text">
-            Los modelos de predicción de ocupación y recomendación de habitaciones se mostrarán aquí cuando se integren al
-            backend (semanas 11 a 14 del cronograma).
-          </p>
-        </div>
-        <Chip color={COLORS.gold}>Próximamente</Chip>
-      </section>
+      {can("reportes", "ver") && <HestiaIntelligence />}
     </>
   );
 }

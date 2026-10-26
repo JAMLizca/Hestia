@@ -1,0 +1,24 @@
+/* Recomendación de habitaciones: se usa en la página de reservas y en el formulario de nueva reserva */
+.hr {
+  margin: 0 0 16px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid #ecdcb4;
+  border-left: 4px solid #c9a052;
+  background: #fffaf0;
+  color: #1b2540;
+}
+.hr__eyebrow { display: flex; align-items: center; gap: 6px; color: #a8832f; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
+.hr__head strong { display: block; margin-top: 4px; font-size: 15px; }
+.hr__head p { margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: #5d6578; }
+.hr__prefs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 12px; margin-top: 14px; }
+.hr__prefs label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: #3a4258; }
+.hr__prefs select { padding: 8px 10px; border: 1px solid #d9d4c4; border-radius: 8px; background: #fff; font: inherit; font-size: 13px; font-weight: 400; color: #1b2540; }
+.hr__checks { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.hr__checks label { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; font-size: 13px; cursor: pointer; }
+.hr__checks input { width: 16px; height: 16px; accent-color: #2b3650; }
+.hr__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 14px; }
+.hr__btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border: 0; border-radius: 8px; background: #2b3650; color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.hr__btn:disabled { opacity: 0.6; cursor: default; }
+.hr__aviso { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; background: #fff0cf; border: 1px solid #f0d9a6; color: #8a5a00; font-size: 13px; font-weight: 500; }
+@media (max-width: 640px) { .hr__prefs { grid-template-columns: minmax(0, 1fr); } }
