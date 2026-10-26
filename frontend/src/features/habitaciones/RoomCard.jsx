@@ -1,14 +1,14 @@
 import { Pencil, Sparkles, Trash2 } from "lucide-react";
-import fotoHabitacion from "../../assets/habitacion.webp";
 import { IconButton } from "../../components/ui";
 import { formatMoney } from "../../utils/format";
+import { fotoDeHabitacion, textoCaracteristicas } from "../../utils/fotosHabitacion";
 import { COLORS, HABITACION_ESTADOS } from "../../utils/status";
 import "./RoomCard.css";
 
 /**
  * Tarjeta de habitación según el diseño enviado (foto, número, nombre, estado,
- * piso y capacidad). El backend no guarda fotos ni nombres por habitación:
- * se usa la foto general del hotel y el nombre del tipo de habitación.
+ * piso y capacidad). El backend no guarda fotos: la foto sale de
+ * `utils/fotosHabitacion` (elegida en la habitación → la del tipo → la general).
  */
 export default function RoomCard({ habitacion, tipo, busy, onEdit, onDelete, onMarkAvailable }) {
   const estado = HABITACION_ESTADOS[habitacion.estado];
@@ -20,7 +20,7 @@ export default function RoomCard({ habitacion, tipo, busy, onEdit, onDelete, onM
   return (
     <article className="room-card">
       <div className="room-card__media">
-        <img src={fotoHabitacion} alt="" loading="lazy" />
+        <img src={fotoDeHabitacion(habitacion, tipo)} alt="" loading="lazy" />
         <span className="room-card__number">#{habitacion.numero}</span>
       </div>
 
@@ -33,7 +33,7 @@ export default function RoomCard({ habitacion, tipo, busy, onEdit, onDelete, onM
           </span>
         </div>
         <p className="room-card__meta">{detalles.join(" · ") || "—"}</p>
-        {habitacion.caracteristicas && <p className="room-card__features">{habitacion.caracteristicas}</p>}
+        {textoCaracteristicas(habitacion.caracteristicas) && <p className="room-card__features">{textoCaracteristicas(habitacion.caracteristicas)}</p>}
 
         <div className="room-card__footer">
           <span className="room-card__price">{tipo ? `${formatMoney(tipo.precio_base)} / noche` : ""}</span>
