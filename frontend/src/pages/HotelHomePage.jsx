@@ -1,9 +1,10 @@
-import { ArrowRight, BedDouble, CalendarDays, Clock, ConciergeBell, Loader2, Mail, MapPin, Menu, Phone, Ruler, Search, ShieldCheck, Users, X } from "lucide-react";
+import { ArrowRight, BedDouble, CalendarDays, ConciergeBell, Loader2, MapPin, Menu, Ruler, Search, Users, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { reservasWebApi } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import HeroCarrusel from "../features/hotel/HeroCarrusel";
+import InfoHotel from "../features/hotel/InfoHotel";
 import ServiciosHotel from "../features/hotel/ServiciosHotel";
 import { FOTOS_DISPONIBLES, fotoDeTipo, fotoEspecificaDeTipo, fotoGeneralUrl } from "../utils/fotosHabitacion";
 import { configureFormat, formatMoney, formatShortDate, nights as contarNoches, todayISO } from "../utils/format";
@@ -387,48 +388,7 @@ export default function HotelHomePage() {
           <div className="hh-wrap">
             <p className="hh-etiqueta">Antes de venir</p>
             <h2 className="hh-h2">Información útil</h2>
-            <div className="hh-info">
-              <article>
-                <Clock size={20} aria-hidden="true" />
-                <h3>Horarios</h3>
-                <p>
-                  Check-in desde las {hotel.hora_checkin}.<br />
-                  Check-out hasta las {hotel.hora_checkout}.
-                </p>
-              </article>
-              <article>
-                <ShieldCheck size={20} aria-hidden="true" />
-                <h3>Cómo se confirma</h3>
-                <p>
-                  {hotel.pagos_activos
-                    ? `Reservas en línea y aseguras tu habitación pagando un anticipo del ${hotel.anticipo_porcentaje}% de forma segura con Wompi.`
-                    : "Reservas en línea y el hotel confirma tu solicitud."}
-                  {hotel.horas_vencimiento > 0 && !hotel.pagos_activos ? ` Si no se confirma en ${hotel.horas_vencimiento} horas, la solicitud se libera sola.` : ""}
-                </p>
-                <p>
-                  Con tu código de reserva y tu documento puedes{" "}
-                  <Link to="/reservar?vista=consultar" className="hh-enlace">
-                    consultarla o cancelarla
-                  </Link>
-                  .
-                </p>
-              </article>
-              <article>
-                <MapPin size={20} aria-hidden="true" />
-                <h3>Dónde estamos</h3>
-                <p>{[hotel.direccion, ubicacion].filter(Boolean).join(" · ") || "Consulta la dirección con el hotel."}</p>
-                {hotel.telefono && (
-                  <p>
-                    <Phone size={14} aria-hidden="true" /> <a href={`tel:${hotel.telefono.replace(/\s+/g, "")}`}>{hotel.telefono}</a>
-                  </p>
-                )}
-                {hotel.email && (
-                  <p>
-                    <Mail size={14} aria-hidden="true" /> <a href={`mailto:${hotel.email}`}>{hotel.email}</a>
-                  </p>
-                )}
-              </article>
-            </div>
+            <InfoHotel hotel={hotel} ubicacion={ubicacion} />
           </div>
         </section>
       </main>
