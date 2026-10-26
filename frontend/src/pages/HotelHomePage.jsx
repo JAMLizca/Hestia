@@ -5,13 +5,13 @@ import { reservasWebApi } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import HeroCarrusel from "../features/hotel/HeroCarrusel";
 import InfoHotel from "../features/hotel/InfoHotel";
+import PieHotel from "../features/hotel/PieHotel";
 import ServiciosHotel from "../features/hotel/ServiciosHotel";
 import { FOTOS_DISPONIBLES, fotoDeTipo, fotoEspecificaDeTipo, fotoGeneralUrl } from "../utils/fotosHabitacion";
 import { configureFormat, formatMoney, formatShortDate, nights as contarNoches, todayISO } from "../utils/format";
 import "./HotelHomePage.css";
 
 const MAX_NOCHES = 30; // mismo tope que la reserva en línea
-const ANIO = new Date().getFullYear();
 
 const sumarDias = (iso, n) => {
   const d = new Date(`${iso}T12:00:00`);
@@ -393,17 +393,7 @@ export default function HotelHomePage() {
         </section>
       </main>
 
-      <footer className="hh-pie">
-        <div className="hh-wrap hh-pie__inner">
-          <span>
-            © {ANIO} {hotel.nombre}. Tus datos se usan solo para gestionar tu reserva.
-          </span>
-          <span className="hh-pie__links">
-            <Link to="/login">Acceso del personal</Link>
-            <Link to="/hestia">Sistema Hestia</Link>
-          </span>
-        </div>
-      </footer>
+      <PieHotel hotel={hotel} ubicacion={ubicacion} enlaces={enlaces} reservasActivas={reservasActivas} />
     </div>
   );
 }
