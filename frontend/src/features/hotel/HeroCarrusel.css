@@ -1,0 +1,76 @@
+/* Carrusel de fondo del hero (página principal pública). */
+.hhc { position: absolute; inset: 0; z-index: 0; }
+.hhc__fondo { position: absolute; inset: 0; overflow: hidden; background: #13203a; }
+
+.hhc__slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1.4s ease-in-out; }
+.hhc__slide--on { opacity: 1; }
+.hhc__slide img { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.09); }
+.hhc__slide--on img { animation: hhc-zoom 7.4s ease-out forwards; }
+@keyframes hhc-zoom { from { transform: scale(1); } to { transform: scale(1.09); } }
+
+/* Degradado: oscuro a la izquierda (texto) y más abierto a la derecha (se ve la foto). */
+.hhc__velo {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, rgba(19, 32, 58, 0.9) 0%, rgba(19, 32, 58, 0.62) 48%, rgba(19, 32, 58, 0.22) 100%),
+    linear-gradient(0deg, rgba(19, 32, 58, 0.7) 0%, rgba(19, 32, 58, 0) 32%);
+}
+
+/* Controles */
+.hhc__ctrl { position: absolute; left: 0; right: 0; bottom: 20px; z-index: 3; pointer-events: none; }
+.hhc__fila { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.hhc__izq, .hhc__leyenda { pointer-events: auto; }
+.hhc__izq { display: flex; align-items: center; gap: 8px; }
+.hhc__btn {
+  display: grid; place-items: center; width: 34px; height: 34px; padding: 0;
+  color: #fff; background: rgba(19, 32, 58, 0.55); border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%; cursor: pointer; backdrop-filter: blur(4px); transition: background 0.15s, border-color 0.15s;
+}
+.hhc__btn:hover { background: rgba(201, 168, 76, 0.85); border-color: var(--hh-gold, #c9a84c); }
+.hhc__btn:focus-visible, .hhc__punto:focus-visible, .hhc__leyenda:focus-visible { outline: 2px solid var(--hh-gold, #c9a84c); outline-offset: 2px; }
+
+.hhc__puntos { display: flex; align-items: center; gap: 6px; margin: 0; padding: 0 4px; list-style: none; }
+.hhc__punto {
+  position: relative; display: block; width: 26px; height: 5px; padding: 0; overflow: hidden;
+  background: rgba(255, 255, 255, 0.38); border: 0; border-radius: 3px; cursor: pointer;
+  transition: width 0.3s ease, background 0.2s;
+}
+.hhc__punto:hover { background: rgba(255, 255, 255, 0.6); }
+.hhc__punto--on { width: 46px; }
+.hhc__barra {
+  position: absolute; inset: 0; background: var(--hh-gold, #c9a84c); border-radius: 3px;
+  transform-origin: left; transform: scaleX(0); animation: hhc-progreso 6s linear forwards;
+}
+@keyframes hhc-progreso { to { transform: scaleX(1); } }
+
+/* Pausa: cursor sobre el hero (mientras llenas el buscador), foco de TECLADO dentro del hero
+   (o escribiendo en un campo) o botón de pausa. Con :focus-visible, un clic con el mouse en una
+   flecha no deja el carrusel pausado. */
+.hh-hero:hover .hhc__barra,
+.hh-hero:has(:focus-visible) .hhc__barra,
+.hhc[data-pausa] .hhc__barra { animation-play-state: paused; }
+.hh-hero:hover .hhc__slide--on img,
+.hh-hero:has(:focus-visible) .hhc__slide--on img,
+.hhc[data-pausa] .hhc__slide--on img { animation-play-state: paused; }
+
+.hhc__leyenda {
+  display: inline-flex; flex-direction: column; gap: 1px; align-items: flex-end; text-align: right; text-decoration: none; color: #fff;
+  padding: 8px 14px; background: rgba(19, 32, 58, 0.55); border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 12px; backdrop-filter: blur(4px);
+  transition: background 0.15s;
+}
+.hhc__leyenda:hover { background: rgba(19, 32, 58, 0.78); }
+.hhc__leyenda strong { font-family: var(--hh-serif, Georgia, serif); font-size: 16px; font-weight: 700; }
+.hhc__leyenda span { font-size: 12px; color: var(--hh-gold, #c9a84c); }
+
+@media (max-width: 760px) {
+  .hhc__velo { background: linear-gradient(180deg, rgba(19, 32, 58, 0.86) 0%, rgba(19, 32, 58, 0.7) 60%, rgba(19, 32, 58, 0.82) 100%); }
+  .hhc__leyenda { display: none; }
+  .hhc__ctrl { bottom: 16px; }
+}
+
+/* Sin movimiento si el usuario lo prefiere: se muestra la primera foto y se navega a mano. */
+@media (prefers-reduced-motion: reduce) {
+  .hhc__slide { transition: none; }
+  .hhc__slide--on img { animation: none; transform: none; }
+  .hhc__barra { animation: none; transform: scaleX(1); }
+}

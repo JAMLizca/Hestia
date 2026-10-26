@@ -3,8 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { reservasWebApi } from "../api/services";
 import { useAuth } from "../context/AuthContext";
-import fotoHabitacion from "../assets/habitacion.webp";
-import { fotoDeTipo } from "../utils/fotosHabitacion";
+import HeroCarrusel from "../features/hotel/HeroCarrusel";
+import { FOTOS_DISPONIBLES, fotoDeTipo, fotoEspecificaDeTipo, fotoGeneralUrl } from "../utils/fotosHabitacion";
 import { configureFormat, formatMoney, formatShortDate, nights as contarNoches, todayISO } from "../utils/format";
 import "./HotelHomePage.css";
 
@@ -50,6 +50,26 @@ export default function HotelHomePage() {
       activo = false;
     };
   }, []);
+
+  // Fotos del carrusel del hero: una por tipo de habitación que tenga foto propia + las fotos extra de la galería.
+  const slidesHero = useMemo(() => {
+    const vistas = new Set();
+    const lista = [];
+    for (const t of catalogo?.tipos ?? []) {
+      const url = fotoEspecificaDeTipo(t.nombre);
+      if (url && !vistas.has(url)) {
+        vistas.add(url);
+        lista.push({ url, titulo: t.nombre, detalle: `Desde ${formatMoney(t.precio_noche)} por noche` });
+      }
+    }
+    for (const f of FOTOS_DISPONIBLES) {
+      if (!vistas.has(f.url)) {
+        vistas.add(f.url);
+        lista.push({ url: f.url });
+      }
+    }
+    return lista.length ? lista.slice(0, 7) : [{ url: fotoGeneralUrl }];
+  }, [catalogo]);
 
   const noches = contarNoches(fechas.checkin, fechas.checkout);
   const errorFechas = useMemo(() => {
@@ -192,8 +212,9 @@ export default function HotelHomePage() {
       </header>
 
       <main>
-        <section id="inicio" className="hh-hero" style={{ backgroundImage: `linear-gradient(180deg, rgba(19,32,58,.78) 0%, rgba(19,32,58,.88) 100%), url(${fotoHabitacion})` }}>
-          <div className="hh-wrap">
+        <section id="inicio" className="hh-hero">
+          <HeroCarrusel slides={slidesHero} />
+          <div className="hh-wrap hh-hero__contenido">
             {ubicacion && (
               <p className="hh-eyebrow">
                 <MapPin size={14} aria-hidden="true" /> {ubicacion}
