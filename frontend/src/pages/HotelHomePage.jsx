@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { reservasWebApi } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import HeroCarrusel from "../features/hotel/HeroCarrusel";
+import ServiciosHotel from "../features/hotel/ServiciosHotel";
 import { FOTOS_DISPONIBLES, fotoDeTipo, fotoEspecificaDeTipo, fotoGeneralUrl } from "../utils/fotosHabitacion";
 import { configureFormat, formatMoney, formatShortDate, nights as contarNoches, todayISO } from "../utils/format";
 import "./HotelHomePage.css";
@@ -150,7 +151,6 @@ export default function HotelHomePage() {
   const ubicacion = [hotel.ciudad, hotel.pais].filter(Boolean).join(", ");
   const contacto = [hotel.telefono, hotel.email].filter(Boolean);
   const reservasActivas = hotel.reservas_activas;
-  const categorias = [...new Set(catalogo.servicios.map((s) => s.categoria || "Otros"))];
   const enlaces = [
     { href: "#habitaciones", label: "Habitaciones" },
     ...(catalogo.servicios.length ? [{ href: "#servicios", label: "Servicios" }] : []),
@@ -378,26 +378,7 @@ export default function HotelHomePage() {
               </p>
               <h2 className="hh-h2">Servicios del hotel</h2>
               <p className="hh-sub">Se cargan a tu cuenta durante la estadía y los pagas al hacer el check-out.</p>
-              <div className="hh-servicios">
-                {categorias.map((cat) => (
-                  <div key={cat}>
-                    <h3 className="hh-cat">{cat}</h3>
-                    <ul>
-                      {catalogo.servicios
-                        .filter((s) => (s.categoria || "Otros") === cat)
-                        .map((s) => (
-                          <li key={s.nombre}>
-                            <div>
-                              <strong>{s.nombre}</strong>
-                              {s.descripcion && <small>{s.descripcion}</small>}
-                            </div>
-                            <span>{formatMoney(s.precio)}</span>
-                          </li>
-                        ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
+              <ServiciosHotel servicios={catalogo.servicios} />
             </div>
           </section>
         )}
