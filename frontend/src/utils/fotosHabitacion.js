@@ -1,4 +1,7 @@
 import fotoGeneral from "../assets/habitacion.webp";
+import { idParaTipo, slug } from "./fotosMatch";
+
+export { slug };
 
 /**
  * Fotos de habitaciones SIN tocar la base de datos.
@@ -7,6 +10,8 @@ import fotoGeneral from "../assets/habitacion.webp";
  *   Vite las descubre solo: basta con copiar el archivo y volver a desplegar.
  * - Foto por defecto de un tipo: el archivo cuyo nombre es el del tipo en
  *   minúsculas y con guiones (tipo "Suite Familiar" → `suite-familiar.webp`).
+ *   También se aceptan `estandar.webp` para "Habitación Estándar" o
+ *   `suite-familiar-2.webp` (ver `fotosMatch.js`).
  * - Foto elegida para una habitación concreta: se guarda como marcador
  *   `[foto:nombre-del-archivo]` dentro del campo "características" que ya
  *   existe, y la interfaz lo oculta al mostrar el texto.
@@ -19,16 +24,6 @@ const archivos = import.meta.glob("../assets/habitaciones/*.{webp,jpg,jpeg,png,a
 });
 
 export const FOTO_GENERAL = "general";
-
-/** Convierte un texto en identificador: "Suite Familiar" → "suite-familiar". */
-export function slug(texto) {
-  return String(texto ?? "")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 const POR_ID = {};
 for (const [ruta, url] of Object.entries(archivos)) {
@@ -68,7 +63,8 @@ export function largoMarcador(fotoId) {
 
 /** Foto por defecto de un tipo de habitación (o la general). */
 export function fotoDeTipo(nombreTipo) {
-  return POR_ID[slug(nombreTipo)] ?? fotoGeneral;
+  const id = idParaTipo(nombreTipo, Object.keys(POR_ID));
+  return (id && POR_ID[id]) || fotoGeneral;
 }
 
 /** Foto de una habitación: la elegida → la de su tipo → la general. */
