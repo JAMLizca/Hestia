@@ -62,6 +62,14 @@ export function largoMarcador(fotoId) {
 }
 
 /** Foto por defecto de un tipo de habitación (o la general). */
+export const fotoGeneralUrl = fotoGeneral;
+
+/** Foto propia de un tipo (sin caer a la general): url o undefined. */
+export function fotoEspecificaDeTipo(nombreTipo) {
+  const id = idParaTipo(nombreTipo, Object.keys(POR_ID));
+  return id ? POR_ID[id] : undefined;
+}
+
 export function fotoDeTipo(nombreTipo) {
   const id = idParaTipo(nombreTipo, Object.keys(POR_ID));
   return (id && POR_ID[id]) || fotoGeneral;
