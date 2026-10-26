@@ -9,6 +9,7 @@ import { formatMoney, nights, todayISO } from "../../utils/format";
 import { fullName, matches, onlyDigits } from "../../utils/hotel";
 import { CANALES } from "../../utils/status";
 import HuespedFormModal from "../huespedes/HuespedFormModal";
+import RecomendacionHabitaciones from "../inteligencia/RecomendacionHabitaciones";
 import { PREFERENCIAS_VACIAS, preferenciasPayload } from "../../utils/preferencias";
 import PreferenciasFields from "./PreferenciasFields";
 import "./reservas.css";
@@ -247,6 +248,13 @@ export default function ReservaFormModal({ huespedes, tipos, initialHuespedId, o
                 text="No hay habitaciones libres para esas fechas. Prueba con otras fechas u otro tipo."
               />
             ) : (
+              <>
+              <RecomendacionHabitaciones
+                variante="recepcion"
+                contexto={{ llegada: checkin, salida: checkout, huespedes: Number(numHuespedes) }}
+                preferencias={preferencias}
+                onPreferencias={setPreferencias}
+              />
               <div className="room-options">
                 {disponibles.map((h) => {
                   const tipo = tiposById[h.tipo_habitacion_id];
@@ -271,6 +279,7 @@ export default function ReservaFormModal({ huespedes, tipos, initialHuespedId, o
                   );
                 })}
               </div>
+              </>
             )}
           </section>
         )}

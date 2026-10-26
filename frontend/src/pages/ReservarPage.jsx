@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { cuentaApi, reservasWebApi } from "../api/services";
 import { useAuth } from "../context/AuthContext";
+import RecomendacionHabitaciones from "../features/inteligencia/RecomendacionHabitaciones";
 import { Campo, Contacto, Pantalla, Resumen } from "../features/reservasWeb/Comunes";
 import { MOTIVOS, PERSONA_VACIA, Persona } from "../features/reservasWeb/Registro";
 import { configureFormat, formatMoney, formatShortDate, nights as contarNoches, todayISO } from "../utils/format";
@@ -271,6 +272,13 @@ function Reservar({ hotel }) {
           {tipos.length === 0 ? (
             <Contacto hotel={hotel} extra="No hay habitaciones disponibles para esas fechas y esa cantidad de personas. Prueba con otras fechas." />
           ) : (
+            <>
+            <RecomendacionHabitaciones
+              variante="huesped"
+              contexto={{ llegada: fechas.checkin, salida: fechas.checkout, huespedes: Number(fechas.huespedes) }}
+              preferencias={prefs}
+              onPreferencias={setPrefs}
+            />
             <ul className="rv__types">
               {tipos.map((t) => (
                 <li key={t.tipo_habitacion_id} className={`rv__type${elegido?.tipo_habitacion_id === t.tipo_habitacion_id ? " rv__type--on" : ""}`}>
@@ -293,6 +301,7 @@ function Reservar({ hotel }) {
                 </li>
               ))}
             </ul>
+            </>
           )}
         </section>
       )}
