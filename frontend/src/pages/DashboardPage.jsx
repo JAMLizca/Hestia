@@ -1,13 +1,14 @@
 import { ArrowRight, CalendarCheck, CalendarDays, LogIn, LogOut, User, UserPlus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { habitacionesApi, huespedesApi, reservasApi, serviciosApi } from "../api/services";
 import { Badge, Button, Card, ErrorBanner, LoadingState, Person, StatCard, StatGrid, TableView, hexAlpha } from "../components/ui";
 import { BedIcon, PercentIcon, ServiceBellIcon, SparklesIcon } from "../components/ui/icons";
 import { usePermisos } from "../context/PermisosContext";
 import HestiaIntelligence from "../features/inteligencia/HestiaIntelligence";
+import { predecirOcupacion } from "../features/inteligencia/inteligencia";
 import { indexById, useApiData } from "../hooks/useApiData";
-import { formatShortDate } from "../utils/format";
+import { formatShortDate, todayISO } from "../utils/format";
 import { ESTADOS_ANULADOS, fullName, isToday, recentActivity, timeAgo, weeklyOccupancy } from "../utils/hotel";
 import { COLORS, HABITACION_ESTADOS, RESERVA_ESTADOS } from "../utils/status";
 import "./DashboardPage.css";
@@ -28,6 +29,20 @@ export default function DashboardPage() {
     servicios: () => serviciosApi.list(),
   });
   const [loadedAt] = useState(() => new Date());
+
+  // Proyección de Hestia Intelligence para los próximos 7 días (solo para quien tiene el permiso de predicción).
+  const puedePredecir = can("prediccion", "ver");
+  const [proyeccion, setProyeccion] = useState({ estado: "idle", datos: null });
+  useEffect(() => {
+    if (!puedePredecir) return undefined;
+    let vivo = true;
+    predecirOcupacion({ desde: todayISO(), dias: 7 })
+      .then((datos) => vivo && setProyeccion({ estado: "ok", datos }))
+      .catch(() => vivo && setProyeccion({ estado: "error", datos: null }));
+    return () => {
+      vivo = false;
+    };
+  }, [puedePredecir]);
 
   const reservas = useMemo(() => data.reservas ?? [], [data.reservas]);
   const habitacionesList = useMemo(() => data.habitaciones ?? [], [data.habitaciones]);
@@ -178,19 +193,28 @@ export default function DashboardPage() {
                 <div className="dash-week__big">{hoySemana?.pct ?? 0}%</div>
                 <div className="dash-week__small">Ocupación actual</div>
               </div>
-              <div className="dash-week__ai">
-                <div className="dash-week__big" style={{ color: COLORS.gold, display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
-                  <SparklesIcon size={11} color={COLORS.gold} />—
+              {puedePredecir && (
+                <div className="dash-week__ai">
+                  <div className="dash-week__big" style={{ color: COLORS.gold, display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
+                    <SparklesIcon size={11} color={COLORS.gold} />
+                    {proyeccion.datos ? `${Math.round(proyeccion.datos.promedio_pct)}%` : "—"}
+                  </div>
+                  <div className="dash-week__small">Proyección IA · próx. 7 días</div>
                 </div>
-                <div className="dash-week__small">Proyección IA</div>
-              </div>
+              )}
             </div>
           </div>
           <WeekChart days={semana} />
-          <div className="dash-week__note">
-            <SparklesIcon size={11} color={COLORS.gold} />
-            La proyección de HestiaCast se mostrará cuando el modelo de predicción esté integrado al backend.
-          </div>
+          {puedePredecir && (
+            <div className="dash-week__note">
+              <SparklesIcon size={11} color={COLORS.gold} />
+              {proyeccion.datos
+                ? `Proyección de Hestia Intelligence: ocupación promedio esperada de hoy a los próximos 7 días (error medio ±${proyeccion.datos.error_medio_pp} puntos). El detalle por día está más abajo.`
+                : proyeccion.estado === "error"
+                  ? "La proyección de Hestia Intelligence no está disponible por ahora."
+                  : "Calculando la proyección de Hestia Intelligence…"}
+            </div>
+          )}
         </Card>
 
         <div className="dash-side">
@@ -232,7 +256,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {can("reportes", "ver") && <HestiaIntelligence />}
+      {can("prediccion", "ver") && <HestiaIntelligence />}
     </>
   );
 }

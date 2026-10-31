@@ -254,6 +254,8 @@ export default function ReservaFormModal({ huespedes, tipos, initialHuespedId, o
                 contexto={{ llegada: checkin, salida: checkout, huespedes: Number(numHuespedes) }}
                 preferencias={preferencias}
                 onPreferencias={setPreferencias}
+                seleccionada={habitacionId}
+                onElegir={(s) => disponibles.some((h) => h.id === s.habitacion_id) && setHabitacionId(s.habitacion_id)}
               />
               <div className="room-options">
                 {disponibles.map((h) => {

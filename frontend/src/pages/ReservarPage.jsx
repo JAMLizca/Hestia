@@ -278,6 +278,8 @@ function Reservar({ hotel }) {
               contexto={{ llegada: fechas.checkin, salida: fechas.checkout, huespedes: Number(fechas.huespedes) }}
               preferencias={prefs}
               onPreferencias={setPrefs}
+              seleccionada={elegido?.tipo_habitacion_id}
+              onElegir={(s) => setElegido(tipos.find((t) => t.tipo_habitacion_id === s.tipo_habitacion_id) ?? null)}
             />
             <ul className="rv__types">
               {tipos.map((t) => (

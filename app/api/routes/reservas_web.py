@@ -3,6 +3,7 @@ Rutas públicas de la reserva en línea (página /reservar). Solo traducen HTTP 
 las reglas están en app/services/reservas_web.py.
 """
 from datetime import date
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
@@ -22,6 +23,8 @@ from app.schemas.reserva_web import (
     TipoDisponible,
     VerificarPago,
 )
+from app.schemas.inteligencia import RecomendacionOut
+from app.services import inteligencia as inteligencia_servicio
 from app.services import reservas_web as servicio
 
 router = APIRouter(
@@ -58,6 +61,23 @@ def disponibilidad_publica(
     db: Session = Depends(get_db),
 ):
     return servicio.disponibilidad(db, fecha_checkin, fecha_checkout, huespedes)
+
+
+@router.get("/recomendacion", response_model=list[RecomendacionOut], summary="Tipos de habitación que mejor se ajustan a la estadía y a las preferencias del huésped")
+def recomendacion_publica(
+    fecha_checkin: date = Query(...),
+    fecha_checkout: date = Query(...),
+    huespedes: int = Query(default=1, ge=1, le=10),
+    piso: Literal["bajo", "alto"] | None = None,
+    vista: Literal["exterior", "interior"] | None = None,
+    cama: Literal["doble", "sencillas"] | None = None,
+    tranquila: bool = False,
+    accesible: bool = False,
+    db: Session = Depends(get_db),
+):
+    servicio.exigir_activas(servicio.config_hotel(db))
+    prefs = {"piso": piso, "vista": vista, "cama": cama, "tranquila": tranquila, "accesible": accesible}
+    return inteligencia_servicio.recomendar(db, fecha_checkin, fecha_checkout, huespedes, prefs, "web", por_habitacion=False)
 
 
 @router.post(
