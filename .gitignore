@@ -15,3 +15,12 @@ env/
 
 # Frontend compilado (lo genera el Dockerfile)
 static/
+
+# ML: los CSV se regeneran; los modelos .joblib sí se versionan
+ml/datos/*.csv
+.ipynb_checkpoints/
+
+# ML: binarios reproducibles con paso4; la API usa los JSON de app/ml/modelos
+ml/modelos/*.joblib
+audit/
+*.zip

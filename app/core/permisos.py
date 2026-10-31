@@ -56,6 +56,10 @@ PERMISOS: dict[tuple[str, str], tuple[str, ...]] = {
     ("roles", "editar"): (ADMIN,),
     ("roles", "eliminar"): (ADMIN,),
     ("reportes", "ver"): (ADMIN, GERENTE, AUDITOR),
+    # Hestia Intelligence: el pronóstico de ocupación lo ven quienes gestionan y auditan; la sugerencia de
+    # habitación la usa quien crea reservas (recepción).
+    ("prediccion", "ver"): (ADMIN, GERENTE, AUDITOR),
+    ("recomendacion", "ver"): (RECEPCION,),
     # Configuración: todos la consultan (horarios, moneda, nombre del hotel); solo el administrador la cambia.
     ("configuracion", "ver"): _TODOS,
     ("configuracion", "editar"): (ADMIN,),
@@ -85,6 +89,8 @@ MODULOS = {
     "usuarios": "Usuarios",
     "roles": "Roles",
     "reportes": "Reportes y datos",
+    "prediccion": "Predicción de ocupación",
+    "recomendacion": "Recomendación de habitaciones",
     "configuracion": "Configuración",
 }
 
