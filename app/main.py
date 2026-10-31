@@ -18,6 +18,8 @@ from app.api.routes import (
     huespedes,
     pagos,
     precheckin,
+    prediccion,
+    recomendacion,
     reserva_servicios,
     reservas,
     reportes,
@@ -97,6 +99,8 @@ app.include_router(reservas_web.router, prefix=settings.API_V1_PREFIX)
 app.include_router(cuenta.router, prefix=settings.API_V1_PREFIX)
 app.include_router(wompi.router, prefix=settings.API_V1_PREFIX)
 app.include_router(reportes.router, prefix=settings.API_V1_PREFIX)
+app.include_router(prediccion.router, prefix=settings.API_V1_PREFIX)
+app.include_router(recomendacion.router, prefix=settings.API_V1_PREFIX)
 
 
 # Si existe la carpeta `static/` (el frontend ya compilado, como en el despliegue con Docker), la API
