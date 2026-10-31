@@ -1,0 +1,57 @@
+{
+  "modelo": "ocupacion",
+  "horizontes": [
+    7,
+    14,
+    30
+  ],
+  "sklearn": "1.9.1",
+  "entrenado": "2026-10-29",
+  "variables_numericas": [
+    "en_libros_pct",
+    "en_libros_sem_pct",
+    "nuevas_7d",
+    "nuevas_28d",
+    "ocup_ult7",
+    "ocup_ult28",
+    "es_finde"
+  ],
+  "variables_categoricas": [
+    "dia_semana",
+    "mes"
+  ],
+  "recortar_a": [
+    0,
+    100
+  ],
+  "por_horizonte": {
+    "7": {
+      "algoritmo": "Regresión lineal (Ridge)",
+      "mae_prueba_pp": 7.26,
+      "rmse_prueba_pp": 9.41,
+      "r2_prueba": 0.76,
+      "mae_mejor_base_pp": 9.64,
+      "acierto_10pp": 0.75,
+      "filas_entrenamiento_final": 662
+    },
+    "14": {
+      "algoritmo": "Regresión lineal (Ridge)",
+      "mae_prueba_pp": 9.11,
+      "rmse_prueba_pp": 12.02,
+      "r2_prueba": 0.608,
+      "mae_mejor_base_pp": 14.57,
+      "acierto_10pp": 0.625,
+      "filas_entrenamiento_final": 662
+    },
+    "30": {
+      "algoritmo": "Regresión lineal (Ridge)",
+      "mae_prueba_pp": 12.13,
+      "rmse_prueba_pp": 15.06,
+      "r2_prueba": 0.385,
+      "mae_mejor_base_pp": 14.57,
+      "acierto_10pp": 0.517,
+      "filas_entrenamiento_final": 662
+    }
+  },
+  "nota": "Entrenado con datos SIMULADOS por el sistema (ml/generar_datos.py); las métricas describen el simulador, no clientes reales."
+}

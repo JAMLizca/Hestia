@@ -1,0 +1,104 @@
+
+==============================================================================
+MODELO 1 · PRONÓSTICO DE OCUPACIÓN (a 7, 14 y 30 días)
+==============================================================================
+Error = diferencia promedio, en puntos porcentuales de ocupación (MAE). Menor es mejor.
+Modelo desplegado: el lineal. Los complejos se prueban solo para ver si justificarían el cambio.
+
+--- Horizonte: 7 días de anticipación   (entrenamiento 542 días · prueba 120 días)
+  Líneas base (error en la prueba):
+    Promedio histórico del mismo día de la semana       14.6 pp
+    Solo las reservas en libros (sin ajustar)            9.6 pp
+    Ocupación de los últimos 28 días                    16.3 pp
+  Candidatos (error en validación cruzada, solo entrenamiento):
+    Regresión lineal (Ridge)                             7.2 pp   ← elegido
+    Bosque aleatorio                                     7.5 pp
+    Gradient boosting                                    7.8 pp
+  Modelos más complejos: no mejoran más de 3 %: no justifican reemplazar al lineal.
+    Días de la prueba con error menor a 10 puntos: 75%
+  RESULTADO en prueba con «Regresión lineal (Ridge)»:  MAE 7.3 pp · RMSE 9.4 pp · R² 0.76
+    Sesgo medio: -0.0 pp (negativo = el modelo se queda corto)  ·  ocupación real media en la prueba: 63.7%  ·  en el entrenamiento: 57.8%
+    Mejor línea base: 9.6 pp  →  el modelo reduce el error un 25%
+
+--- Horizonte: 14 días de anticipación   (entrenamiento 542 días · prueba 120 días)
+  Líneas base (error en la prueba):
+    Promedio histórico del mismo día de la semana       14.6 pp
+    Solo las reservas en libros (sin ajustar)           22.3 pp
+    Ocupación de los últimos 28 días                    17.5 pp
+  Candidatos (error en validación cruzada, solo entrenamiento):
+    Regresión lineal (Ridge)                             9.0 pp   ← elegido
+    Bosque aleatorio                                     9.3 pp
+    Gradient boosting                                    9.5 pp
+  Modelos más complejos: no mejoran más de 3 %: no justifican reemplazar al lineal.
+    Días de la prueba con error menor a 10 puntos: 62%
+  RESULTADO en prueba con «Regresión lineal (Ridge)»:  MAE 9.1 pp · RMSE 12.0 pp · R² 0.61
+    Sesgo medio: +1.1 pp (negativo = el modelo se queda corto)  ·  ocupación real media en la prueba: 63.7%  ·  en el entrenamiento: 57.8%
+    Mejor línea base: 14.6 pp  →  el modelo reduce el error un 37%
+
+--- Horizonte: 30 días de anticipación   (entrenamiento 542 días · prueba 120 días)
+  Líneas base (error en la prueba):
+    Promedio histórico del mismo día de la semana       14.6 pp
+    Solo las reservas en libros (sin ajustar)           43.0 pp
+    Ocupación de los últimos 28 días                    18.9 pp
+  Candidatos (error en validación cruzada, solo entrenamiento):
+    Regresión lineal (Ridge)                            11.8 pp   ← elegido
+    Bosque aleatorio                                    11.8 pp
+    Gradient boosting                                   12.3 pp
+  Modelos más complejos: no mejoran más de 3 %: no justifican reemplazar al lineal.
+    Días de la prueba con error menor a 10 puntos: 52%
+  RESULTADO en prueba con «Regresión lineal (Ridge)»:  MAE 12.1 pp · RMSE 15.1 pp · R² 0.38
+    Sesgo medio: -1.9 pp (negativo = el modelo se queda corto)  ·  ocupación real media en la prueba: 63.7%  ·  en el entrenamiento: 57.8%
+    Mejor línea base: 14.6 pp  →  el modelo reduce el error un 17%
+
+==============================================================================
+MODELO 2 · RECOMENDADOR DE TIPO DE HABITACIÓN
+==============================================================================
+Top-1 = acertó el tipo con su primera sugerencia · Top-3 = el tipo real está entre sus 3 primeras sugerencias.
+Modelo desplegado: el lineal (regresión logística). Los complejos se prueban solo para ver si justificarían el cambio.
+
+Línea base (sin aprendizaje automático)                          Top-1   Top-3
+  Siempre el tipo más frecuente                                  28.0%   64.5%
+  Regla simple: el tipo más común para ese tamaño de grupo       43.5%   84.9%
+
+Candidatos: pérdida logarítmica en validación cruzada (solo entrenamiento; menor es mejor)
+  Regresión logística              1.315   ← elegido
+  Bosque aleatorio                 1.324
+  Gradient boosting                1.432
+Modelos más complejos: no mejoran más de 3 %: no justifican reemplazar a la regresión logística.
+
+Resultado en el conjunto de prueba                               Top-1   Top-3
+  Regresión logística (elegido)                                  46.1%   88.0%
+  Bosque aleatorio                                               46.7%   87.2%
+  Gradient boosting                                              45.8%   87.0%
+
+«Regresión logística» frente a la regla simple por tamaño de grupo:  Top-1 46.1% vs 43.5%  ·  Top-3 88.0% vs 84.9%
+
+Acierto Top-1 y Top-3 según el tamaño del grupo (conjunto de prueba):
+   reservas  top1  top3
+g                      
+1       231   57%   92%
+2       710   33%   83%
+3       116   65%   97%
+4       100   75%  100%
+5        34  100%  100%
+
+Importancia de cada variable (cuánto empeora el modelo si se desordena; mayor = más influyente):
+  num_huespedes                  1.953
+  pref_cama                      0.082
+  anticipacion_dias              0.014
+  noches                         0.010
+  huesped_recurrente             0.009
+  pref_tranquila                 0.008
+  temporada                      0.007
+  llegada_fin_de_semana          0.002
+
+==============================================================================
+ARCHIVOS GENERADOS
+==============================================================================
+  ml/modelos/ocupacion_h14.joblib               2 KB
+  ml/modelos/ocupacion_h30.joblib               2 KB
+  ml/modelos/ocupacion_h7.joblib                2 KB
+  ml/modelos/ocupacion_meta.json                1 KB
+  ml/modelos/recomendador.joblib                4 KB
+  ml/modelos/recomendador_meta.json             2 KB
+  scikit-learn 1.9.1: la API debe usar esta MISMA versión para cargar los modelos.

@@ -1,0 +1,201 @@
+
+==============================================================================
+1. CARGA Y ESTRUCTURA
+==============================================================================
+reservas.csv:      5956 filas x 30 columnas
+habitaciones.csv:  30 filas x 7 columnas
+Periodo (llegadas): 2024-10-29  →  2026-12-28
+
+Tipos de dato por columna:
+reserva_codigo                         str
+canal                                  str
+estado                                 str
+temporada                              str
+fecha_creacion              datetime64[us]
+fecha_checkin               datetime64[us]
+fecha_checkout              datetime64[us]
+noches                               int64
+anticipacion_dias                    int64
+dia_semana_llegada                   int64
+mes_llegada                          int64
+llegada_fin_de_semana                int64
+num_huespedes                        int64
+tipo_habitacion                        str
+piso                                 int64
+precio_noche                       float64
+precio_total                       float64
+costo_servicios                    float64
+total_pagado                       float64
+pagado_completo                      int64
+huesped_nacionalidad                   str
+huesped_recurrente                   int64
+reservas_previas_huesped             int64
+pref_piso                              str
+pref_vista                             str
+pref_cama                              str
+pref_tranquila                       int64
+pref_accesible                       int64
+cancelada                            int64
+no_show                              int64
+
+Columnas con valores vacíos (cantidad):
+pref_piso     2857
+pref_vista    3334
+pref_cama     2727
+  → Los vacíos en pref_* NO son errores: significan que el huésped no indicó esa preferencia.
+
+==============================================================================
+2. VALIDACIÓN DE REGLAS DE NEGOCIO
+==============================================================================
+Regla                                                    Incumplen
+------------------------------------------------------------------
+[dura]   código de reserva repetido                              0
+[dura]   noches < 1                                              0
+[dura]   checkout no es posterior al checkin                     0
+[dura]   noches no coincide con checkout - checkin               0
+[dura]   reserva creada después de la llegada                    0
+[dura]   anticipación no coincide con checkin - creación         0
+[dura]   huéspedes < 1                                           0
+[dura]   precio por noche <= 0                                   0
+[dura]   total pagado negativo                                   0
+[dura]   tipo de habitación que no existe en el inventario         0
+[aviso]  precio_total distinto de precio_noche x noches          0
+[aviso]  más huéspedes que la capacidad del tipo                 0
+[aviso]  bandera cancelada no coincide con estado                0
+[aviso]  bandera no_show no coincide con estado                  0
+[aviso]  dia_semana_llegada no coincide con la fecha             0
+[aviso]  mes_llegada no coincide con la fecha                    0
+
+Filas eliminadas por reglas duras: 0 de 5956
+  → Con datos generados por el propio sistema se espera 0: la app ya valida al crear la reserva.
+    Con datos reales o importados de otra fuente aquí sí aparecerían errores.
+
+==============================================================================
+3. EXPLORACIÓN
+==============================================================================
+
+Distribución de «canal»:
+canal
+web           44.1%
+whatsapp      20.2%
+telefono      13.5%
+correo        10.7%
+presencial     7.0%
+otro           4.5%
+
+Distribución de «estado»:
+estado
+checkout      85.0%
+cancelada      8.8%
+no_show        3.1%
+confirmada     2.7%
+checkin        0.3%
+pendiente      0.1%
+
+Distribución de «temporada»:
+temporada
+baja     57.8%
+alta     24.6%
+media    17.6%
+
+Distribución de «tipo_habitacion»:
+tipo_habitacion
+Habitación Estándar      28.2%
+Habitación Superior      23.5%
+Suite Junior             13.0%
+Suite Familiar           10.8%
+Habitación Triple         8.8%
+Habitación Doble Twin     6.5%
+Suite Ejecutiva           5.5%
+Suite Presidencial        3.6%
+
+Variables numéricas (resumen):
+       noches  anticipacion_dias  num_huespedes  precio_noche  reservas_previas_huesped
+count  5956.0             5956.0         5956.0        5956.0                    5956.0
+mean      2.6               22.7            2.2      296613.5                       0.3
+std       1.2               27.6            0.9      138334.5                       0.6
+min       1.0                0.0            1.0      180000.0                       0.0
+25%       2.0                6.0            2.0      180000.0                       0.0
+50%       2.0               13.0            2.0      250000.0                       0.0
+75%       3.0               29.0            2.0      340000.0                       0.0
+max       7.0              397.0            5.0      750000.0                       5.0
+
+Huéspedes recurrentes: 22.9% de las reservas
+Llegadas en fin de semana: 36.6% de las reservas
+
+Preferencias declaradas (porcentaje de reservas; «sin dato» = no indicó):
+  pref_piso       sin dato: 48%  bajo: 30%  alto: 22%
+  pref_vista      sin dato: 56%  exterior: 28%  interior: 16%
+  pref_cama       sin dato: 46%  doble: 43%  sencillas: 12%
+  pref_tranquila  0: 73%  1: 27%
+  pref_accesible  0: 96%  1: 4%
+
+Reservas con desenlace conocido (checkout, cancelada o no_show): 5772 de 5956
+  Las demás (pendiente, confirmada, checkin) todavía no terminan: no se sabe si se cancelarán.
+  Para estudiar cancelaciones solo se usan las resueltas; si no, se contaría como «no canceló»
+  una reserva que simplemente aún no ha ocurrido.
+
+Cancelación global: 9.1%   |   no-show global: 3.2%
+
+Cancelación y no-show por canal:
+           cancelada no_show  reservas
+canal                                 
+correo          7.0%    1.6%       625
+otro           11.1%    2.7%       261
+presencial      1.7%    4.0%       401
+telefono        5.1%    2.2%       772
+web            11.6%    4.4%      2541
+whatsapp        9.6%    2.0%      1172
+
+Cancelación y no-show por temporada:
+          cancelada no_show  reservas
+temporada                            
+alta           6.3%    3.2%      1439
+baja          10.6%    3.4%      3284
+media          8.4%    2.6%      1049
+
+Cancelación y no-show por recurrente:
+                   cancelada no_show  reservas
+huesped_recurrente                            
+0                      10.1%    3.4%      4454
+1                       5.9%    2.7%      1318
+
+Cancelación y no-show según la anticipación con que se reservó:
+                  cancelada no_show
+anticipacion_dias                  
+0-3 d                  4.9%    2.2%
+4-14 d                 7.2%    3.5%
+15-30 d                9.0%    3.2%
+31-90 d               15.0%    3.5%
+más de 90 d           17.1%    3.0%
+
+¿Qué tipo de habitación se asigna según el tamaño del grupo? (% por fila)
+tipo_habitacion  Doble Twin  Estándar  Superior  Triple  S. Ejecutiva  S. Familiar  S. Junior  S. Presidencial
+num_huespedes                                                                                                 
+1                         4        54        28       0             8            0          4                0
+2                        10        30        30       2             7            0         18                2
+3                         0         0         0      67             0           19         11                3
+4                         0         0         0       0             0           74          0               26
+5                         0         0         0       0             0          100          0                0
+  → Esta relación es la base del recomendador (modelo 2).
+
+==============================================================================
+4. LIMPIEZA Y GUARDADO
+==============================================================================
+  Preferencias vacías  →  «sin_preferencia»
+  Fechas convertidas a tipo fecha; filas ordenadas por fecha de creación
+  Columna nueva «resuelta» (1 = el desenlace de la reserva ya se conoce)
+  Guardado: ml/datos/reservas_limpio.csv   (5956 filas, 31 columnas)
+
+Columnas que NO se pueden usar para predecir cancelación o no-show («fuga de información»):
+  estado, cancelada, no_show      → son el resultado mismo
+  total_pagado, pagado_completo   → solo existen si la estancia ocurrió
+  costo_servicios                 → solo hay consumos si el huésped llegó
+  Un modelo que las use se vería perfecto en el entrenamiento y fallaría en la vida real,
+  porque en el momento de decidir esos datos todavía no existen.
+
+Última reserva creada: 2026-10-29. Hay 182 reservas con llegada posterior: son reservas ya hechas
+hacia el futuro. El primer mes y los últimos del periodo están incompletos; en el Paso 3 no se
+usan como si fueran meses completos (se mide la ocupación solo donde la historia está completa).
+
+Gráficas guardadas en ml/informes/: reservas_por_mes.png, noches_por_reserva.png, cancelacion_por_canal.png

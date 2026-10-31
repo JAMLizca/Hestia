@@ -1,0 +1,42 @@
+
+==============================================================================
+MODELO 1 · PRONÓSTICO DE OCUPACIÓN
+==============================================================================
+Habitaciones en el inventario: 30
+Serie diaria: 2024-10-29 → 2026-10-28  (730 días)
+Ocupación media: 58.8%   mínima: 13%   máxima: 100%
+  (los primeros 10 días se descartan: las estancias previas al inicio de los datos no existen y la ocupación sale artificialmente baja)
+
+                desde         hasta           días
+entrenamiento   2025-01-05    2026-06-30       542
+prueba          2026-07-01    2026-10-28       120
+Filas del modelo 1: 1986  (3 horizontes x 662 días)
+
+Qué tan relacionada está la ocupación «en libros» con la ocupación real (correlación, solo entrenamiento):
+  a  7 días de anticipación:  en_libros vs real = 0.88    |   viernes/sábado vs real = +0.26
+  a 14 días de anticipación:  en_libros vs real = 0.77    |   viernes/sábado vs real = +0.26
+  a 30 días de anticipación:  en_libros vs real = 0.56    |   viernes/sábado vs real = +0.26
+  → Cuanto más cerca de la fecha, más reservas ya existen y mejor se puede predecir.
+
+Variables del modelo 1 (todas conocidas el día en que se hace el pronóstico):
+  en_libros_pct       % de habitaciones ya reservadas para esa noche
+  en_libros_sem_pct   % reservado en promedio alrededor de esa noche (±3 días)
+  nuevas_7d / _28d    reservas nuevas por día (como % de las habitaciones) en la última semana / mes: el ritmo de la demanda
+  ocup_ult7 / _28     ocupación real de los últimos 7 / 28 días
+  dia_semana, mes, es_finde
+
+==============================================================================
+MODELO 2 · RECOMENDADOR DE HABITACIÓN
+==============================================================================
+Filas: 5956   |   variables de entrada: 16   |   objetivo: tipo_habitacion (8 tipos)
+entrenamiento: 4765 reservas, creadas 2024-04-16 → 2026-06-14
+prueba:        1191 reservas, creadas 2026-06-14 → 2026-10-29
+
+Línea base: acertar siempre el tipo más frecuente del entrenamiento
+  tipo más frecuente: Habitación Estándar  →  acierta 28.0% de la prueba
+  El modelo solo vale la pena si supera claramente este número.
+
+Variables EXCLUIDAS a propósito (fuga de información):
+  precio_noche, precio_total   → el precio se deduce del tipo: sería como dar la respuesta
+  piso                         → es la habitación ya asignada (las suites ejecutiva y presidencial están siempre en el piso 4)
+  estado, cancelada, no_show, total_pagado, costo_servicios → ocurren después de reservar
