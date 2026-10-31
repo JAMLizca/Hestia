@@ -1,5 +1,5 @@
-import { CheckCircle2, Loader2, LogIn, Plus, Search, Trash2, UserPlus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CheckCircle2, Loader2, LogIn, Plus, RefreshCw, Search, Trash2, UserPlus } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { cuentaApi, reservasWebApi } from "../api/services";
 import { useAuth } from "../context/AuthContext";
@@ -46,12 +46,55 @@ function preferenciasEnvio(p) {
   return Object.keys(out).length ? out : null;
 }
 
-/** Dirección a la que se vuelve tras iniciar sesión: la misma búsqueda, con la habitación ya elegida. */
-const volverA = (f, tipo) => {
+/** Dirección a la que se vuelve tras iniciar sesión: la misma búsqueda, con la habitación ya elegida y sus preferencias. */
+const volverA = (f, tipo, prefs) => {
   const q = new URLSearchParams({ llegada: f.checkin, salida: f.checkout, huespedes: String(f.huespedes) });
   if (tipo) q.set("tipo", String(tipo.tipo_habitacion_id));
+  Object.keys(PREFERENCIAS_OPCIONES).forEach((k) => prefs?.[k] && q.set(k, prefs[k]));
+  PREFERENCIAS_BANDERAS.forEach(({ key }) => prefs?.[key] && q.set(key, "1"));
   return { pathname: "/reservar", search: `?${q.toString()}` };
 };
+
+/** Preferencias que venían en la dirección (solo valores válidos). */
+function prefsDesde(params) {
+  const p = { piso: "", vista: "", cama: "", tranquila: false, accesible: false };
+  Object.entries(PREFERENCIAS_OPCIONES).forEach(([k, opciones]) => {
+    const v = params.get(k);
+    if (opciones.some((o) => o.value === v)) p[k] = v;
+  });
+  PREFERENCIAS_BANDERAS.forEach(({ key }) => {
+    p[key] = params.get(key) === "1";
+  });
+  return p;
+}
+
+/** La habitación ya elegida, en una sola tarjeta, con la opción de cambiarla. */
+function HabitacionElegida({ elegido, fechas, noches, onCambiar }) {
+  return (
+    <section className="pc__card rv__chosen" aria-labelledby="rv-elegida">
+      <h2 id="rv-elegida">2. Tu habitación</h2>
+      <div className="rv__chosen-body">
+        <div className="rv__type-main">
+          <strong>{elegido.nombre}</strong>
+          <span className="rv__meta">
+            Hasta {elegido.capacidad_maxima} {elegido.capacidad_maxima === 1 ? "persona" : "personas"} · {elegido.camas} {elegido.camas === 1 ? "cama" : "camas"}
+            {elegido.metros_cuadrados ? ` · ${Number(elegido.metros_cuadrados)} m²` : ""}
+          </span>
+          <span className="rv__meta">
+            {formatShortDate(fechas.checkin)} → {formatShortDate(fechas.checkout)} · {noches} {noches === 1 ? "noche" : "noches"}
+          </span>
+        </div>
+        <div className="rv__type-price">
+          <strong>{formatMoney(elegido.precio_total)}</strong>
+          <span className="rv__meta">{formatMoney(elegido.precio_noche)} por noche</span>
+          <button type="button" className="rv__btn rv__chosen-change" onClick={onCambiar}>
+            <RefreshCw size={14} /> Cambiar habitación
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 /** Ver disponibilidad es libre; reservar exige una cuenta de huésped. */
 function AccesoParaReservar({ status, esPersonal, logout, volver }) {
@@ -115,6 +158,9 @@ function Reservar({ hotel }) {
   const [errorBusqueda, setErrorBusqueda] = useState("");
   const [tipos, setTipos] = useState(null);
   const [elegido, setElegido] = useState(null);
+  const [cambiando, setCambiando] = useState(false); // con una habitación elegida, la lista solo se reabre si el huésped quiere cambiarla
+  const formRef = useRef(null);
+  const yaDesplazo = useRef(false);
   const { user, status, esCliente, esPersonal, logout } = useAuth();
   const [huesped, setHuesped] = useState({ ...PERSONA_VACIA, email: "", telefono: "", procedencia: "" });
   // Registro de alojamiento (antes era un paso aparte, el pre-check-in): acompañantes y datos de la llegada.
@@ -126,7 +172,7 @@ function Reservar({ hotel }) {
     setHuesped((h) => ({ ...h, nombres: h.nombres || user.nombres, apellidos: h.apellidos || user.apellidos, email: h.email || user.email }));
   }, [esCliente, user]);
   const [notas, setNotas] = useState("");
-  const [prefs, setPrefs] = useState({ piso: "", vista: "", cama: "", tranquila: false, accesible: false });
+  const [prefs, setPrefs] = useState(() => prefsDesde(params));
   const [trampa, setTrampa] = useState("");
   const [consent, setConsent] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -137,8 +183,22 @@ function Reservar({ hotel }) {
   const editarFechas = (fn) => {
     setTipos(null);
     setElegido(null);
+    setCambiando(false);
     setFechas(fn);
   };
+
+  const elegirTipo = (tipo) => {
+    setElegido(tipo);
+    setCambiando(false);
+  };
+
+  // Al volver de crear la cuenta o iniciar sesión con la habitación ya elegida, se baja directo a completar los datos.
+  useEffect(() => {
+    if (!pedido?.tipo || !elegido || !esCliente || yaDesplazo.current) return;
+    yaDesplazo.current = true;
+    const reducido = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    formRef.current?.scrollIntoView({ behavior: reducido ? "auto" : "smooth", block: "start" });
+  }, [pedido, elegido, esCliente]);
 
   const noches = contarNoches(fechas.checkin, fechas.checkout);
   const maxAcompanantes = Math.max(0, Number(fechas.huespedes) - 1);
@@ -162,6 +222,7 @@ function Reservar({ hotel }) {
     setErrorBusqueda("");
     setError("");
     setElegido(null);
+    setCambiando(false);
     setBuscando(true);
     try {
       const encontrados = await reservasWebApi.disponibilidad(fechas);
@@ -263,12 +324,19 @@ function Reservar({ hotel }) {
         </button>
       </form>
 
-      {tipos && (
+      {tipos && elegido && !cambiando && <HabitacionElegida elegido={elegido} fechas={fechas} noches={noches} onCambiar={() => setCambiando(true)} />}
+
+      {tipos && (!elegido || cambiando) && (
         <section className="pc__card">
           <h2>2. Elige tu habitación</h2>
           <p className="pc__help">
             {formatShortDate(fechas.checkin)} → {formatShortDate(fechas.checkout)} · {noches} {noches === 1 ? "noche" : "noches"}
           </p>
+          {elegido && (
+            <button type="button" className="rv__btn" onClick={() => setCambiando(false)}>
+              Conservar {elegido.nombre}
+            </button>
+          )}
           {tipos.length === 0 ? (
             <Contacto hotel={hotel} extra="No hay habitaciones disponibles para esas fechas y esa cantidad de personas. Prueba con otras fechas." />
           ) : (
@@ -279,7 +347,10 @@ function Reservar({ hotel }) {
               preferencias={prefs}
               onPreferencias={setPrefs}
               seleccionada={elegido?.tipo_habitacion_id}
-              onElegir={(s) => setElegido(tipos.find((t) => t.tipo_habitacion_id === s.tipo_habitacion_id) ?? null)}
+              onElegir={(s) => {
+                const tipo = tipos.find((t) => t.tipo_habitacion_id === s.tipo_habitacion_id);
+                if (tipo) elegirTipo(tipo);
+              }}
             />
             <ul className="rv__types">
               {tipos.map((t) => (
@@ -296,7 +367,7 @@ function Reservar({ hotel }) {
                   <div className="rv__type-price">
                     <strong>{formatMoney(t.precio_total)}</strong>
                     <span className="rv__meta">{formatMoney(t.precio_noche)} por noche</span>
-                    <button type="button" className="rv__btn rv__btn--primary" onClick={() => setElegido(t)}>
+                    <button type="button" className="rv__btn rv__btn--primary" onClick={() => elegirTipo(t)}>
                       {elegido?.tipo_habitacion_id === t.tipo_habitacion_id ? "Elegida" : "Elegir"}
                     </button>
                   </div>
@@ -309,11 +380,11 @@ function Reservar({ hotel }) {
       )}
 
       {tipos && elegido && !esCliente && (
-        <AccesoParaReservar status={status} esPersonal={esPersonal} logout={logout} volver={volverA(fechas, elegido)} />
+        <AccesoParaReservar status={status} esPersonal={esPersonal} logout={logout} volver={volverA(fechas, elegido, prefs)} />
       )}
 
       {tipos && elegido && esCliente && (
-        <form className="pc__form" onSubmit={enviar}>
+        <form className="pc__form" onSubmit={enviar} ref={formRef}>
           <section className="pc__card">
             <h2>3. Tus datos y tu registro</h2>
             <p className="pc__help">
