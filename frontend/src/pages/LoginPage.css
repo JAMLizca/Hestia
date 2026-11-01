@@ -1,6 +1,6 @@
-/* Login — mockup del tablero de Canva (panel oscuro + formulario) */
+/* Login — panel oscuro + formulario. El panel usa el azul marino de la app (--navy-900), no un gris propio. */
 .login {
-  --login-dark: #2c333d;
+  --login-dark: var(--navy-900);
   --login-gold: #bea06c;
   display: grid;
   grid-template-columns: 54fr 46fr;
