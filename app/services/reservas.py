@@ -1,8 +1,5 @@
 """
 Reglas de negocio de las reservas: crear, editar y cambiar de estado.
-
-Estados: pendiente → confirmada → checkin → checkout, más cancelada y no_show. Solo pendiente, confirmada y
-checkin «bloquean» la habitación (ver app/services/ocupacion.py, que además lo garantiza en la base de datos).
 """
 import secrets
 from datetime import date, datetime, timezone
@@ -20,10 +17,8 @@ from app.services._comun import confirmar_cambios
 from app.services.ocupacion import ESTADOS_QUE_BLOQUEAN
 from app.services.temporada import temporada_para
 
-# Sin 0/O ni 1/I/L: el código se dicta por teléfono y no debe confundirse.
 _ALFABETO_CODIGO = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 
-# Qué se puede cambiar según el estado de la reserva.
 _CAMPOS_EDITABLES = {
     "pendiente": {"habitacion_id", "fecha_checkin_prevista", "fecha_checkout_prevista", "num_huespedes", "canal", "notas", "preferencias"},
     "confirmada": {"habitacion_id", "fecha_checkin_prevista", "fecha_checkout_prevista", "num_huespedes", "canal", "notas", "preferencias"},
@@ -111,11 +106,7 @@ def crear(db: Session, datos: ReservaCreate, usuario: Usuario) -> Reserva:
 
 
 def editar(db: Session, reserva_id: int, datos: ReservaUpdate) -> Reserva:
-    """
-    Edición parcial. Mientras la reserva está pendiente o confirmada se puede cambiar casi todo; en check-in
-    solo la salida prevista, el número de huéspedes y las notas; en cualquier otro estado, solo las notas.
-    El precio se recalcula con la tarifa vigente.
-    """
+
     reserva = obtener(db, reserva_id)
     cambios = datos.model_dump(exclude_unset=True)
     if "preferencias" in cambios:

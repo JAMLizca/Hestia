@@ -135,7 +135,6 @@
   color: var(--gray-500);
 }
 
-/* Si la tarjeta es angosta (móvil), cada módulo pasa a ser un bloque con una línea por rol */
 @container (max-width: 640px) {
   .perm__row--head {
     display: none;

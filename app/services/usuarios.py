@@ -1,9 +1,3 @@
-"""
-Usuarios del personal: alta, edición, contraseñas y eliminación.
-
-Un usuario solo se elimina si nunca dejó rastro (reservas que creó o pre-check-ins que validó); si ya trabajó en
-el sistema se desactiva, para no perder quién hizo cada reserva.
-"""
 from sqlalchemy.orm import Session
 
 from app.core.errores import Conflicto, NoAutenticado, NoEncontrado, Prohibido, SolicitudInvalida
@@ -17,9 +11,9 @@ from app.services import cuentas
 from app.services._comun import confirmar_cambios
 
 ROL_ADMIN = "administrador"
-EMAIL_USUARIO_WEB = "reservas-en-linea@hestia.co"  # atribuye las reservas hechas desde la página pública
+EMAIL_USUARIO_WEB = "reservas-en-linea@hestia.co"  
 
-# Columnas NOT NULL: un null explícito daría error 500 en la base de datos.
+# Columnas NOT NULL
 CAMPOS_OBLIGATORIOS = ("nombre", "email", "rol_id", "activo")
 
 
@@ -76,7 +70,7 @@ def editar(db: Session, usuario_id: int, datos_in: UsuarioUpdate, actual: Usuari
         if not nuevo_rol:
             raise SolicitudInvalida(f"El rol con id {datos['rol_id']} no existe")
 
-    # Protecciones para que el sistema nunca se quede sin un administrador con acceso.
+  
     es_propio = usuario.id == actual.id
     if es_propio and datos.get("activo") is False:
         raise SolicitudInvalida("No puedes desactivar tu propia cuenta")

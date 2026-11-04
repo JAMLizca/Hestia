@@ -6,7 +6,6 @@ from app.models.tipo_habitacion import TipoHabitacion
 from app.schemas.tipo_habitacion import TipoHabitacionCreate, TipoHabitacionUpdate
 from app.services._comun import confirmar_cambios
 
-# Columnas NOT NULL: un null explícito en el PUT daría error 500 en la base de datos.
 CAMPOS_OBLIGATORIOS = ("nombre", "capacidad_maxima", "precio_base", "camas")
 
 

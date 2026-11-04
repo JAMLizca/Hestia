@@ -6,7 +6,6 @@ from app.models.servicio import Servicio
 from app.schemas.servicio import ServicioCreate, ServicioUpdate
 from app.services._comun import confirmar_cambios
 
-# Columnas NOT NULL: un null explícito en el PUT daría error 500 en la base de datos.
 CAMPOS_OBLIGATORIOS = ("nombre", "precio")
 
 
