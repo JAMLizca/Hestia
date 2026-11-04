@@ -67,7 +67,6 @@ _CODIGOS_CHECK = (3819, 4025)
 
 @app.exception_handler(IntegrityError)
 async def _restriccion_de_base_de_datos(request: Request, exc: IntegrityError):
-    # Red de seguridad: los servicios validan antes, pero si la base rechaza algo no debe verse como un error 500 opaco.
     return JSONResponse(status_code=409, content={"detail": _MENSAJE_INTEGRIDAD})
 
 
@@ -103,8 +102,6 @@ app.include_router(prediccion.router, prefix=settings.API_V1_PREFIX)
 app.include_router(recomendacion.router, prefix=settings.API_V1_PREFIX)
 
 
-# Si existe la carpeta `static/` (el frontend ya compilado, como en el despliegue con Docker), la API
-# también sirve el sitio: así navegador y API comparten origen y no hace falta CORS.
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
 if (STATIC_DIR / "index.html").is_file():

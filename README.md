@@ -71,30 +71,6 @@ Esto crea todas las tablas en `hestia_db`. Si ya tenías la base creada y se agr
 nuevo (por ejemplo `configuracion_hotel`), vuelve a correr el mismo comando: solo crea las
 tablas que faltan y no toca las existentes.
 
-> **Base de datos que ya tenías:** `create_all` no agrega columnas a tablas existentes. Si
-> actualizas desde una versión anterior a la Fase 1 (código, canal y notas en `reservas`),
-> ejecuta una sola vez `migraciones/2026-10_fase1_reservas.sql`:
-> `mysql -u <usuario> -p hestia_db < migraciones/2026-10_fase1_reservas.sql`.
-> Para la Fase 3 (reserva en línea) agrega además `configuracion_hotel.reservas_web_activas`:
-> `python migraciones/fase3_reservas_web.py` (o `migraciones/2026-10_fase3_reservas_web.sql`).
-> Para la Fase 4 (pagos en línea) agrega columnas en `pagos` y `configuracion_hotel`:
-> `python migraciones/fase4_pagos.py` (o `migraciones/2026-10_fase4_pagos.sql`).
-> Para la Fase 5 (integridad en la base, temporada/preferencias, anulación de pagos) **haz antes una copia de la base** y ejecuta
-> `python migraciones/fase5_integridad.py` (no hay versión `.sql`: hay que revisar los datos existentes). Crea la tabla
-> `reserva_noches` (la que impide que dos reservas ocupen la misma habitación la misma noche), agrega las columnas nuevas y las
-> restricciones `CHECK`. Si ya había reservas solapadas o filas con estados inválidos, no las toca: las lista y termina con
-> código 1; se corrigen a mano y se vuelve a ejecutar.
-> Los scripts `.py` son idempotentes: se pueden ejecutar más de una vez.
-
-Después, crea los roles base y el primer administrador (el registro de
-usuarios en `/auth/register` exige un administrador autenticado):
-
-```bash
-python seed_roles.py
-```
-
-El script pide nombre, email y contraseña del administrador, o los toma de
-`ADMIN_NOMBRE`, `ADMIN_EMAIL` y `ADMIN_PASSWORD` si están definidas en `.env`.
 
 ### 6. Levantar el servidor de desarrollo
 
@@ -108,7 +84,7 @@ uvicorn app.main:app --reload
 - Documentación alternativa (ReDoc): http://localhost:8000/redoc
 - Healthcheck: http://localhost:8000/api/v1/health
 
-### 8. Levantar el frontend (opcional)
+### 8. Levantar el frontend
 
 ```bash
 cd frontend
@@ -116,7 +92,7 @@ npm install
 npm run dev
 ```
 
-En desarrollo, Vite reenvía `/api/v1` al backend (`http://localhost:8000`),
+Vite reenvía `/api/v1` al backend,
 por lo que no hace falta configurar CORS. Más detalles en
 [`frontend/README.md`](frontend/README.md).
 
@@ -216,7 +192,7 @@ pequeño de prueba. Hestia elige solo el ambiente (sandbox o producción) según
   aplica el backend (`GET /roles/permisos`): lo que el rol no puede hacer no se muestra, y entrar por URL a una pantalla
   restringida muestra «Acceso restringido». El backend sigue siendo quien decide.
 
-## Cuentas de huésped (Fase 6)
+## Cuentas de huésped 
 
 Quien quiere reservar en línea crea una **cuenta de huésped**. Ver la página principal, las habitaciones y la
 disponibilidad sigue siendo público; **reservar exige haber iniciado sesión**.
@@ -240,7 +216,7 @@ disponibilidad sigue siendo público; **reservar exige haber iniciado sesión**.
 
 ## Roles y permisos
 
-Cuatro roles del personal. Todos los permisos están en **una sola tabla** (`PERMISOS` en `app/core/permisos.py`):
+Cuatro roles del personal. Todos los permisos:
 la API la aplica a cada petición (sin sesión → 401, sin permiso → 403) y la pantalla *Roles* muestra esa misma
 tabla. Lo que no está en la tabla se niega, así que un rol nuevo o una ruta nueva no pueden hacer nada hasta
 que se agreguen. Para cambiar un permiso se edita únicamente esa tabla.
@@ -252,7 +228,7 @@ que se agreguen. Para cambiar un permiso se edita únicamente esa tabla.
 | Huéspedes | solo ver | ver, editar, eliminar | ver, crear, editar | solo ver |
 | Servicios (catálogo y consumos) | solo ver | solo ver | todo | solo ver |
 | Pagos | ver, registrar, corregir, anular | ver, corregir, anular | ver, registrar | solo ver |
-| Tipos de habitación | todo | todo | ver, crear, editar | solo ver |
+| Tipos de habitación | todo | todo | solo ver | solo ver |
 | Facturación, disponibilidad | ver | ver | ver | ver |
 | Usuarios | todo | — | — | — |
 | Roles | todo (los demás consultan la matriz) | ver | ver | ver |
@@ -315,7 +291,7 @@ Todos los endpoints (salvo `/health` y `/auth/login`) requieren el header
 | Roles | `GET/POST /roles/`, `PUT/DELETE /roles/{id}` (editar: solo la descripción), `GET /roles/permisos` | crear, editar y eliminar: administrador. `permisos` devuelve la matriz módulo × acción × rol y los usuarios por rol |
 | Configuración | `GET/PUT /configuracion/` | consultar: cualquier usuario; modificar: administrador |
 | Usuarios | `GET /usuarios/`, `GET/PUT/DELETE /usuarios/{id}`, `PUT /usuarios/{id}/password` | solo administrador; eliminar solo si nunca registró actividad (el alta es `POST /auth/register`) |
-| Tipos de habitación | `GET/POST /tipos-habitacion/`, `GET/PUT/DELETE /tipos-habitacion/{id}` | ver: todos; crear y editar: administrador, gerente, recepcionista; eliminar: administrador, gerente |
+| Tipos de habitación | `GET/POST /tipos-habitacion/`, `GET/PUT/DELETE /tipos-habitacion/{id}` | administrador, gerente |
 | Habitaciones | `GET/POST /habitaciones/`, `GET/PUT/DELETE /habitaciones/{id}` | consultar: cualquier usuario. Crear, editar y eliminar: **solo recepcionista** (administrador y gerente solo miran) |
 | Disponibilidad | `GET /disponibilidad/?fecha_checkin=&fecha_checkout=` | — |
 | Huéspedes | `GET/POST /huespedes/`, `GET/PUT/DELETE /huespedes/{id}` | cualquier usuario; eliminar: administrador, gerente |
