@@ -1,5 +1,5 @@
 """
-Predicción de ocupación (Hestia Intelligence). Las reglas están en app/services/inteligencia.py.
+Predicción de ocupación
 """
 from datetime import date
 

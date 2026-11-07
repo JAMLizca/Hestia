@@ -1,9 +1,7 @@
 """
 Webhook de Wompi: `POST /publico/wompi/eventos`.
 
-Wompi avisa aquí cada cambio de estado de una transacción. El aviso solo se acepta si su checksum
-coincide con el calculado con el secreto de eventos (ver app/core/wompi.py). Responde 200 cuando el aviso
-es auténtico (aunque no sea de este sistema) para que Wompi no lo reintente.
+Cambios de estado de una transacción de Wompi
 """
 import logging
 

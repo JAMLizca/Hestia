@@ -1,5 +1,5 @@
 """
-Endpoints de roles y de la matriz de permisos. Solo traducen HTTP; las reglas están en app/services/roles.py.
+Endpoints de roles y de la matriz de permisos.
 """
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
@@ -21,9 +21,8 @@ def listar_roles(db: Session = Depends(get_db)):
 @router.get("/permisos", response_model=MatrizPermisos, summary="Matriz de permisos por módulo y usuarios por rol")
 def matriz_permisos(request: Request, db: Session = Depends(get_db)):
     """
-    Qué puede hacer cada rol en cada módulo, según la tabla de app/core/permisos.py (la misma que el backend
-    aplica en cada petición). Un rol creado después no puede hacer nada hasta que se agregue a esa tabla.
-    El frontend usa esta misma matriz para ocultar menús y botones.
+    Qué puede hacer cada rol en cada módulo, según la tabla de app/core/permisos.py.
+    Un rol creado después no puede hacer nada hasta que se agregue a esa tabla.
     """
     return servicio.matriz(db, request.app)
 
@@ -35,7 +34,9 @@ def matriz_permisos(request: Request, db: Session = Depends(get_db)):
     summary="Crea un nuevo rol (solo administradores)",
 )
 def crear_rol(rol: RoleCreate, db: Session = Depends(get_db)):
-    """400 si ya existe un rol con el mismo nombre; 403 si quien lo pide no es administrador."""
+    """400 si ya existe un rol con el mismo nombre;
+       403 si quien lo pide no es administrador.
+    """
     return servicio.crear(db, rol)
 
 
@@ -45,7 +46,6 @@ def crear_rol(rol: RoleCreate, db: Session = Depends(get_db)):
     summary="Edita la descripción de un rol (solo administradores)",
 )
 def actualizar_rol(role_id: int, datos: RoleUpdate, db: Session = Depends(get_db)):
-    """El nombre no se puede cambiar: los permisos se asignan por nombre de rol."""
     return servicio.editar(db, role_id, datos)
 
 
@@ -55,5 +55,4 @@ def actualizar_rol(role_id: int, datos: RoleUpdate, db: Session = Depends(get_db
     summary="Elimina un rol sin usuarios (solo administradores)",
 )
 def eliminar_rol(role_id: int, db: Session = Depends(get_db)):
-    """409 si es uno de los roles del sistema (administrador, gerente, recepcionista) o si aún tiene usuarios."""
     servicio.eliminar(db, role_id)

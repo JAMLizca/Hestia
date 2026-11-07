@@ -1,6 +1,5 @@
 """
 CRUD del catálogo de servicios. Consultar: autenticado. Escribir: solo recepción.
-Las reglas están en app/services/servicios.py.
 """
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session

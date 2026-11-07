@@ -1,6 +1,5 @@
 """
-Recomendación de habitaciones para recepción (Hestia Intelligence). Las reglas están en app/services/inteligencia.py.
-La versión para el huésped está en reservas_web.py (/publico/recomendacion).
+Recomendación de habitaciones para recepción
 """
 from datetime import date
 from typing import Literal

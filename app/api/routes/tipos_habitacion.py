@@ -1,5 +1,5 @@
 """
-Endpoints CRUD de tipos de habitación. Las reglas están en app/services/tipos_habitacion.py.
+Endpoints CRUD de tipos de habitación.
 """
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session

@@ -1,8 +1,5 @@
 """
-Endpoints de la entidad Reserva. Solo traducen HTTP: las reglas están en app/services/reservas.py.
-
-Las reservas pendientes que superan el plazo configurado se cancelan solas antes de
-atender cualquier petición (ver app/core/vencimiento.py).
+Endpoints de la entidad Reserva.
 """
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session

@@ -1,8 +1,5 @@
 """
-Administración de usuarios del staff: listar, consultar, editar, activar/desactivar, cambiar la contraseña y
-eliminar. Todo el módulo es solo para administradores. Las reglas están en app/services/usuarios.py.
-
-El alta de usuarios sigue siendo `POST /auth/register`.
+Administración de usuarios
 """
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
@@ -37,8 +34,5 @@ def cambiar_password(usuario_id: int, datos: UsuarioPasswordUpdate, db: Session 
 
 @router.delete("/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Elimina un usuario que nunca registró actividad (solo administrador)")
 def eliminar_usuario(usuario_id: int, db: Session = Depends(get_db), usuario_actual: Usuario = Depends(get_current_user)):
-    """
-    No se puede eliminar a sí mismo ni al último administrador activo (400). Si ya creó reservas o validó
-    pre-check-ins responde 409: hay que desactivarlo para conservar el historial.
-    """
+   
     servicio.eliminar(db, usuario_id, usuario_actual)

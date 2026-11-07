@@ -1,6 +1,5 @@
 """
-Rutas públicas de la reserva en línea (página /reservar). Solo traducen HTTP y limitan el abuso por IP;
-las reglas están en app/services/reservas_web.py.
+Rutas públicas de la reserva en línea
 """
 from datetime import date
 from typing import Literal
@@ -35,7 +34,6 @@ router = APIRouter(
 
 
 def _buscar(db: Session, datos: ConsultaWeb, request: Request) -> Reserva:
-    """Un código o documento errado cuenta como intento fallido: 8 por minuto y por IP bloquean (429)."""
     try:
         return servicio.buscar(db, datos)
     except NoEncontrado:

@@ -1,5 +1,5 @@
 """
-Servicios consumidos dentro de una reserva. El precio se congela al agregar.
+Servicios consumidos dentro de una reserva.
 Las reglas están en app/services/consumos.py.
 """
 from fastapi import APIRouter, Depends, status
@@ -25,7 +25,6 @@ def agregar_servicio_a_reserva(reserva_id: int, datos: ReservaServicioCreate, db
 
 @router.put("/{reserva_servicio_id}", response_model=ReservaServicioOut, summary="Corrige la cantidad de un consumo")
 def editar_servicio_de_reserva(reserva_id: int, reserva_servicio_id: int, datos: ReservaServicioUpdate, db: Session = Depends(get_db)):
-    """El precio unitario no cambia (es el que se congeló al agregar). 409 si el pagado quedaría por encima del total."""
     return servicio.editar(db, reserva_id, reserva_servicio_id, datos)
 
 

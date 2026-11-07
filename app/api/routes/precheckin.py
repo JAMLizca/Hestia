@@ -1,11 +1,5 @@
 """
 Pre-check-in: el huésped completa su registro desde un enlace antes de llegar y recepción lo valida.
-Las reglas están en app/services/precheckin.py.
-
-Dos grupos de rutas:
-- /reservas/{id}/precheckin (con sesión): recepción genera el enlace, ve lo que envió el huésped y lo valida.
-- /publico/precheckin/{token} (sin sesión): lo que abre el huésped. El token es el único secreto, por eso las
-  rutas públicas tienen límite de peticiones y no revelan nada sobre enlaces inválidos.
 """
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
@@ -28,7 +22,7 @@ publico = APIRouter(
 )
 
 
-# ── Recepción ───────────────────────────────────────────────────────────────
+# Recepción 
 
 @router.get("/", response_model=PreCheckinOut | None, summary="Pre-check-in de la reserva (null si aún no se creó el enlace)")
 def obtener_precheckin(reserva_id: int, db: Session = Depends(get_db)):
@@ -55,7 +49,7 @@ def validar_precheckin(
     return servicio.validar(db, reserva_id, opciones, usuario)
 
 
-# ── Huésped (sin sesión) ────────────────────────────────────────────────────
+# Huésped (sin sesión)
 
 def _resolver(db: Session, token: str, request: Request) -> PreCheckin:
     """Un enlace que no existe cuenta como intento fallido (límite por IP contra la adivinación de tokens)."""

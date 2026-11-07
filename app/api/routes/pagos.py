@@ -1,8 +1,3 @@
-"""
-Pagos asociados a una reserva. Una reserva puede tener varios pagos.
-Registrar: cualquier usuario autenticado. Corregir o anular: administrador o gerente.
-Las reglas están en app/services/pagos.py.
-"""
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
