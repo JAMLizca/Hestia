@@ -10,9 +10,9 @@ from app.db.session import get_db
 from app.models.cuenta_huesped import CuentaHuesped
 from app.models.usuario import Usuario
 
-# tokenUrl le indica a Swagger dónde está el endpoint de login para el botón "Authorize".
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
-# Igual, pero sin exigir el token: la verificación de permisos corre en TODAS las rutas y las públicas no llevan sesión.
+
 oauth2_opcional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 TIPO_PERSONAL = "personal"
@@ -25,10 +25,10 @@ def get_current_user(
     db: Session = Depends(get_db),
 ) -> Usuario:
     """
-    Decodifica el JWT recibido en el header `Authorization: Bearer <token>`
-    y carga el usuario correspondiente desde la DB.
+    Decodificar el JWT recibido en el header,
+    carga el usuario correspondiente desde la DB.
     """
-    # verificar_permiso (dependencia global) ya lo cargó en esta misma petición: no se consulta dos veces.
+
     ya_cargado = getattr(request.state, "usuario", None)
     if ya_cargado is not None:
         return ya_cargado
@@ -43,11 +43,10 @@ def get_current_user(
         usuario_id = payload.get("sub")
         if usuario_id is None:
             raise credentials_exception
-        # El token de un huésped lleva tipo="cliente" y su "sub" es el id de OTRA tabla: jamás vale como personal.
-        # Los tokens del personal anteriores a las cuentas de huésped no traen "tipo" y siguen siendo válidos.
+      
         if payload.get("tipo", TIPO_PERSONAL) != TIPO_PERSONAL:
             raise credentials_exception
-        # int() dentro del try: un "sub" no numérico da 401 y no un error 500.
+        
         usuario_id = int(usuario_id)
     except (ValueError, TypeError):
         raise credentials_exception
@@ -63,11 +62,6 @@ def verificar_permiso(
     token: str | None = Depends(oauth2_opcional),
     db: Session = Depends(get_db),
 ) -> None:
-    """
-    Dependencia global: aplica la tabla de permisos (app/core/permisos.py) a cada ruta del personal.
-    Sin sesión válida → 401; con sesión pero sin permiso para (módulo, acción) → 403.
-    Las rutas públicas, el login y las del huésped no están en la matriz y pasan sin tocarse.
-    """
     from app.core.config import settings
     from app.core.permisos import clasificar_peticion, rol_puede
 
@@ -87,7 +81,6 @@ def get_cuenta_actual(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ) -> CuentaHuesped:
-    """Cuenta de huésped autenticada. Rechaza cualquier token que no sea de huésped (incluido el del personal)."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Inicia sesión con tu cuenta de huésped para continuar",
@@ -108,9 +101,7 @@ def get_cuenta_actual(
 
 def liberar_pendientes_vencidas(db: Session = Depends(get_db)) -> None:
     """
-    Dependencia de las rutas de reservas y disponibilidad: antes de responder, cancela las
-    reservas pendientes vencidas (ver app/core/vencimiento.py). Se declara después de
-    `get_current_user` para que una petición sin sesión no ejecute nada.
+    Dependencia de las rutas de reservas y disponibilidad
     """
     expirar_pendientes(db)
 

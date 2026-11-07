@@ -1,9 +1,3 @@
-"""
-Errores de negocio. Los servicios (app/services) los lanzan sin saber nada de HTTP;
-`main.py` los convierte en la respuesta {"detail": "..."} con el código que corresponda.
-"""
-
-
 class ErrorNegocio(Exception):
     codigo_http = 400
     cabeceras: dict[str, str] | None = None

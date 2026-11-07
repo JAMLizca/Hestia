@@ -1,5 +1,5 @@
 """
-Modulo que contiene la configuración de la aplicación, se incluye las var de entornos y config de la DB
+Modulo que contiene la configuración de la aplicación, var de entornos y config de la DB
 """
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,27 +16,21 @@ class Settings(BaseSettings):
     DB_HOST: str = "localhost"
     DB_PORT: int = 3306
     DB_USER: str = "root"
-    # Sin valor por defecto: debe definirse en `.env` (puede ser vacía).
     DB_PASSWORD: str 
     DB_NAME: str = "hestia_db"
-    # Servicios de MySQL en la nube (Aiven, TiDB, etc.) exigen conexión cifrada.
     DB_SSL: bool = False
-    # Certificado de la autoridad (ca.pem) para verificar el servidor: ruta a un archivo, o su contenido
-    # pegado en DB_SSL_CA_PEM (útil en plataformas donde solo hay variables de entorno).
     DB_SSL_CA: str = ""
     DB_SSL_CA_PEM: str = ""
 
-    # Sin valor por defecto: con una clave conocida cualquiera puede falsificar tokens.
+   
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
-    # Pagos en línea con Wompi (https://wompi.com). Vacíos = sin pagos en línea.
-    # Las llaves salen del panel de Wompi: Desarrolladores → Secretos para integración técnica.
-    WOMPI_PUBLIC_KEY: str = ""        # pub_test_... (pruebas) o pub_prod_... (producción)
-    WOMPI_INTEGRITY_SECRET: str = ""  # firma del enlace de pago
-    WOMPI_EVENTS_SECRET: str = ""     # verifica los avisos (webhook) que envía Wompi
-    # Dirección pública del frontend: a ella vuelve el huésped después de pagar.
+
+    WOMPI_PUBLIC_KEY: str = ""        
+    WOMPI_INTEGRITY_SECRET: str = ""  
+    WOMPI_EVENTS_SECRET: str = ""    
     FRONTEND_URL: str = "http://localhost:5173"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")

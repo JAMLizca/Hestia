@@ -1,9 +1,5 @@
 """
 Límite de peticiones para las rutas públicas (sin sesión).
-
-Es en memoria y por dirección IP: frena los intentos de adivinar tokens o de saturar el formulario
-sin depender de nada externo. Si la API corre en varios procesos, cada uno lleva su propia cuenta
-(el límite real es entonces un múltiplo); para algo más estricto conviene limitar en el proxy.
 """
 import time
 from collections import defaultdict, deque
@@ -55,10 +51,6 @@ _creaciones: dict[str, deque] = defaultdict(deque)
 
 
 def limitar_creacion(request: Request) -> None:
-    """Dependencia de POST /publico/reservas: cada reserva bloquea una habitación hasta que vence o se confirma.
-
-    Solo cuentan las reservas realmente creadas (ver `registrar_creacion`), para no castigar errores de digitación.
-    """
     ip, ahora = _ip(request), time.monotonic()
     with _candado:
         cola = _creaciones[ip]
@@ -77,9 +69,9 @@ def registrar_creacion(request: Request) -> None:
 
 
 
-MAX_FALLOS_LOGIN = 10  # contraseñas incorrectas por IP en la ventana
+MAX_FALLOS_LOGIN = 10 
 VENTANA_LOGIN = 300
-MAX_REGISTROS = 10  # cuentas de huésped nuevas por IP cada hora
+MAX_REGISTROS = 10  
 VENTANA_REGISTRO = 3600
 _fallos_login: dict[str, deque] = defaultdict(deque)
 _registros: dict[str, deque] = defaultdict(deque)
@@ -93,7 +85,6 @@ def _bloquear_si_excede(cola: deque, ahora: float, ventana: int, maximo: int, me
 
 
 def limitar_login(request: Request) -> None:
-    """Dependencia de POST /auth/login: frena el adivinar contraseñas. Solo cuentan los intentos fallidos."""
     with _candado:
         _bloquear_si_excede(
             _fallos_login[_ip(request)], time.monotonic(), VENTANA_LOGIN, MAX_FALLOS_LOGIN,
@@ -107,7 +98,6 @@ def registrar_fallo_login(request: Request) -> None:
 
 
 def limitar_registro(request: Request) -> None:
-    """Dependencia de POST /cuenta/registro: evita crear cuentas en masa. Cuenta solo las cuentas creadas."""
     with _candado:
         _bloquear_si_excede(
             _registros[_ip(request)], time.monotonic(), VENTANA_REGISTRO, MAX_REGISTROS,
@@ -126,7 +116,6 @@ def registrar_fallo(request: Request) -> None:
 
 
 def reiniciar() -> None:
-    """Solo para pruebas."""
     with _candado:
         _peticiones.clear()
         _fallos.clear()
