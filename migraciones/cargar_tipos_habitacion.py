@@ -1,12 +1,3 @@
-"""
-Carga un catálogo inicial de tipos de habitación (idempotente: omite los que ya existen por nombre).
-
-    python migraciones/cargar_tipos_habitacion.py --ver     # solo muestra qué haría
-    python migraciones/cargar_tipos_habitacion.py           # crea los que falten
-
-Usa la conexión del `.env` (tu MySQL local, o Aiven si tienes sus datos en el `.env`). No toca los tipos
-ni las habitaciones existentes. Los precios son una referencia: ajústalos después desde Habitaciones → Tipos.
-"""
 import sys
 from decimal import Decimal
 from pathlib import Path

@@ -1,13 +1,3 @@
-"""
-Carga un catálogo inicial de servicios del hotel (idempotente: omite los que ya existen por nombre).
-
-    python migraciones/cargar_servicios.py --ver     # solo muestra qué haría
-    python migraciones/cargar_servicios.py           # crea los que falten
-
-Usa la conexión del `.env` (tu MySQL local, o Aiven con las variables DB_* en la línea de comandos).
-No modifica ni borra los servicios existentes. Los precios (COP) son una referencia: ajústalos después
-desde Servicios → Catálogo. Las categorías coinciden con las del formulario (cada una tiene su color).
-"""
 import sys
 import unicodedata
 from decimal import Decimal
@@ -20,7 +10,7 @@ from app.models.servicio import Servicio  # noqa: E402
 
 # (categoría, nombre, descripción, precio en COP)
 SERVICIOS = [
-    # ── Alimentos ──────────────────────────────────────────────
+    # Alimentos
     ("Alimentos", "Desayuno buffet", "Buffet con frutas, huevos al gusto, arepas, pan, cereales, jugos naturales y café. Se sirve de 6:30 a 10:00 a. m.", 28000),
     ("Alimentos", "Desayuno en la habitación", "Desayuno americano servido en la habitación a la hora que elijas (de 6:30 a 10:30 a. m.).", 35000),
     ("Alimentos", "Almuerzo ejecutivo", "Sopa del día, plato fuerte con proteína, acompañamientos, jugo y postre.", 38000),
@@ -33,13 +23,13 @@ SERVICIOS = [
     ("Alimentos", "Cerveza nacional", "Cerveza nacional bien fría (botella).", 9000),
     ("Alimentos", "Cóctel de la casa", "Cóctel de autor preparado en el bar del hotel.", 24000),
     ("Alimentos", "Botella de vino de la casa", "Botella de vino tinto o blanco seleccionado por el hotel.", 95000),
-    # ── Lavandería ─────────────────────────────────────────────
+    # Lavandería
     ("Lavandería", "Lavado por prenda", "Lavado y secado de una prenda. Entrega en 24 horas.", 8000),
     ("Lavandería", "Planchado por prenda", "Planchado de una prenda, listo en el mismo día si se entrega antes de las 10:00 a. m.", 5000),
     ("Lavandería", "Lavado en seco por prenda", "Lavado en seco para prendas delicadas, trajes y vestidos. Entrega en 48 horas.", 15000),
     ("Lavandería", "Lavandería por kilo", "Lavado, secado y doblado de ropa por kilo. Entrega en 24 horas.", 14000),
     ("Lavandería", "Lavandería express", "Servicio el mismo día para una bolsa de ropa (hasta 3 kg) entregada antes de las 9:00 a. m.", 45000),
-    # ── Habitación ─────────────────────────────────────────────
+    # Habitación 
     ("Habitación", "Cama adicional", "Cama plegable con ropa de cama completa, por noche (sujeto a disponibilidad y capacidad de la habitación).", 60000),
     ("Habitación", "Cuna para bebé", "Cuna con colchón y sábanas, por noche.", 25000),
     ("Habitación", "Salida tardía (late check-out)", "Salida hasta las 6:00 p. m. en lugar del mediodía (sujeto a disponibilidad).", 50000),
@@ -48,19 +38,19 @@ SERVICIOS = [
     ("Habitación", "Limpieza adicional", "Una segunda limpieza de la habitación en el día.", 20000),
     ("Habitación", "Kit de aseo adicional", "Cepillo, crema dental, jabón, champú y peinilla.", 10000),
     ("Habitación", "Tarifa por mascota", "Cargo por noche por mascota pequeña (hasta 10 kg), con cama y platos de bienvenida.", 50000),
-    # ── Transporte ─────────────────────────────────────────────
+    # Transporte
     ("Transporte", "Traslado aeropuerto Benito Salas", "Traslado privado entre el hotel y el aeropuerto Benito Salas de Neiva (un trayecto).", 45000),
     ("Transporte", "Traslado terminal de transporte", "Traslado privado entre el hotel y la terminal de transporte de Neiva (un trayecto).", 25000),
     ("Transporte", "Vehículo con conductor (por hora)", "Carro con conductor para diligencias o recorridos por la ciudad, por hora.", 70000),
     ("Transporte", "Parqueadero cubierto", "Cupo de parqueadero cubierto y vigilado, por noche.", 15000),
-    # ── Bienestar ──────────────────────────────────────────────
+    # Bienestar
     ("Bienestar", "Masaje relajante (60 min)", "Masaje de cuerpo completo con aceites esenciales para liberar el estrés.", 120000),
     ("Bienestar", "Masaje descontracturante (60 min)", "Masaje de presión media a profunda para espalda, cuello y hombros.", 140000),
     ("Bienestar", "Circuito de spa", "Acceso por día a sauna, turco y jacuzzi.", 50000),
     ("Bienestar", "Manicure y pedicure", "Manicure y pedicure con esmaltado tradicional.", 45000),
     ("Bienestar", "Clase de yoga matutina", "Clase grupal guiada de 60 minutos frente a la piscina, por persona.", 25000),
     ("Bienestar", "Pase de piscina para visitantes", "Acceso a la piscina por el día para un acompañante que no se aloja en el hotel.", 30000),
-    # ── Actividades ────────────────────────────────────────────
+    # Actividades
     ("Actividades", "Tour Desierto de la Tatacoa", "Excursión de día completo al Desierto de la Tatacoa con guía, transporte y refrigerio. Precio por persona.", 220000),
     ("Actividades", "Tour San Agustín", "Excursión de día completo al Parque Arqueológico de San Agustín con guía y transporte. Precio por persona.", 260000),
     ("Actividades", "Paseo en lancha por Betania", "Recorrido en lancha por la represa de Betania con almuerzo típico. Precio por persona.", 130000),

@@ -1,16 +1,5 @@
 """
 Hestia · Fase 6 (cuentas de huésped): migración de la base de datos.
-
-Agrega:
-  - la tabla cuentas_huesped (quienes reservan en línea con su propia cuenta)
-  - reservas.cuenta_id (a qué cuenta pertenece una reserva hecha en línea; NULL en las demás)
-
-Es idempotente: se puede ejecutar varias veces y solo agrega lo que falta. Usa la conexión del `.env`.
-
-    python migraciones/fase6_cuentas.py       (desde la carpeta raíz del proyecto, con el entorno virtual activo)
-
-Haz una copia de la base antes de correrla. Requiere haber aplicado antes las migraciones de las fases anteriores.
-Las reservas en línea que ya existen quedan sin cuenta (cuenta_id NULL): se siguen consultando con su código y documento.
 """
 import sys
 from pathlib import Path

@@ -1,12 +1,3 @@
-"""
-Enciende (o apaga) las reservas en línea sin pasar por la pantalla de Configuración.
-
-    python migraciones/activar_reservas_web.py          # enciende
-    python migraciones/activar_reservas_web.py --apagar # apaga
-
-Es lo mismo que marcar «Permitir reservas en línea» en Configuración y guardar. Requiere haber
-corrido antes migraciones/fase3_reservas_web.py (que agrega la columna).
-"""
 import sys
 from pathlib import Path
 

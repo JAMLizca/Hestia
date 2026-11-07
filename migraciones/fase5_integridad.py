@@ -1,28 +1,5 @@
 """
 Hestia · Fase 5 (integridad en la base de datos, CRUD completo y datos para ML): migración.
-
-Agrega, sobre una base que ya existía:
-  - reservas.temporada (alta|media|baja) y reservas.preferencias (JSON)       → RF-20
-  - pagos.motivo_anulacion                                                     → RF-16
-  - la tabla reserva_noches (una fila por habitación y noche ocupada) con su restricción UNIQUE:
-    es lo que impide en la base de datos que dos reservas ocupen la misma habitación la misma noche → RNF-10
-  - las restricciones CHECK de estados, fechas, cantidades y montos de cada tabla                   → RNF-10
-
-Qué hace con los datos que ya hay:
-  - temporada: se calcula para cada reserva existente según su fecha de llegada.
-  - reserva_noches: se llena con las reservas vigentes (pendiente, confirmada, checkin). Si dos reservas
-    vigentes ya se solapaban, la segunda NO se bloquea y se lista para que recepción la corrija.
-  - CHECK: antes de agregar cada una se verifica que ninguna fila existente la incumpla; si alguna lo hace,
-    esa restricción se omite y se muestran las filas para corregirlas.
-
-Es idempotente: se puede ejecutar varias veces; solo agrega lo que falta. Si quedó algo pendiente termina con
-código 1: corrige esos datos y vuelve a ejecutarlo. Usa la conexión del `.env`.
-
-    python migraciones/fase5_integridad.py       (desde la carpeta raíz del proyecto, con el entorno virtual activo)
-
-Requiere haber aplicado antes las migraciones de las Fases 1, 3 y 4 y MySQL 8.0.16+ o MariaDB 10.2+
-(las versiones anteriores aceptan las restricciones CHECK pero no las aplican).
-HAZ UNA COPIA DE LA BASE DE DATOS ANTES DE EJECUTARLO.
 """
 import sys
 from pathlib import Path
@@ -83,7 +60,7 @@ def rellenar_noches() -> None:
         vigentes = (
             db.query(Reserva)
             .filter(Reserva.estado.in_(ESTADOS_QUE_BLOQUEAN))
-            .order_by(Reserva.fecha_creacion, Reserva.id)  # si hay solapamientos, gana la reserva más antigua
+            .order_by(Reserva.fecha_creacion, Reserva.id)  
             .all()
         )
         nuevas = 0
