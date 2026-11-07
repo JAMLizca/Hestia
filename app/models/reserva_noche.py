@@ -1,14 +1,8 @@
 """
-Modelo SQLAlchemy de la tabla `reserva_noches`: una fila por cada noche que una reserva «bloquea» una habitación.
-
-Sirve para que la base de datos misma impida dos reservas simultáneas en una habitación (MySQL no tiene
-restricciones de exclusión por rango): la restricción UNIQUE (habitacion_id, fecha) rechaza la segunda,
-aunque dos peticiones lleguen a la vez. Las filas las mantiene app/services/ocupacion.py: no se escriben a mano.
-Una reserva solo tiene filas mientras está pendiente, confirmada o en check-in; la noche de salida no cuenta.
+Modelo SQLAlchemy de la tabla `reserva_noches`
 """
 from sqlalchemy import Column, Date, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import relationship
-
 from app.db.base_class import Base
 
 

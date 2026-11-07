@@ -1,9 +1,5 @@
 """
-Modelo SQLAlchemy de la tabla `precheckins`: el registro previo que el huésped completa desde
-un enlace antes de llegar. Cada reserva tiene como máximo uno.
-
-Los datos que envía el huésped se guardan tal cual en `datos` (JSON) y solo pasan al registro
-del huésped cuando recepción los valida.
+Modelo SQLAlchemy de la tabla `precheckins
 """
 from sqlalchemy import JSON, CheckConstraint, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import backref, relationship
@@ -18,9 +14,7 @@ class PreCheckin(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     reserva_id = Column(Integer, ForeignKey("reservas.id"), unique=True, nullable=False)
-    # Valor secreto de la URL pública. Se regenera si el enlace se filtra o se pierde.
     token = Column(String(64), unique=True, nullable=False, index=True)
-    # enviado (enlace creado) → completado (el huésped envió sus datos) → validado (recepción los aplicó)
     estado = Column(String(20), nullable=False, default="enviado")
     datos = Column(JSON, nullable=True)
 

@@ -1,6 +1,6 @@
 """
 Tabla puente entre Reserva y Servicio. El precio_unitario secongela al
-momento de agregar el servicio (no cambia si lugo cambia el catálogo).
+momento de agregar el servicio
 """
 from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Integer, Numeric
 from sqlalchemy.orm import relationship

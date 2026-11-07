@@ -1,6 +1,5 @@
 """
-Esquemas Pydantic del pre-check-in: lo que el huésped envía desde el enlace público y lo que
-ve recepción.
+Esquemas Pydantic del pre-check-in
 """
 from datetime import date, datetime, time
 from typing import Literal
@@ -62,7 +61,6 @@ class Acompanante(_Persona):
 
 
 class PreCheckinEnvio(BaseModel):
-    """Cuerpo del PUT público. Los acompañantes son los demás huéspedes de la reserva."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -87,7 +85,6 @@ class PreCheckinEnvio(BaseModel):
 
 
 class PreCheckinPublico(BaseModel):
-    """Lo que ve quien abre el enlace: solo lo necesario para completar el formulario."""
 
     hotel_nombre: str
     hora_checkin: str
@@ -97,7 +94,6 @@ class PreCheckinPublico(BaseModel):
     noches: int
     num_huespedes: int
     estado: EstadoPreCheckin
-    # Solo nombre y nacionalidad: el documento, el teléfono y el correo los escribe el huésped.
     titular: dict
     datos: dict | None = None
     editable: bool
@@ -108,13 +104,13 @@ class PreCheckinOut(BaseModel):
 
     reserva_id: int
     token: str
-    enlace: str  # ruta relativa en el panel (ej. /pre-checkin/<token>); el cliente le antepone su dominio
+    enlace: str  
     estado: EstadoPreCheckin
     datos: dict | None = None
     fecha_creacion: datetime | None = None
     fecha_completado: datetime | None = None
     fecha_validacion: datetime | None = None
-    huesped: dict | None = None  # datos actuales del huésped, para compararlos con lo declarado
+    huesped: dict | None = None 
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -122,5 +118,4 @@ class PreCheckinOut(BaseModel):
 class ValidarPreCheckin(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    # Solo si el documento declarado difiere del registrado y recepción confirma que el registrado era un error.
     actualizar_documento: bool = False

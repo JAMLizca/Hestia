@@ -23,7 +23,6 @@ class HabitacionCreate(HabitacionBase):
 
 
 class HabitacionUpdate(BaseModel):
-    """Todos los campos son opcionales: solo se actualiza lo que se va a envíar."""
 
     numero: NumeroHabitacion | None = None
     tipo_habitacion_id: int | None = None

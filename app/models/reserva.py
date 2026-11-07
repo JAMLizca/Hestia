@@ -34,7 +34,6 @@ class Reserva(Base):
     huesped_id = Column(Integer, ForeignKey("huespedes.id"), nullable=False)
     habitacion_id = Column(Integer, ForeignKey("habitaciones.id"), nullable=False)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    # Cuenta de huésped que hizo la reserva en línea (NULL si la tomó el personal).
     cuenta_id = Column(Integer, ForeignKey("cuentas_huesped.id"), nullable=True, index=True)
 
     fecha_checkin_prevista = Column(Date, nullable=False)
@@ -47,18 +46,13 @@ class Reserva(Base):
     estado = Column(String(20), nullable=False, default="pendiente")
     precio_total = Column(Numeric(10, 2), nullable=False)
 
-    # Código legible para que el huésped lo cite al llamar (ej. HST-K7M4QX).
+   
     codigo = Column(String(12), unique=True, nullable=False)
-    # Cómo llegó la reserva: presencial | telefono | whatsapp | correo | web | otro
     canal = Column(String(20), nullable=False, default="presencial", server_default="presencial")
     notas = Column(String(500), nullable=True)
     # Datos para el análisis y los modelos de Machine Learning (RF-20).
-    # Temporada según la fecha de llegada (ver app/services/temporada.py); se guarda para conservar el histórico.
     temporada = Column(String(10), nullable=False, default="baja", server_default="baja")
-    # Preferencias del huésped para esta estadía: {"piso": "alto", "vista": "exterior", "cama": "doble",
-    # "tranquila": true, "accesible": true}; solo trae las que el huésped pidió.
     preferencias = Column(JSON, nullable=True)
-    # Solo se llena cuando el sistema cancela sola una reserva pendiente que venció.
     motivo_cancelacion = Column(String(100), nullable=True)
 
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())

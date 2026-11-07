@@ -20,10 +20,10 @@ ZONAS_HORARIAS = (
     "Europe/Madrid",
     "UTC",
 )
-Moneda = Literal[MONEDAS]  # type: ignore[valid-type]
-ZonaHoraria = Literal[ZONAS_HORARIAS]  # type: ignore[valid-type]
+Moneda = Literal[MONEDAS]  
+ZonaHoraria = Literal[ZONAS_HORARIAS]  
 
-# Lo que devuelve la API mientras el administrador no haya guardado nada.
+
 VALORES_POR_DEFECTO = {
     "nombre": "Hotel Hestia",
     "razon_social": None,
@@ -43,12 +43,11 @@ VALORES_POR_DEFECTO = {
     "zona_horaria": "America/Bogota",
 }
 
-# Campos que no admiten null (columnas NOT NULL).
+
 CAMPOS_OBLIGATORIOS = ("nombre", "hora_checkin", "hora_checkout", "horas_vencimiento_pendiente", "reservas_web_activas", "anticipo_porcentaje", "moneda", "zona_horaria")
 
 
 def _limpiar(valor):
-    """Recorta espacios; una cadena vacía equivale a "sin dato"."""
     if isinstance(valor, str):
         valor = valor.strip()
         return valor or None
@@ -75,7 +74,6 @@ class ConfiguracionBase(BaseModel):
 
 
 class ConfiguracionUpdate(BaseModel):
-    """Todos los campos son opcionales: solo se actualiza lo que se envíe."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -105,10 +103,8 @@ class ConfiguracionUpdate(BaseModel):
 
 
 class ConfiguracionOut(ConfiguracionBase):
-    """Configuración vigente. `fecha_actualizacion` es null si aún no se ha guardado nada."""
 
     fecha_actualizacion: datetime | None = None
-    # Solo lectura: las llaves de Wompi están en el .env del servidor (nunca viajan por la API).
     pasarela_configurada: bool = False
 
     model_config = ConfigDict(from_attributes=True)

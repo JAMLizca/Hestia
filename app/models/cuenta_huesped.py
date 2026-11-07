@@ -1,8 +1,5 @@
 """
 Modelo SQLAlchemy de la tabla `cuentas_huesped`.
-
-Es la cuenta de quien reserva desde la página pública. Es una tabla aparte de `usuarios` (el personal):
-así una cuenta de huésped no puede heredar permisos del panel por error, ni siquiera por tener el mismo id.
 """
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.sql import func
