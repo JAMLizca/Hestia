@@ -73,8 +73,7 @@ class _Contacto(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
 
-# El titular de la reserva en línea es el mismo de un pre-check-in (documento, nombre, nacionalidad, nacimiento,
-# teléfono, correo y procedencia): reservar y registrarse son un solo paso.
+# El titular de la reserva en línea es el mismo de un pre-check-in 
 HuespedWeb = Titular
 
 
@@ -84,13 +83,11 @@ class ReservaWebCreate(_Contacto):
     fecha_checkout: date
     num_huespedes: int = Field(ge=1, le=MAX_HUESPEDES)
     huesped: HuespedWeb
-    # Registro de alojamiento (lo que antes era el pre-check-in aparte): acompañantes y datos de la llegada.
     acompanantes: list[Acompanante] = Field(default_factory=list, max_length=MAX_HUESPEDES - 1)
     hora_llegada: time | None = None
     motivo_viaje: MotivoViaje | None = None
     notas: str | None = Field(default=None, max_length=500)
     preferencias: PreferenciasReserva | None = None
-    # Campo trampa: está oculto en el formulario; solo lo llenan los bots.
     sitio_web: str | None = Field(default=None, max_length=200)
 
     @field_validator("notas", mode="before")
@@ -99,7 +96,7 @@ class ReservaWebCreate(_Contacto):
         return (v.strip() or None) if isinstance(v, str) else v
 
     def registro(self) -> PreCheckinEnvio:
-        """Los datos del registro de alojamiento, en el formato del pre-check-in (valida que no se repitan documentos)."""
+        """Los datos del registro de alojamiento, formato del pre-check-in (valida que no se repitan documentos)."""
         return PreCheckinEnvio(
             titular=self.huesped.model_dump(),
             acompanantes=[a.model_dump() for a in self.acompanantes],
@@ -139,14 +136,13 @@ class ReservaWebOut(BaseModel):
     precio_total: Decimal
     moneda: str
     hora_checkin: str
-    # Horas que tiene el hotel para confirmar antes de que la reserva pendiente venza (0 = no vence).
+    # Horas que tiene el hotel para confirmar antes de vencer
     horas_vencimiento: int
     puede_cancelar: bool
     motivo_cancelacion: str | None = None
     precheckin_enlace: str | None = None
-    # Estado del registro de alojamiento: enviado (falta que el huésped lo complete) | completado | validado.
+    # Estado del registro de alojamiento: enviado | completado | validado.
     registro: str | None = None
-    # Pago en línea del anticipo (solo si el hotel lo tiene activo).
     puede_pagar: bool = False
     anticipo_monto: Decimal | None = None
     pagado: Decimal = Decimal("0")

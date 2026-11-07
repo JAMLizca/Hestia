@@ -1,13 +1,3 @@
-"""
-Mantiene `reserva_noches` sincronizada con las reservas (ver app/models/reserva_noche.py).
-
-Se engancha al `flush` de SQLAlchemy: cada vez que una reserva se crea, cambia de estado, de fechas o de
-habitación, o se elimina, sus noches se recalculan en la misma transacción. Así ningún camino del código
-(rutas, pago en línea, reactivación de una reserva vencida…) puede olvidarse de bloquear o liberar la habitación.
-Si dos reservas pidieran la misma noche, la base de datos lanza IntegrityError y la operación completa se revierte.
-
-Las actualizaciones masivas (`query.update`) no pasan por aquí: el vencimiento automático llama a `liberar`.
-"""
 from datetime import date, timedelta
 
 from sqlalchemy import event

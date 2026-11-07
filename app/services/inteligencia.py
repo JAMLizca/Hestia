@@ -1,17 +1,13 @@
 """
-Hestia Intelligence: arma las variables de los modelos con los datos VIVOS del hotel y consulta los modelos
+Arma las variables de los modelos con los datos VIVOS del hotel y consulta los modelos
 (app/ml/prediccion.py). Las variables se calculan igual que en el entrenamiento (ml/paso3_variables.py).
 
 Predicción de ocupación
   Se hace «hoy» para los próximos días (máximo 30). El modelo depende de qué tan lejos esté cada día:
   hasta 7 días usa el modelo de 7, hasta 14 el de 14 y hasta 30 el de 30.
-  «En libros» = reservas ya hechas que cubren esa noche, contando también las canceladas (así se contó al
-  entrenar: el sistema no guarda cuándo se canceló una reserva).
 
 Recomendación
-  El modelo estima qué tipo de habitación suele elegirse con una reserva como esta; luego se descartan los tipos
-  que no caben o no están libres y se reparte la afinidad entre los que quedan. Dentro de cada tipo se propone la
-  habitación que mejor cumple las preferencias que se pueden comprobar (piso, acceso, cama).
+  El modelo estima qué tipo de habitación suele elegirse con una reserva como esta.
 """
 from collections import defaultdict
 from datetime import date, datetime, time, timedelta, timezone
@@ -35,7 +31,6 @@ MAX_SUGERENCIAS = 3
 
 
 def hoy_hotel(db: Session) -> date:
-    """La fecha de hoy en la zona horaria del hotel (el servidor corre en UTC y de noche iría un día adelante)."""
     zona = configuracion.obtener(db).zona_horaria
     try:
         from zoneinfo import ZoneInfo
@@ -54,9 +49,8 @@ def _modelo(nombre: str):
         raise ServicioNoDisponible("Los modelos de Hestia Intelligence no están disponibles por ahora.") from e
 
 
-# =============================================================================================
+
 # PREDICCIÓN DE OCUPACIÓN
-# =============================================================================================
 def pronosticar_ocupacion(db: Session, desde: date | None, dias: int) -> dict:
     hoy = hoy_hotel(db)
     desde = desde or hoy
@@ -87,7 +81,7 @@ def pronosticar_ocupacion(db: Session, desde: date | None, dias: int) -> dict:
             if estado in ESTADOS_DUERMEN:
                 dormidas[noche] += 1
 
-    # Ritmo de reservas nuevas (por día, como % de las habitaciones)
+    # Ritmo de reservas nuevas 
     creadas = [c.date() for (c,) in db.query(Reserva.fecha_creacion).filter(Reserva.fecha_creacion >= datetime.combine(hoy - timedelta(days=28), time.min)).all() if c]
     nuevas7 = sum(1 for c in creadas if c > hoy - timedelta(days=7)) / 7 / n_hab * 100
     nuevas28 = sum(1 for c in creadas if c > hoy - timedelta(days=28)) / 28 / n_hab * 100
@@ -131,17 +125,12 @@ def pronosticar_ocupacion(db: Session, desde: date | None, dias: int) -> dict:
         "entrenado": modelos[7].meta.get("entrenado"),
     }
 
-
-# =============================================================================================
 # RECOMENDACIÓN DE HABITACIONES
-# =============================================================================================
 def _clave_numero(numero: str):
-    """Orden natural: 2 antes que 10, 101 antes que 102."""
     return (0, int(numero), "") if numero.isdigit() else (1, 0, numero)
 
 
 def _cumple_preferencias(h: Habitacion, tipo: TipoHabitacion, prefs: dict, piso_max: int, piso_min: int) -> list[str]:
-    """Preferencias que se pueden comprobar con los datos de la habitación (la vista y la tranquilidad no se guardan)."""
     motivos = []
     if prefs.get("piso") and h.piso is not None and piso_max > piso_min:
         corte = (piso_min + piso_max) // 2  # con pisos 1 a 4: bajo = 1-2, alto = 3-4

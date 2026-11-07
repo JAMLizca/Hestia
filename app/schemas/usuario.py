@@ -20,7 +20,7 @@ class UsuarioCreate(UsuarioBase):
 
 
 class UsuarioOut(UsuarioBase):
-    """Datos que la API devuelve al consultar un usuario. No se incluye la contraseña."""
+    """Datos que la API devuelve al consultar un usuario. No se incluye la contaseña."""
 
     id: int
     rol_id: int

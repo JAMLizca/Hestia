@@ -62,10 +62,10 @@ from app.services.usuarios import EMAIL_USUARIO_WEB
 from app.services.temporada import temporada_para
 
 MAX_PENDIENTES_WEB_POR_HUESPED = 3
-MAX_INTENTOS_PAGO = 10  # intentos de pago (filas en `pagos`) por reserva
+MAX_INTENTOS_PAGO = 10 
 
 
-# ── Utilidades ──────────────────────────────────────────────────────────────
+# Utilidades
 
 def config_hotel(db: Session) -> dict:
     fila = db.get(ConfiguracionHotel, CONFIG_ID)
@@ -76,8 +76,6 @@ def config_hotel(db: Session) -> dict:
 
 
 def catalogo(db: Session) -> CatalogoPublico:
-    """Lo que el hotel ofrece (tipos de habitación y servicios), para la página principal. No depende del
-    interruptor de reservas en línea: es información, no una operación. Nunca expone números de habitación."""
     cuenta = {}
     for tipo_id, n in (
         db.query(Habitacion.tipo_habitacion_id, func.count(Habitacion.id))
@@ -111,7 +109,6 @@ def catalogo(db: Session) -> CatalogoPublico:
 
 
 def pagos_activos(config: dict) -> bool:
-    """Pagos en línea: el hotel fijó un anticipo, cobra en COP y el servidor tiene las llaves de Wompi."""
     return config["anticipo_porcentaje"] > 0 and config["moneda"] == wompi.MONEDA and settings.WOMPI_CONFIGURADO
 
 
@@ -139,7 +136,6 @@ def validar_fechas(checkin: date, checkout: date) -> int:
 
 
 def _usuario_web(db: Session) -> Usuario:
-    """Usuario inactivo (no puede iniciar sesión) al que se atribuyen las reservas hechas en línea."""
     usuario = db.query(Usuario).filter(Usuario.email == EMAIL_USUARIO_WEB).first()
     if usuario:
         return usuario
@@ -187,14 +183,13 @@ def salida(reserva: Reserva, config: dict, con_enlace: bool = True) -> ReservaWe
 
 
 def buscar(db: Session, datos: ConsultaWeb) -> Reserva:
-    """Código + documento del titular: si no coinciden, el mensaje es el mismo (no revela cuál falló)."""
     reserva = db.query(Reserva).filter(Reserva.codigo == datos.codigo.strip().upper()).first()
     if reserva is None or reserva.huesped.documento_identidad.strip().upper() != datos.documento_identidad.strip().upper():
         raise NoEncontrado("No encontramos una reserva con esos datos. Revisa el código y el documento.")
     return reserva
 
 
-# ── Casos de uso ────────────────────────────────────────────────────────────
+# Casos de uso
 
 def datos_hotel(db: Session) -> HotelPublico:
     c = config_hotel(db)
@@ -259,16 +254,12 @@ def crear(db: Session, datos: ReservaWebCreate, cuenta: CuentaHuesped) -> Reserv
         db.add(huesped)
         db.flush()
     else:
-        # Quien reserva no puede modificar un huésped que ya existe: sus datos de contacto van en las notas
-        # para que recepción los vea y decida.
         pendientes = db.query(Reserva).filter(Reserva.huesped_id == huesped.id, Reserva.canal == "web", Reserva.estado == "pendiente").count()
         if pendientes >= MAX_PENDIENTES_WEB_POR_HUESPED:
             raise Conflicto("Ya tienes varias reservas pendientes de confirmar. Comunícate con el hotel.")
         contacto = f"Contacto en línea: {h.nombres} {h.apellidos} · {h.email} · {h.telefono}"
         notas = f"{contacto}\n{notas}" if notas else contacto
 
-    # Se bloquean las habitaciones del tipo para que dos reservas simultáneas no tomen la misma
-    # (y, además, la restricción UNIQUE de reserva_noches lo impide en la base de datos).
     habitaciones = (
         db.query(Habitacion)
         .filter(Habitacion.tipo_habitacion_id == tipo.id, Habitacion.estado != "mantenimiento")
@@ -300,9 +291,6 @@ def crear(db: Session, datos: ReservaWebCreate, cuenta: CuentaHuesped) -> Reserv
     )
     db.add(reserva)
     db.flush()
-    # Reservar y registrarse son un solo paso: el registro de alojamiento viaja con la reserva y queda "completado".
-    # Recepción lo valida después (con ese paso se aplican los datos al huésped; mientras tanto no se modifica un
-    # huésped que ya existía).
     db.add(PreCheckin(
         reserva_id=reserva.id, estado="completado", token=secrets.token_urlsafe(24),
         datos=datos.registro().model_dump(mode="json"), fecha_completado=datetime.now(timezone.utc),
@@ -320,7 +308,7 @@ def cancelar(db: Session, reserva: Reserva) -> ReservaWebOut:
     reserva.estado = "cancelada"
     reserva.motivo_cancelacion = "Cancelada por el huésped (en línea)"
     for p in reserva.pagos:
-        if p.estado == "pendiente":  # si el huésped igual completa ese pago, aplicar_transaccion lo marca para reembolso
+        if p.estado == "pendiente":  
             p.estado = "anulado"
     confirmar_cambios(db)
     db.refresh(reserva)
@@ -343,7 +331,7 @@ def iniciar_pago(db: Session, reserva: Reserva, config: dict) -> PagoIniciado:
     if len(reserva.pagos) >= MAX_INTENTOS_PAGO:
         raise DemasiadasSolicitudes("Hiciste demasiados intentos de pago. Comunícate con el hotel.")
 
-    for p in reserva.pagos:  # un solo intento vigente a la vez
+    for p in reserva.pagos: 
         if p.estado == "pendiente":
             p.estado = "anulado"
     referencia = wompi.nueva_referencia(reserva.codigo)
@@ -364,7 +352,6 @@ def verificar_pago(db: Session, reserva: Reserva, transaccion_id: str) -> Reserv
         tx = wompi.consultar_transaccion(transaccion_id)
     except wompi.WompiNoDisponible:
         raise PasarelaNoDisponible("No pudimos consultar el estado del pago. Inténtalo de nuevo en un momento.")
-    # La transacción debe pertenecer a esta reserva: con otro código y documento no se confirma nada.
     if not any(p.referencia and p.referencia == tx.get("reference") for p in reserva.pagos):
         raise NoEncontrado("Ese pago no corresponde a esta reserva.")
     wompi.aplicar_transaccion(db, tx)

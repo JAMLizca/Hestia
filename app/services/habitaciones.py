@@ -39,13 +39,11 @@ def editar(db: Session, habitacion_id: int, datos_in: HabitacionUpdate) -> Habit
     habitacion = obtener(db, habitacion_id)
     datos = datos_in.model_dump(exclude_unset=True)
 
-    # Estos campos son NOT NULL en la base de datos: un null explícito daría error 500.
     for campo in ("numero", "tipo_habitacion_id", "estado"):
         if campo in datos and datos[campo] is None:
             raise SolicitudInvalida(f"El campo '{campo}' no puede ser nulo")
 
-    # Con un huésped alojado (reserva en 'checkin') la habitación debe seguir 'ocupada'. El estado cambia solo con
-    # el check-out; así no se salta la validación del check-in.
+    # Con un huésped alojado (reserva en 'checkin') la habitación debe seguir 'ocupada'.
     if "estado" in datos and datos["estado"] != habitacion.estado:
         alojado = db.query(db.query(Reserva).filter(Reserva.habitacion_id == habitacion_id, Reserva.estado == "checkin").exists()).scalar()
         if alojado and datos["estado"] != "ocupada":

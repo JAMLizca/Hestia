@@ -1,10 +1,3 @@
-"""
-Dataset de reservas para analítica y Machine Learning (RF-20).
-
-Una fila por reserva, con variables ya derivadas (noches, anticipación, temporada, preferencias, recurrencia…) y
-las dos etiquetas que interesa predecir (`cancelada`, `no_show`). No incluye datos personales: ni nombre,
-documento, correo ni teléfono del huésped.
-"""
 import csv
 import io
 from datetime import date
@@ -38,7 +31,6 @@ def filas(db: Session, desde: date | None = None, hasta: date | None = None, sol
     if desde and hasta and hasta < desde:
         raise SolicitudInvalida("'hasta' no puede ser anterior a 'desde'")
 
-    # Cuántas reservas tenía el huésped antes de cada una (en orden de creación): su "recurrencia".
     previas: dict[int, int] = {}
     contador: dict[int, int] = {}
     for reserva_id, huesped_id in db.query(Reserva.id, Reserva.huesped_id).order_by(Reserva.fecha_creacion, Reserva.id).all():

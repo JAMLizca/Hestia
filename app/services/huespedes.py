@@ -6,7 +6,6 @@ from app.models.huesped import Huesped
 from app.schemas.huesped import HuespedCreate, HuespedUpdate
 from app.services._comun import confirmar_cambios
 
-# Columnas NOT NULL: un null explícito en el PUT daría error 500 en la base de datos.
 CAMPOS_OBLIGATORIOS = ("tipo_documento", "nombres", "apellidos")
 
 

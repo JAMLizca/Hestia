@@ -11,8 +11,8 @@ from app.services.ocupacion import habitaciones_ocupadas
 def consultar(db: Session, fecha_checkin: date, fecha_checkout: date, tipo_habitacion_id: int | None = None) -> list[Habitacion]:
     """
     Una habitación está disponible si:
-    1. Su estado operativo no es "mantenimiento".
-    2. No tiene ninguna reserva vigente (pendiente, confirmada o en checkin) que se cruce con el rango.
+    * Su estado operativo no es "mantenimiento".
+    * No tiene ninguna reserva vigente (pendiente, confirmada o en checkin) que se cruce con el rrango.
     """
     if fecha_checkout <= fecha_checkin:
         raise SolicitudInvalida("La fecha de checkout debe ser posterior a la de checkin")

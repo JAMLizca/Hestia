@@ -1,10 +1,5 @@
 """
 Cuentas de huésped: quien quiere reservar en línea crea una cuenta y entra con ella.
-
-Reglas:
-  - El correo es único entre las cuentas de huésped Y el personal (un mismo correo no puede ser de las dos, porque el
-    inicio de sesión es uno solo y no sabría a cuál entrar).
-  - Una cuenta solo ve y gestiona las reservas que ella misma hizo (reservas.cuenta_id).
 """
 from sqlalchemy.orm import Session
 
@@ -16,8 +11,6 @@ from app.models.usuario import Usuario
 from app.schemas.cuenta import RegistroCuenta
 from app.services._comun import confirmar_cambios
 
-# Hash de una contraseña inexistente: se verifica igual cuando el correo no existe, para que el tiempo de
-# respuesta no revele qué correos tienen cuenta.
 _HASH_FALSO = hash_password("no-es-una-contrasena-real")
 
 

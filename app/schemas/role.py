@@ -60,7 +60,7 @@ class PermisoAccion(BaseModel):
     accion: str  # ver | crear | editar | estado | eliminar
     etiqueta: str
     roles: list[str]  # nombres de los roles que pueden realizar la acción
-    notas: dict[str, str] = {}  # aclaraciones por rol (p. ej. "solo el estado")
+    notas: dict[str, str] = {}  # aclaraciones por rol
 
 
 class ModuloPermisos(BaseModel):

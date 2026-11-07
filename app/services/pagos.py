@@ -1,9 +1,5 @@
 """
-Pagos de una reserva: registrar, corregir y anular.
-
-Un pago nunca se borra (queda el rastro contable): se corrige mientras esté `pagado` o se anula con un
-motivo. Los pagos hechos por la pasarela (llevan `referencia`) no se tocan a mano: su dinero se devuelve
-desde el panel de Wompi.
+Pagos de una reserva
 """
 from sqlalchemy.orm import Session
 

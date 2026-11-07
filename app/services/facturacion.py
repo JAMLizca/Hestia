@@ -17,7 +17,6 @@ def costo_total(reserva: Reserva) -> Decimal:
 
 
 def total_pagado(reserva: Reserva) -> Decimal:
-    """Solo cuentan los pagos en estado 'pagado': los anulados, rechazados y pendientes no suman."""
     return sum((p.monto for p in reserva.pagos if p.estado == "pagado"), Decimal("0"))
 
 

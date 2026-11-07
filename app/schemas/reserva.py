@@ -19,7 +19,7 @@ def _notas_o_none(valor):
 
 
 class PreferenciasReserva(BaseModel):
-    """Preferencias del huésped para esta estadía (RF-20). Todas son opcionales."""
+    """Preferencias del huésped para esta estadía (RF-20)."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -30,7 +30,6 @@ class PreferenciasReserva(BaseModel):
     accesible: bool = False
 
     def compactas(self) -> dict | None:
-        """Solo lo que el huésped pidió; None si no pidió nada (así se guarda en la base)."""
         pedidas = {k: v for k, v in self.model_dump().items() if v not in (None, False)}
         return pedidas or None
 
@@ -53,9 +52,7 @@ class ReservaBase(BaseModel):
 
 class ReservaCreate(ReservaBase):
     """
-    Datos requeridos para crear una reserva. El precio, el código, el estado inicial
-    ('pendiente') y el usuario que gestiona se calculan en el backend,
-    no se reciben del cliente.
+    Datos requeridos para crear una reserva.
     """
 
     canal: CanalReserva = "presencial"
@@ -69,11 +66,7 @@ class ReservaCreate(ReservaBase):
 
 
 class ReservaUpdate(BaseModel):
-    """
-    Edición parcial: solo se cambia lo que se envíe. Qué campos se pueden editar
-    depende del estado de la reserva (ver PUT /reservas/{id}). El huésped no se cambia.
-    """
-
+    
     model_config = ConfigDict(extra="forbid")
 
     habitacion_id: int | None = None

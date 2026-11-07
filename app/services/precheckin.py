@@ -1,7 +1,3 @@
-"""
-Pre-check-in: el huésped completa su registro desde un enlace antes de llegar y recepción lo valida,
-lo que aplica esos datos al registro del huésped.
-"""
 import secrets
 from datetime import date, datetime, timezone
 
@@ -17,7 +13,6 @@ from app.schemas.configuracion import VALORES_POR_DEFECTO
 from app.schemas.precheckin import PreCheckinEnvio, PreCheckinOut, PreCheckinPublico, ValidarPreCheckin
 from app.services._comun import confirmar_cambios
 
-# Estados de la reserva en los que todavía tiene sentido pedir el registro previo.
 ESTADOS_ADMITEN = ("pendiente", "confirmada")
 
 
@@ -49,7 +44,7 @@ def salida(pc: PreCheckin) -> PreCheckinOut:
     )
 
 
-# ── Recepción ───────────────────────────────────────────────────────────────
+# Recepción
 
 def obtener(db: Session, reserva_id: int) -> PreCheckinOut | None:
     reserva = _reserva(db, reserva_id)
@@ -108,7 +103,7 @@ def validar(db: Session, reserva_id: int, opciones: ValidarPreCheckin | None, us
     return salida(pc)
 
 
-# ── Huésped (sin sesión) ────────────────────────────────────────────────────
+# Huésped (sin sesión)
 
 def resolver(db: Session, token: str) -> PreCheckin:
     """Lanza NoEncontrado si el enlace no existe (la ruta lo cuenta como intento fallido) o Caducado si ya no sirve."""

@@ -36,7 +36,6 @@ def actualizar(db: Session, datos: ConfiguracionUpdate) -> ConfiguracionOut:
     try:
         db.commit()
     except IntegrityError:
-        # Dos administradores guardaron por primera vez a la vez: la fila ya existe.
         db.rollback()
         config = db.get(ConfiguracionHotel, CONFIG_ID)
         for campo, valor in cambios.items():
