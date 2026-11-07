@@ -35,7 +35,7 @@ log = logging.getLogger("hestia.wompi")
 
 CHECKOUT_URL = "https://checkout.wompi.co/p/"
 VIGENCIA_ENLACE_MIN = 60  # minutos que el enlace de pago sigue siendo válido
-MONEDA = "COP"  # Wompi solo cobra en pesos colombianos
+MONEDA = "COP"  # Wompi solo COP
 
 ESTADOS_RECHAZO = {"DECLINED": "rechazado", "ERROR": "rechazado", "VOIDED": "anulado"}
 
@@ -58,7 +58,6 @@ def nueva_referencia(codigo_reserva: str) -> str:
 
 
 def url_checkout(*, referencia: str, monto: Decimal, redirect_url: str, email: str | None = None, nombre: str | None = None) -> str:
-    """Enlace del Web Checkout firmado con el secreto de integridad (ver docs.wompi.co, «Web Checkout»)."""
     expira = (datetime.now(timezone.utc) + timedelta(minutes=VIGENCIA_ENLACE_MIN)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
     cents = centavos(monto)
     firma = _sha256(f"{referencia}{cents}{MONEDA}{expira}{settings.WOMPI_INTEGRITY_SECRET}")
@@ -78,7 +77,7 @@ def url_checkout(*, referencia: str, monto: Decimal, redirect_url: str, email: s
     return f"{CHECKOUT_URL}?{urllib.parse.urlencode(params)}"
 
 
-# ── Avisos (webhook) ────────────────────────────────────────────────────────
+#Avisos
 
 def _valor(data: dict, ruta: str):
     for parte in ruta.split("."):
@@ -89,7 +88,6 @@ def _valor(data: dict, ruta: str):
 
 
 def checksum_evento(evento: dict, secreto: str) -> str:
-    """SHA-256 de: valores de `signature.properties` (en ese orden) + timestamp + secreto de eventos."""
     props = evento.get("signature", {}).get("properties", [])
     texto = "".join(str(_valor(evento.get("data", {}), p)) for p in props) + str(evento.get("timestamp", "")) + secreto
     return _sha256(texto)
@@ -103,14 +101,13 @@ def verificar_evento(evento: dict, secreto: str | None = None) -> bool:
     return hmac.compare_digest(checksum_evento(evento, secreto).upper(), recibido.upper())
 
 
-# ── Consulta directa a Wompi ────────────────────────────────────────────────
+# Consulta directa a Wompi
 
 class WompiNoDisponible(Exception):
     pass
 
 
 def consultar_transaccion(transaccion_id: str) -> dict:
-    """GET /transactions/{id} (endpoint público de Wompi). Devuelve el objeto `data` de la transacción."""
     url = f"{settings.WOMPI_API_URL}/transactions/{urllib.parse.quote(transaccion_id, safe='')}"
     try:
         with urllib.request.urlopen(urllib.request.Request(url, headers={"Accept": "application/json"}), timeout=10) as r:
@@ -120,7 +117,7 @@ def consultar_transaccion(transaccion_id: str) -> dict:
         raise WompiNoDisponible from exc
 
 
-# ── Resultado de una transacción ────────────────────────────────────────────
+# Resultado de una transacción
 
 def _nota_reembolso(reserva: Reserva, referencia: str) -> None:
     alerta = f"⚠ Pago en línea recibido ({referencia}) con la reserva cancelada: reembolsar al huésped."
@@ -152,10 +149,6 @@ def _reactivar_si_libre(db: Session, reserva: Reserva) -> bool:
 
 
 def aplicar_transaccion(db: Session, tx: dict) -> Pago | None:
-    """
-    Aplica el resultado de una transacción de Wompi a su `Pago` (idempotente). Devuelve el pago, o None si la
-    referencia no es de este sistema o el monto no coincide (en ese caso no se confirma nada).
-    """
     referencia = str(tx.get("reference", ""))
     pago = db.query(Pago).filter(Pago.referencia == referencia).with_for_update().first()
     if pago is None:
@@ -179,7 +172,7 @@ def aplicar_transaccion(db: Session, tx: dict) -> Pago | None:
                 _nota_reembolso(reserva, referencia)
     elif estado in ESTADOS_RECHAZO:
         nuevo = ESTADOS_RECHAZO[estado]
-        # Un pago aprobado solo se revierte si Wompi lo anula (devolución); un rechazo no lo toca.
+        # Un pago aprobado solo se revierte si Wompi lo anulaa
         if pago.estado == "pendiente" or (pago.estado == "pagado" and estado == "VOIDED"):
             pago.estado = nuevo
             pago.transaccion_id = str(tx.get("id", ""))[:64] or pago.transaccion_id
