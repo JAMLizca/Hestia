@@ -10,7 +10,6 @@ from app.core.config import settings
 
 
 def _normalizar_pem(texto: str) -> str:
-    """Repara un certificado pegado en una sola línea, con espacios o con «\\n» literales en vez de saltos de línea."""
     import re
     import textwrap
 
@@ -38,7 +37,6 @@ def _argumentos_conexion() -> dict:
         ca = archivo.name
     if ca:
         return {"ssl": {"ca": ca}}
-    # Cifrado sin verificar el certificado del servidor: mejor que texto plano, peor que usar el ca.pem.
     import ssl
 
     contexto = ssl.create_default_context()
@@ -57,7 +55,7 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 """
-Dependencia de la sesión de datos por request y la cerra automaticamente al finalizar.
+Dependencia de la sesión de datos por request, la cerra automaticamente al finalizar.
 """
 def get_db() -> Session:
     db = SessionLocal()
