@@ -1,5 +1,5 @@
 """
-Resumen/factura de una reserva: costo habitación + servicios, y saldo pendiente.
+Resumen/factura de una reserva.
 """
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session

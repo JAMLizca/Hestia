@@ -1,5 +1,5 @@
 """
-Endpoints CRUD de habitaciones. Consultar: cualquier usuario autenticado. Crear, editar y eliminar: solo recepción. Las reglas están en app/services/habitaciones.py.
+Endpoints CRUD de habitaciones.
 """
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session

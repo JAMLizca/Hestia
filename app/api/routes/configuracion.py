@@ -1,9 +1,5 @@
 """
-Configuración general del hotel: datos del establecimiento, horarios de check-in/out y ajustes regionales
-(moneda, zona horaria).
-
-Cualquier usuario autenticado puede consultarla (el panel muestra el nombre del hotel y formatea los montos con
-la moneda); solo el administrador puede modificarla. Las reglas están en app/services/configuracion.py.
+Configuración general del hotel
 """
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session

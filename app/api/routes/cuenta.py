@@ -1,9 +1,5 @@
 """
-Cuenta del huésped: registro, perfil y sus propias reservas. Solo traducen HTTP; las reglas están en
-app/services/cuentas.py y app/services/reservas_web.py.
-
-Todo lo que está aquí es del huésped autenticado (token de tipo "cliente"); el personal no entra por estas rutas y el
-huésped no entra por las del panel. Estas rutas no forman parte de la matriz de permisos de los roles.
+Cuenta del huésped
 """
 from fastapi import APIRouter, Depends, Request, status
 from pydantic import BaseModel, Field
