@@ -2,10 +2,7 @@ import { CalendarDays, Database, LayoutGrid, Settings, Shield, User, Users } fro
 import { BedIcon, ServiceBellIcon } from "../ui/icons";
 
 /**
- * Estructura del menú lateral tal como aparece en el mockup del panel.
- * `subtitle` es el texto bajo el título en el header de cada pantalla.
- * `modulo` es el módulo de la matriz de permisos (GET /roles/permisos): el ítem y su ruta solo se muestran a los
- * roles que pueden "ver" ese módulo (RNF-03). Sin `modulo` el ítem es para todos.
+ * Estructura del menú lateral tal
  */
 export const NAV_SECTIONS = [
   {

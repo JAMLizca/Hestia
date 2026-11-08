@@ -1,4 +1,4 @@
-/** Campos de formulario con el estilo del panel. */
+/** Campos de formulario */
 export function Field({ label, hint, required, full, children }) {
   return (
     <label className={`field${full ? " field--full" : ""}`}>
@@ -33,10 +33,6 @@ export function Select({ options, placeholder, ...props }) {
   );
 }
 
-/**
- * Convierte los valores del formulario al payload del backend:
- * cadenas vacías → null (para que Pydantic acepte los campos opcionales).
- */
 export function cleanPayload(values, { numbers = [], omitEmpty = false } = {}) {
   const out = {};
   Object.entries(values).forEach(([key, raw]) => {

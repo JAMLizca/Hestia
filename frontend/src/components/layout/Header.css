@@ -144,7 +144,7 @@
   }
 }
 
-/* ── Menús desplegables del encabezado (avisos, ayuda, usuario) ── */
+/* ── Menús desplegables del encabezado */
 .header__menu-wrap {
   position: relative;
 }
@@ -290,7 +290,7 @@ a.panel__item:hover {
 }
 
 @media (max-width: 640px) {
-  /* En pantallas angostas el panel ocupa el ancho de la pantalla, bajo el encabezado */
+  /* En pantallas angostas el panel ocupa el ancho de la pantalla, bajo ele encabezado */
   .header__menu-wrap {
     position: static;
   }

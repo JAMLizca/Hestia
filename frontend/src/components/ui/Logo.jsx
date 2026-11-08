@@ -1,7 +1,7 @@
 import logoCirculo from "../../assets/logo-hestia-circulo.webp";
 import "./Logo.css";
 
-/** Logo circular de Hestia (menú lateral, login y landing). */
+/** Logo circular (menú lateral, login y landing). */
 export default function Logo({ size = 36, bordered = true }) {
   return (
     <img

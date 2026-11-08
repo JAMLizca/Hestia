@@ -8,7 +8,7 @@ import { useToast } from "../../context/ToastContext";
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 72;
 
-/** Cambio de la contraseña de quien tiene la sesión abierta (PUT /auth/me/password). */
+/** Cambio de la contraseña de quien tiene la sesión abierta */
 export default function ChangePasswordModal({ onClose }) {
   const toast = useToast();
   const [actual, setActual] = useState("");

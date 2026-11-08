@@ -1,7 +1,7 @@
 import { Clock } from "lucide-react";
 import "./ModulePending.css";
 
-/** Marcador para pantallas del mockup que aún no se pueden construir con la API actual. */
+
 export default function ModulePending({ title, text = "Esta pantalla se implementa en la siguiente entrega del frontend." }) {
   return (
     <div className="module-pending">

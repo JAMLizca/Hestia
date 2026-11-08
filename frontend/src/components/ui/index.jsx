@@ -1,13 +1,11 @@
 /**
- * Componentes compartidos del panel de Hestia. Reproducen los patrones del
- * mockup: tarjetas, indicadores, pestañas, buscador, badges, tablas,
- * paginación y estados vacío/carga/error.
+ Componentes compartidos del panel
  */
 import { AlertCircle, Inbox, Loader2, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import "./ui.css";
 
-/* ── Tarjeta ───────────────────────────────────────── */
+/* Tarjeta */
 export function Card({ title, subtitle, action, padded = true, className = "", children, ...rest }) {
   return (
     <section className={`card${padded ? " card--pad" : ""} ${className}`} {...rest}>
@@ -25,7 +23,7 @@ export function Card({ title, subtitle, action, padded = true, className = "", c
   );
 }
 
-/* ── Indicadores ───────────────────────────────────── */
+/* Indicadores */
 export function StatGrid({ cols = 4, children }) {
   return (
     <div className="stat-grid" style={{ "--cols": cols }}>
@@ -34,7 +32,6 @@ export function StatGrid({ cols = 4, children }) {
   );
 }
 
-/** Indicador grande del Dashboard (ícono + número + etiqueta + detalle). */
 export function StatCard({ icon: Icon, color, value, label, detail, progress }) {
   return (
     <div className="card stat-card">
@@ -55,7 +52,6 @@ export function StatCard({ icon: Icon, color, value, label, detail, progress }) 
   );
 }
 
-/** Indicador compacto de los módulos (número de color + etiqueta). */
 export function MiniStat({ value, label, color = "var(--navy-700)" }) {
   return (
     <div className="card mini-stat">
@@ -67,7 +63,7 @@ export function MiniStat({ value, label, color = "var(--navy-700)" }) {
   );
 }
 
-/* ── Pestañas segmentadas ──────────────────────────── */
+/* Pestañas segmentadas */
 export function Tabs({ options, value, onChange, label = "Filtro" }) {
   return (
     <div className="tabs" role="tablist" aria-label={label}>
@@ -98,7 +94,7 @@ export function SearchInput({ value, onChange, placeholder }) {
   );
 }
 
-/* ── Botones ───────────────────────────────────────── */
+/* Btn */
 export function Button({ variant = "primary", size, icon: Icon, loading, children, className = "", ...rest }) {
   return (
     <button
@@ -121,7 +117,7 @@ export function IconButton({ icon: Icon, title, color = "var(--navy-700)", ...re
   );
 }
 
-/* ── Badges, etiquetas y avatar ────────────────────── */
+/* Badges, etiquetas y avatar */
 export function Badge({ color, children }) {
   return (
     <span className="badge" style={{ color, background: hexAlpha(color, 0.094) }}>
@@ -138,7 +134,7 @@ export function Chip({ color = "#2B3650", children }) {
   );
 }
 
-// Colores de avatar del mockup: se eligen según la letra inicial del nombre.
+// Colores de avatar 
 const AVATAR_COLORS = ["#2B3650", "#4CAF82", "#8B5CF6", "#E88C30", "#C9A052"];
 
 export function Avatar({ name = "", size = 28 }) {
@@ -162,7 +158,7 @@ export function Person({ name, size = 28, muted }) {
   );
 }
 
-/* ── Tablas y paginación ───────────────────────────── */
+/* Tablas y paginación */
 export function usePagination(items, pageSize = 10) {
   const [requested, setPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
@@ -190,10 +186,7 @@ export function Pagination({ page, totalPages, onChange }) {
 }
 
 /**
- * Tabla responsive. En escritorio es una tabla normal; en móvil cada fila se
- * convierte en una tarjeta: la columna `primary` (por defecto la primera) es el
- * título, las demás se muestran como "etiqueta: valor" y la columna "acciones"
- * queda al pie. Opciones por columna: primary, hideOnMobile, className.
+ * Tabla responsive.
  */
 export function TableView({ columns, rows, rowKey = "id", compact, onRowClick, rowTitle }) {
   const primaryKey = (columns.find((c) => c.primary) ?? columns[0])?.key;
@@ -237,7 +230,7 @@ export function TableView({ columns, rows, rowKey = "id", compact, onRowClick, r
   );
 }
 
-/** Tabla del mockup dentro de una tarjeta, con estados vacío/carga y pie con paginación. */
+/** Tabla dentro de una tarjeta, con estados vacío/carga y pie con paginación. */
 export function DataTable({ columns, rows, rowKey = "id", loading, empty, footer, onRowClick }) {
   return (
     <div className="card table-card">
@@ -249,7 +242,7 @@ export function DataTable({ columns, rows, rowKey = "id", loading, empty, footer
   );
 }
 
-/* ── Estados ───────────────────────────────────────── */
+/* Estados */
 export function EmptyState({ icon: Icon = Inbox, title, text, action }) {
   return (
     <div className="empty">
@@ -296,7 +289,7 @@ export function InfoBanner({ children }) {
   );
 }
 
-/* ── Utilidad de color ─────────────────────────────── */
+/* Utilidad de color */
 export function hexAlpha(color, alpha) {
   if (!color || !color.startsWith("#")) return color;
   const n = parseInt(color.slice(1), 16);

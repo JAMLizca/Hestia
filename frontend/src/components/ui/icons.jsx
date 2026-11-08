@@ -1,6 +1,5 @@
 /**
- * Íconos con el trazado exacto del mockup que no tienen un equivalente
- * idéntico en lucide-react. Mismo API que lucide: size, color, strokeWidth.
+ * Íconos 
  */
 function Svg({ size = 14, color = "currentColor", strokeWidth = 1.75, children, ...rest }) {
   return (

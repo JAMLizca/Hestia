@@ -5,12 +5,11 @@ import { HelpMenu, NotificationsMenu, UserMenu } from "./HeaderMenus";
 import "./Header.css";
 
 export default function Header({ title, subtitle, onMenuClick }) {
-  // Solo un menú abierto a la vez: "avisos" | "ayuda" | "usuario"
   const [openMenu, setOpenMenu] = useState(null);
   const [changingPassword, setChangingPassword] = useState(false);
 
   const toggle = (name) => () => setOpenMenu((current) => (current === name ? null : name));
-  // Cada menú se cierra solo si es el que está abierto (los callbacks son estables).
+  // Cada menú se cierra solo si es el que está abierto 
   const closeAvisos = useCallback(() => setOpenMenu((c) => (c === "avisos" ? null : c)), []);
   const closeAyuda = useCallback(() => setOpenMenu((c) => (c === "ayuda" ? null : c)), []);
   const closeUsuario = useCallback(() => setOpenMenu((c) => (c === "usuario" ? null : c)), []);

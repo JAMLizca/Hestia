@@ -3,10 +3,7 @@ import { Link } from "react-router-dom";
 import { usePermisos } from "../../context/PermisosContext";
 import "../ui/ModulePending.css";
 
-/**
- * Protege una pantalla: solo la muestra si el rol del usuario puede `accion` en `modulo`.
- * Si alguien escribe la dirección a mano, ve este aviso en lugar de una pantalla que fallaría con 403.
- */
+
 export default function RequirePermiso({ modulo, accion = "ver", titulo, children }) {
   const { can, ready } = usePermisos();
 

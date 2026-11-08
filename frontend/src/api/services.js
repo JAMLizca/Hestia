@@ -42,9 +42,6 @@ export const habitacionesApi = {
   create: (data) => apiRequest("/habitaciones/", { method: "POST", body: data }),
   update: (id, data) => apiRequest(`/habitaciones/${id}`, { method: "PUT", body: data }),
 
-  // DELETE /habitaciones/{id} tiene un bug en el backend (
-  // {habitacion_idz}). Se deja el servicio con el contrato esperado corregir!!!
-
   remove: (id) => apiRequest(`/habitaciones/${id}`, { method: "DELETE" }),
 };
 
@@ -59,7 +56,7 @@ export const precheckinApi = {
 
 //}Disponibilidad
 export const disponibilidadApi = {
-  /** fechas en formato YYYY-MM-DD */
+  /** fechas formato YYYY-MM-DD */
   check: ({ fecha_checkin, fecha_checkout, tipo_habitacion_id }) =>
     apiRequest("/disponibilidad/", { query: { fecha_checkin, fecha_checkout, tipo_habitacion_id } }),
 };
@@ -78,16 +75,13 @@ export const reservasApi = {
   list: (filtros = {}) => apiRequest("/reservas/", { query: filtros }),
   get: (id) => apiRequest(`/reservas/${id}`),
   create: (data) => apiRequest("/reservas/", { method: "POST", body: data }),
-  /** PUT /reservas/{id} — parcial: habitacion_id, fechas, num_huespedes, canal, notas (según el estado) */
   update: (id, data) => apiRequest(`/reservas/${id}`, { method: "PUT", body: data }),
   confirmar: (id) => apiRequest(`/reservas/${id}/confirmar`, { method: "POST" }),
   checkin: (id) => apiRequest(`/reservas/${id}/checkin`, { method: "POST" }),
   checkout: (id) => apiRequest(`/reservas/${id}/checkout`, { method: "POST" }),
   cancelar: (id) => apiRequest(`/reservas/${id}/cancelar`, { method: "POST" }),
-  /** POST /reservas/{id}/no-show — el huésped no llegó */
   noShow: (id) => apiRequest(`/reservas/${id}/no-show`, { method: "POST" }),
   remove: (id) => apiRequest(`/reservas/${id}`, { method: "DELETE" }),
-  /** GET /reservas/{id}/resumen (routes/facturas.py) */
   resumen: (id) => apiRequest(`/reservas/${id}/resumen`),
 };
 

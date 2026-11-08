@@ -11,7 +11,6 @@ export default function Sidebar({ open, onNavigate }) {
   const { logout } = useAuth();
   const { config } = useConfig();
   const { can } = usePermisos();
-  // Cada rol ve solo los módulos que la matriz de permisos le permite consultar.
   const sections = NAV_SECTIONS.map((s) => ({ ...s, items: s.items.filter((item) => !item.modulo || can(item.modulo, "ver")) })).filter((s) => s.items.length > 0);
 
   return (

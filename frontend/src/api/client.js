@@ -1,8 +1,3 @@
-/**
- * - Agrega el token JWT (Bearer) guardado tras el login.
- * - Traduce los errores de FastAPI ({ detail }) a mensajes legibles.
- */
-
 export const API_URL = import.meta.env.VITE_API_URL || "/api/v1";
 const TOKEN_KEY = "hestia_access_token";
 
@@ -48,12 +43,11 @@ export class ApiError extends Error {
 function parseDetail(payload, status) {
   const detail = payload?.detail;
   if (typeof detail === "string") return detail;
-  // Errores de validación de Pydanticc
+  // Errores de validación 
   if (Array.isArray(detail) && detail.length) {
     return detail
       .map((item) => {
         const campo = Array.isArray(item.loc) ? item.loc.filter((p) => p !== "body").join(".") : "";
-        // Pydantic antepone "Value error, " a los mensajes de nuestros validadores propios.
         const mensaje = String(item.msg).replace(/^Value error, /, "");
         return campo ? `${campo}: ${mensaje}` : mensaje;
       })

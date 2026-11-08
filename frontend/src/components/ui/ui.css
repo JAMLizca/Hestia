@@ -1,9 +1,8 @@
-/* ──────────────────────────────────────────────────────────────
-   Componentes compartidos del panel. Medidas y colores tomados de
-   los estilos del mockup (tarjetas, pestañas, tablas, badges).
-   ────────────────────────────────────────────────────────────── */
+/* 
+   Componentes compartidos del panel. Medidas y colores(tarjetas, pestañas, tablas, badges).
+  */
 
-/* ── Tarjetas ─────────────────────────────────────── */
+/* Tarjetas */
 .card {
   background: var(--surface);
   border: 1px solid var(--canvas);
@@ -46,7 +45,7 @@
   color: var(--gray-400);
 }
 
-/* ── Indicadores ──────────────────────────────────── */
+/* Indicadores */
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
@@ -125,7 +124,7 @@
   color: var(--gray-500);
 }
 
-/* ── Barra de herramientas (pestañas + buscador + acción) ── */
+/* Barra de herramientas */
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -204,7 +203,7 @@
   color: var(--gray-400);
 }
 
-/* ── Botones ──────────────────────────────────────── */
+/* Btn */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -287,7 +286,7 @@
   gap: 2px;
 }
 
-/* ── Badges y etiquetas ───────────────────────────── */
+/* Badges y etiquetas */
 .badge {
   display: inline-block;
   padding: 4px 10px;
@@ -331,7 +330,7 @@
   white-space: nowrap;
 }
 
-/* ── Tablas ───────────────────────────────────────── */
+/* Tablas */
 .table-card {
   overflow: hidden;
 }
@@ -442,7 +441,7 @@
   color: #fff;
 }
 
-/* ── Estados vacío / carga / error ────────────────── */
+/* Estados vacío / carga / error  */
 .empty {
   display: flex;
   flex-direction: column;
@@ -517,7 +516,7 @@
   text-decoration: underline;
 }
 
-/* ── Modal y panel lateral ────────────────────────── */
+/* Modal y panel lateral */
 .overlay {
   position: fixed;
   inset: 0;
@@ -607,7 +606,7 @@
   }
 }
 
-/* ── Formularios ──────────────────────────────────── */
+/* Formularios */
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -675,7 +674,7 @@ textarea.input {
   color: var(--gray-400);
 }
 
-/* ── Lista de detalle (clave/valor) ───────────────── */
+/* Lista de detalle */
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -703,7 +702,7 @@ textarea.input {
   background: var(--canvas);
 }
 
-/* ── Notificaciones (toast) ───────────────────────── */
+/* Notificaciones */
 .toasts {
   position: fixed;
   right: 20px;
@@ -738,7 +737,7 @@ textarea.input {
   cursor: pointer;
 }
 
-/* ── Responsive ───────────────────────────────────── */
+/* Responsive */
 @media (max-width: 1100px) {
   .stat-grid {
     grid-template-columns: repeat(min(var(--cols, 4), 3), minmax(0, 1fr));
@@ -746,13 +745,11 @@ textarea.input {
 }
 
 @media (max-width: 760px) {
-  /* Indicadores: 2 columnas compactas */
   .stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }
 
-  /* Con un número impar de indicadores, el último ocupa toda la fila */
   .stat-grid > :last-child:nth-child(odd) {
     grid-column: 1 / -1;
   }
@@ -780,7 +777,7 @@ textarea.input {
     font-size: 24px;
   }
 
-  /* Barra de herramientas apilada: pestañas, buscador y botón a lo ancho */
+  /* Barra de herramientas apilada */
   .toolbar {
     flex-direction: column;
     align-items: stretch;
@@ -930,7 +927,7 @@ textarea.input {
     padding: 8px 14px;
   }
 
-  /* Modal como hoja inferior; panel lateral a pantalla completa */
+  /* Modal como hoja inferior */
   .overlay {
     align-items: flex-end;
     padding: 0;
@@ -963,7 +960,7 @@ textarea.input {
     padding: 11px 16px;
   }
 
-  /* Formularios: una columna y texto de 16px (evita el zoom automático de iOS) */
+  /* Formularios: una columna y texto de 16px */
   .form-grid {
     grid-template-columns: 1fr;
   }

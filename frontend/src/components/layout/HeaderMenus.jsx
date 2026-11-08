@@ -28,8 +28,7 @@ function useDismiss(open, onClose) {
 const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 
 /**
- * Avisos operativos calculados con los datos reales de la API (reservas y habitaciones).
- * No hay un endpoint de notificaciones: cada aviso es un conteo que lleva a su pantalla.
+ * Avisos operativos calculados con los datos reales de la API 
  */
 function buildAlerts(reservas, habitaciones) {
   const hoy = todayISO();
@@ -70,7 +69,6 @@ export function NotificationsMenu({ open, onToggle, onClose }) {
     }
   }, []);
 
-  // Se actualizan al entrar, cada minuto y cada vez que se abre el menú.
   useEffect(() => {
     load();
     const timer = setInterval(load, 60000);
