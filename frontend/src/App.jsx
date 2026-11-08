@@ -49,11 +49,11 @@ export default function App() {
               <Route path="/" element={<HotelHomePage />} />
               <Route path="/hestia" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
-              {/* Público: el huésped abre el enlace que le envía el hotel, sin iniciar sesión. */}
+              {/*  */}
               <Route path="/pre-checkin/:token" element={<PreCheckinPage />} />
-              {/* Público: reserva en línea (si el hotel la tiene activada en Configuración). */}
+              {/* Público: reserva en línea */}
               <Route path="/reservar" element={<ReservarPage />} />
-              {/* Huésped con cuenta: sus reservas (si no ha iniciado sesión, va al acceso). */}
+              {/*  */}
               <Route path="/mis-reservas" element={<MisReservasPage />} />
 
               <Route element={<ProtectedRoute />}>
