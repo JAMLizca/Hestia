@@ -12,7 +12,7 @@ const HORIZONTES = [
   { value: "30", label: "Próximos 30 días" },
 ];
 const BARRAS_FANTASMA = [46, 58, 52, 70, 84, 92, 66, 54, 62, 78, 88, 74, 60, 50];
-const DIAS_MAX_ADELANTE = 30; // el modelo no pronostica más allá (ver app/services/inteligencia.py)
+const DIAS_MAX_ADELANTE = 30;
 
 const sumarDias = (iso, n) => {
   const d = new Date(`${iso}T12:00:00`);
@@ -26,9 +26,8 @@ const etiquetaDia = (iso) => fecha(iso).toLocaleDateString("es-CO", { weekday: "
 const inicialSemana = (iso) => fecha(iso).toLocaleDateString("es-CO", { weekday: "narrow" }).toUpperCase();
 
 /**
- * Predicción de ocupación (Hestia Intelligence) en el Dashboard, para quienes gestionan el hotel
- * (administrador, gerente, auditor). Consulta GET /prediccion/ocupacion y dibuja un pronóstico por día.
- * La recomendación de habitaciones vive en RecomendacionHabitaciones.jsx.
+ * Predicción de ocupación en el Dashboard
+ * La recomendación de habitacionesestan en RecomendacionHabitaciones.jsx.
  */
 export default function HestiaIntelligence() {
   const hoy = todayISO();
@@ -54,13 +53,11 @@ export default function HestiaIntelligence() {
     }
   }, []);
 
-  // Al abrir el Dashboard ya se ve el pronóstico de la semana.
   useEffect(() => {
     consultar({ desde: hoy, dias: "7" });
     return () => {
       ultima.current += 1;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [consultar]);
 
   const enviar = (event) => {
@@ -115,7 +112,7 @@ export default function HestiaIntelligence() {
   );
 }
 
-/** Barras por día y tres indicadores. Sin datos (cargando o con error) se muestra la silueta tenue. */
+/** Barras por día y tres indicadores.*/
 function ResultadoOcupacion({ datos, cargando }) {
   if (!datos) {
     return (
@@ -138,7 +135,7 @@ function ResultadoOcupacion({ datos, cargando }) {
     );
   }
 
-  const muchos = datos.dias.length > 14; // con 30 barras no caben las cifras: quedan en el texto emergente
+  const muchos = datos.dias.length > 14; 
   return (
     <>
       <div className="hi__result-title">Ocupación esperada por día</div>

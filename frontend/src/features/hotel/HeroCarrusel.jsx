@@ -6,11 +6,6 @@ export const SEGUNDOS_POR_FOTO = 6;
 
 /**
  * Fondo del hero con carrusel de fotos: fundido cruzado + zoom lento, avance automático
- * cada SEGUNDOS_POR_FOTO s, pausa al pasar el cursor / enfocar el hero o con el botón,
- * y sin movimiento si el usuario prefiere "reducir animaciones".
- *
- * `slides`: [{ url, titulo?, detalle?, href? }]. Con una sola foto no muestra controles.
- * Va como primer hijo de un contenedor `position: relative` (el `.hh-hero`).
  */
 export default function HeroCarrusel({ slides }) {
   const [actual, setActual] = useState(0);

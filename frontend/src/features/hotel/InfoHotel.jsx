@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "./InfoHotel.css";
 
-/** Aparece (fundido + subida suave) cuando entra en pantalla. Sin animación si el usuario la reduce. */
 function Reveal({ children, delay = 0, className = "", as: Tag = "div" }) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -32,7 +31,7 @@ function Reveal({ children, delay = 0, className = "", as: Tag = "div" }) {
   );
 }
 
-/** Información útil de la página pública: horarios, cómo se confirma la reserva y cómo contactar / llegar. */
+/** Información útil de la página pública */
 export default function InfoHotel({ hotel, ubicacion }) {
   const pagos = hotel.pagos_activos;
   const direccion = [hotel.direccion, ubicacion].filter(Boolean).join(" · ");

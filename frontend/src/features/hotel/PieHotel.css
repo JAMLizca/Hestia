@@ -1,4 +1,4 @@
-/* Pie de la página pública del hotel. */
+/* Pie de la página pública */
 .hhp { position: relative; color: #c9c3b4; font-size: 14.5px; background: radial-gradient(900px 300px at 85% -10%, rgba(201, 168, 76, 0.14), transparent 70%), var(--hh-deep, #13203a); }
 .hhp h2 { margin: 0 0 14px; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--hh-gold, #c9c3b4); }
 :where(.hhp) ul, :where(.hhp) p { margin: 0; padding: 0; list-style: none; }

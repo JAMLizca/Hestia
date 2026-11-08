@@ -2,7 +2,7 @@ import { ArrowRight, ArrowUp, Clock, Lock, Mail, MapPin, Phone, ShieldCheck, Spa
 import { Link } from "react-router-dom";
 import "./PieHotel.css";
 
-/** Pie de la página pública: marca, navegación, contacto/horarios y accesos internos. */
+/** Pie de la página pública */
 export default function PieHotel({ hotel, ubicacion, enlaces, reservasActivas }) {
   const anio = new Date().getFullYear();
   const direccion = [hotel.direccion, ubicacion].filter(Boolean).join(" · ");

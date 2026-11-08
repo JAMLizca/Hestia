@@ -9,7 +9,7 @@ import { formatMoney, formatShortDate, nights, parseDate } from "../../utils/for
 import { ESTADOS_ANULADOS, fullName } from "../../utils/hotel";
 import { RESERVA_ESTADOS } from "../../utils/status";
 
-/** Perfil del huésped con su historial de estadías (reservas filtradas por huesped_id). */
+/** Perfil del huésped con historial de estadías  */
 export default function HuespedProfileDrawer({ huesped, reservas, habitaciones, onClose, onEdit, onNewReserva, onOpenReserva, onDeleted }) {
   const toast = useToast();
   const { can } = usePermisos();

@@ -1,4 +1,4 @@
-/* Información útil (página pública): horarios, pasos para reservar y contacto. */
+/* Información útil: horarios, pasos para reservar y contacto. */
 .hhi { margin-top: 34px; display: grid; gap: 22px; }
 .hhi h3, .hhi h4 { margin: 0; font-family: var(--hh-serif, Georgia, serif); color: var(--hh-navy, #1e2d4a); }
 .hhi p { margin: 0; }
@@ -9,7 +9,7 @@
 
 .hhi__fila--arriba { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 22px; }
 
-/* ── Horarios (tarjeta oscura) ── */
+/* Horarios */
 .hhi__horarios {
   position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 22px; padding: 28px;
   color: #e6e0d2; background: linear-gradient(150deg, #1e2d4a 0%, #13203a 100%); border-radius: 20px;
@@ -35,7 +35,7 @@
 @keyframes hhi-viaje { 0% { left: 0; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: calc(100% - 10px); opacity: 0; } }
 .hhi__horarios > p { margin-top: auto; padding-top: 4px; font-size: 14px; line-height: 1.55; color: #b9b3a3; }
 
-/* ── Pasos ── */
+/* Pasos */
 .hhi__pasos { display: flex; flex-direction: column; gap: 20px; padding: 28px; background: #fff; border: 1px solid var(--hh-line, #ddd4c8); border-radius: 20px; }
 .hhi__pasos h3 { font-size: 22px; }
 .hhi__pasos ol { position: relative; display: grid; gap: 22px; margin: 0; padding: 0; list-style: none; }
@@ -65,7 +65,7 @@
 .hhi a.hhi__cta:hover { background: var(--hh-deep, #13203a); transform: translateY(-2px); }
 .hhi a.hhi__cta:hover svg { transform: translateX(4px); }
 
-/* ── Dónde estamos ── */
+/* Dónde estamos */
 .hhi__donde {
   position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding: 30px 32px;
   background: linear-gradient(120deg, #fff 0%, #f8efd6 100%); border: 1px solid #e6d7a8; border-radius: 20px;

@@ -1,6 +1,6 @@
 /* Hestia Intelligence (Dashboard) */
 .hi {
-  flex-shrink: 0; /* el contenedor es flex en columna: sin esto, overflow:hidden lo comprime */
+  flex-shrink: 0; /* el contenedor es flex en columna: sin esto, overflow:hidden lo compime */
   border-radius: var(--radius-lg);
   background: var(--navy-900);
   overflow: hidden;

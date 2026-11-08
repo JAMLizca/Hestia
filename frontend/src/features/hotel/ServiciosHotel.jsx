@@ -5,7 +5,7 @@ import "./ServiciosHotel.css";
 
 const clave = (t = "") => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
-// Orden y icono de las categorías conocidas; las demás van al final por orden alfabético.
+// Orden y icono de las categorías conocidas.
 const CATEGORIAS = {
   alimentos: { icono: UtensilsCrossed, orden: 1 },
   habitacion: { icono: BedDouble, orden: 2 },
@@ -18,8 +18,7 @@ const POR_DEFECTO = { icono: Package, orden: 99 };
 const VISIBLES_MOVIL = 5;
 
 /**
- * Servicios del hotel en la página pública: pestañas por categoría y tarjetas solo de la categoría elegida.
- * En pantallas pequeñas las pestañas se deslizan y se muestran los primeros 5 con "Ver los N servicios".
+ * Servicios del hotel en la página pública.
  */
 export default function ServiciosHotel({ servicios }) {
   const grupos = useMemo(() => {

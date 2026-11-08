@@ -43,9 +43,6 @@
 }
 @keyframes hhc-progreso { to { transform: scaleX(1); } }
 
-/* Pausa: cursor sobre el hero (mientras llenas el buscador), foco de TECLADO dentro del hero
-   (o escribiendo en un campo) o botón de pausa. Con :focus-visible, un clic con el mouse en una
-   flecha no deja el carrusel pausado. */
 .hh-hero:hover .hhc__barra,
 .hh-hero:has(:focus-visible) .hhc__barra,
 .hhc[data-pausa] .hhc__barra { animation-play-state: paused; }
@@ -68,7 +65,6 @@
   .hhc__ctrl { bottom: 16px; }
 }
 
-/* Sin movimiento si el usuario lo prefiere: se muestra la primera foto y se navega a mano. */
 @media (prefers-reduced-motion: reduce) {
   .hhc__slide { transition: none; }
   .hhc__slide--on img { animation: none; transform: none; }

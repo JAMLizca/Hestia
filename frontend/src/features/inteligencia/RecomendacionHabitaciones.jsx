@@ -6,14 +6,7 @@ import { recomendarHabitaciones } from "./inteligencia";
 import "./recomendacion.css";
 
 /**
- * Recomendación de habitaciones (Hestia Intelligence). Dos usos:
- *  - variante "huesped": en la página de reservas, para quien está eligiendo. Pide sus preferencias y sugiere TIPOS de
- *    habitación (GET /publico/recomendacion); recepción asigna el número al recibirlo.
- *  - variante "recepcion": en «Nueva reserva» del panel; usa las preferencias del huésped que ya se capturan arriba y
- *    sugiere HABITACIONES concretas (GET /recomendacion/habitaciones).
- * `contexto` = { llegada, salida, huespedes }. `preferencias`/`onPreferencias` son opcionales (si no se pasan, el
- * componente guarda las suyas). `onElegir(sugerencia)` se llama al pulsar «Elegir»; `seleccionada` es el id de la
- * habitación (recepción) o del tipo (huésped) que ya está elegido, para marcarla.
+ * Recomendación de habitaciones.
  */
 export default function RecomendacionHabitaciones({ variante = "huesped", contexto, preferencias, onPreferencias, onElegir, seleccionada }) {
   const [propias, setPropias] = useState({ piso: "", vista: "", cama: "", tranquila: false, accesible: false });
@@ -26,7 +19,6 @@ export default function RecomendacionHabitaciones({ variante = "huesped", contex
 
   const set = (clave) => (e) => setPrefs({ ...prefs, [clave]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
 
-  // Si cambian las fechas, los huéspedes o las preferencias, lo sugerido antes ya no corresponde: se oculta.
   const clave = JSON.stringify([contexto, prefs]);
   const lista = obtenido?.clave === clave ? obtenido.lista : null;
 
