@@ -1,27 +1,3 @@
-"""
-PASO 4 — Entrenamiento, comparación contra líneas base y guardado de los modelos.
-
-Para cada modelo se hace lo mismo:
-
-  1. Líneas base: reglas SIMPLES (sin aprendizaje automático) que cualquier hotel podría aplicar.
-     Si el modelo no las supera con claridad, no justifica su complejidad.
-  2. Candidatos: varios algoritmos de scikit-learn. Se comparan con validación cruzada POR TIEMPO
-     (siempre se entrena con el pasado y se valida con lo que viene después) usando solo el
-     conjunto de entrenamiento.
-  3. El modelo que se despliega es siempre el LINEAL (Ridge / regresión logística): se puede exportar a un
-     archivo JSON pequeño y la API lo calcula sin scikit-learn ni pandas (menos memoria y sin riesgo de versiones).
-     Los modelos complejos se prueban solo para comprobar si justificarían el cambio (mejora de más de 3 %).
-  4. El desplegado se mide UNA sola vez en el conjunto de prueba (los últimos meses), que el entrenamiento
-     nunca vio, y luego se reentrena con todos los datos y se guarda en ml/modelos/ (.joblib + .json).
-
-  MODELO 1 · ocupación a 7, 14 y 30 días   → ml/modelos/ocupacion_h7.joblib (h14, h30)
-  MODELO 2 · tipo de habitación recomendado → ml/modelos/recomendador.joblib
-
-Salidas para la documentación: ml/informes/modelos.txt, tres gráficas .png y pronostico_prueba.csv.
-
-USO:
-    python ml/paso4_entrenamiento.py
-"""
 import argparse
 import json
 import sys
@@ -48,7 +24,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler  # noqa: E402
 RAIZ = Path(__file__).resolve().parent.parent
 HORIZONTES = [7, 14, 30]
 SEMILLA = 42
-TOLERANCIA = 0.03  # un modelo complejo solo justificaría reemplazar al lineal si lo mejora en más de 3 %
+TOLERANCIA = 0.03 
 
 # Variables de cada modelo (el orden y los nombres se guardan junto al modelo para la API)
 OCUP_NUM = ["en_libros_pct", "en_libros_sem_pct", "nuevas_7d", "nuevas_28d", "ocup_ult7", "ocup_ult28", "es_finde"]
@@ -57,7 +33,7 @@ RECO_NUM = ["num_huespedes", "noches", "anticipacion_dias", "llegada_fin_de_sema
             "reservas_previas_huesped", "extranjero", "pref_tranquila", "pref_accesible", "mes_llegada", "dia_semana_llegada"]
 RECO_CAT = ["num_huespedes", "canal", "temporada", "pref_piso", "pref_vista", "pref_cama"]
 
-# Colores de las gráficas (paleta validada: azul y naranja se distinguen incluso con daltonismo)
+# Colores de las gráficas
 SUPERFICIE, TEXTO, TEXTO_SUAVE, AZUL, NARANJA = "#fcfcfb", "#0b0b0b", "#52514e", "#2a78d6", "#eb6834"
 
 _informe: list[str] = []
@@ -78,7 +54,7 @@ def titulo(texto: str) -> None:
 def preprocesador(num: list[str], cat: list[str]) -> ColumnTransformer:
     return ColumnTransformer(
         [("num", StandardScaler(), num), ("cat", OneHotEncoder(handle_unknown="ignore"), cat)],
-        sparse_threshold=0,  # matriz densa: algunos algoritmos no aceptan matrices dispersas
+        sparse_threshold=0,  
     )
 
 
@@ -98,10 +74,8 @@ def guardar(fig, ruta: Path) -> None:
     fig.savefig(ruta, dpi=150, facecolor=SUPERFICIE)
     plt.close(fig)
 
+# MODELO 1  OCUPACIÓN
 
-# =============================================================================================
-# MODELO 1 · OCUPACIÓN
-# =============================================================================================
 def candidatos_ocupacion() -> dict:
     return {
         "Regresión lineal (Ridge)": lambda: Ridge(alpha=10.0),
@@ -133,7 +107,7 @@ def entrenar_ocupacion(datos: pd.DataFrame, modelos_dir: Path, informes: Path) -
             "Solo las reservas en libros (sin ajustar)": te.en_libros_pct.to_numpy(),
             "Ocupación de los últimos 28 días": te.ocup_ult28.to_numpy(),
         }
-        # --- candidatos: validación cruzada por tiempo dentro del entrenamiento
+        
         cv = TimeSeriesSplit(n_splits=5)
         cv_mae = {}
         for nombre, fabrica in candidatos_ocupacion().items():
@@ -145,7 +119,6 @@ def entrenar_ocupacion(datos: pd.DataFrame, modelos_dir: Path, informes: Path) -
         mejor = next(iter(candidatos_ocupacion()))  # el primero es el lineal
         extra = cv_mae[mejor] / min(cv_mae.values()) - 1
 
-        # --- el elegido se mide una sola vez en la prueba
         modelo = pipeline_ocupacion(candidatos_ocupacion()[mejor]()).fit(X_tr, y_tr)
         pred = np.clip(modelo.predict(X_te), 0, 100)
         mae, rmse, r2 = mean_absolute_error(y_te, pred), root_mean_squared_error(y_te, pred), r2_score(y_te, pred)
@@ -172,7 +145,7 @@ def entrenar_ocupacion(datos: pd.DataFrame, modelos_dir: Path, informes: Path) -
         resumen.append({"h": h, "modelo": mae, "base": mae_bases[mejor_base], "base_dia": mae_bases["Promedio histórico del mismo día de la semana"]})
         preds.append(pd.DataFrame({"fecha": te.fecha.to_numpy(), "horizonte": h, "real": y_te.to_numpy(), "pronostico": pred.round(2)}))
 
-        # --- reentrenar con todos los datos y guardar
+        # reentrenar con todos los datos y guardar
         final = pipeline_ocupacion(candidatos_ocupacion()[mejor]()).fit(t[columnas], t.ocupacion_real)
         joblib.dump(final, modelos_dir / f"ocupacion_h{h}.joblib", compress=3)
         escogidos[h] = {
@@ -189,7 +162,7 @@ def entrenar_ocupacion(datos: pd.DataFrame, modelos_dir: Path, informes: Path) -
     }
     (modelos_dir / "ocupacion_meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    # --- gráfica 1: pronóstico a 7 días vs realidad en la prueba
+    # gráfica 1: pronóstico a 7 días vs realidad en la prueba
     d7 = pd.concat(preds)
     d7 = d7[d7.horizonte == 7]
     fig, ax = plt.subplots(figsize=(9, 3.8), facecolor=SUPERFICIE)
@@ -203,7 +176,7 @@ def entrenar_ocupacion(datos: pd.DataFrame, modelos_dir: Path, informes: Path) -
     fig.autofmt_xdate()
     guardar(fig, informes / "pronostico_7_dias.png")
 
-    # --- gráfica 2: error del modelo frente a la línea base por horizonte
+    # gráfica 2: error del modelo frente a la línea base por horizonte
     r = pd.DataFrame(resumen)
     fig, ax = plt.subplots(figsize=(6.5, 3.6), facecolor=SUPERFICIE)
     estilo_ejes(ax)
@@ -221,9 +194,8 @@ def entrenar_ocupacion(datos: pd.DataFrame, modelos_dir: Path, informes: Path) -
     guardar(fig, informes / "error_ocupacion.png")
 
 
-# =============================================================================================
-# MODELO 2 · RECOMENDADOR
-# =============================================================================================
+# MODELO 2 RECOMENDADOR
+
 def candidatos_recomendador() -> dict:
     return {
         "Regresión logística": lambda: LogisticRegression(max_iter=3000, C=1.0),
@@ -237,7 +209,6 @@ def pipeline_reco(estimador) -> Pipeline:
 
 
 def proba_completa(modelo, X: pd.DataFrame, clases: np.ndarray) -> np.ndarray:
-    """Probabilidades con una columna por cada tipo (aunque el modelo no haya visto alguno)."""
     out = np.zeros((len(X), len(clases)))
     idx = [list(clases).index(c) for c in modelo.classes_]
     out[:, idx] = modelo.predict_proba(X)
@@ -259,7 +230,6 @@ def entrenar_recomendador(datos: pd.DataFrame, modelos_dir: Path, informes: Path
     X_tr, y_tr, X_te, y_te = tr[columnas], tr.tipo_habitacion.to_numpy(), te[columnas], te.tipo_habitacion.to_numpy()
     clases = np.array(sorted(datos.tipo_habitacion.unique()))
 
-    # --- líneas base
     frec = pd.Series(y_tr).value_counts(normalize=True).reindex(clases).fillna(0).to_numpy()
     p_base1 = np.tile(frec, (len(te), 1))
     tabla = pd.crosstab(tr.num_huespedes, tr.tipo_habitacion, normalize="index").reindex(columns=clases).fillna(0)
@@ -275,7 +245,7 @@ def entrenar_recomendador(datos: pd.DataFrame, modelos_dir: Path, informes: Path
         metricas_base[k] = (top_k(y_te, pr, clases, 1), top_k(y_te, pr, clases, 3))
         p(f"  {k:<60}{metricas_base[k][0]:>8.1%}{metricas_base[k][1]:>8.1%}")
 
-    # --- candidatos con validación cruzada por tiempo
+   
     cv = TimeSeriesSplit(n_splits=5)
     cv_ll = {}
     for nombre, fabrica in candidatos_recomendador().items():
@@ -313,14 +283,13 @@ def entrenar_recomendador(datos: pd.DataFrame, modelos_dir: Path, informes: Path
     g = por_grupo.groupby("g").agg(reservas=("top1", "size"), top1=("top1", "mean"), top3=("top3", "mean"))
     p(g.assign(top1=g.top1.map("{:.0%}".format), top3=g.top3.map("{:.0%}".format)).to_string())
 
-    # --- qué variables pesan más (para explicar cada recomendación)
     imp = permutation_importance(modelo, X_te, y_te, n_repeats=5, random_state=SEMILLA, scoring="neg_log_loss")
     orden = pd.Series(imp.importances_mean, index=columnas).sort_values(ascending=False)
     p("\nImportancia de cada variable (cuánto empeora el modelo si se desordena; mayor = más influyente):")
     for k, v in orden.head(8).items():
         p(f"  {k:<28}{v:>8.3f}")
 
-    # --- reentrenar con todo y guardar
+    # reentrenar con todo y guardar
     final = pipeline_reco(candidatos_recomendador()[mejor]()).fit(datos[columnas], datos.tipo_habitacion.to_numpy())
     joblib.dump(final, modelos_dir / "recomendador.joblib", compress=3)
     meta = {
@@ -332,7 +301,7 @@ def entrenar_recomendador(datos: pd.DataFrame, modelos_dir: Path, informes: Path
     }
     (modelos_dir / "recomendador_meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    # --- gráfica 3: Top-1 y Top-3 de cada opción
+    # gráfica 3: Top-1 y Top-3 de cada opción
     filas = [(k, *v) for k, v in metricas_base.items()] + [(k, v[0], v[1]) for k, v in resultados.items()]
     etiquetas = ["Tipo más frecuente", "Regla por tamaño\nde grupo"] + [f"{k}" for k in resultados]
     fig, ax = plt.subplots(figsize=(9, 3.8), facecolor=SUPERFICIE)

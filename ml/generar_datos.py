@@ -1,24 +1,5 @@
 """
-Genera un historial SIMULADO de reservas dentro del propio sistema Hestia, para poder entrenar los modelos
-de ML (predicción de ocupación y recomendación de habitaciones) sin descargar datos externos.
-
-Los datos se escriben en las mismas tablas que usa la aplicación (huespedes, habitaciones, reservas, pagos,
-reserva_servicios, reserva_noches), respetando sus reglas (UNIQUE por habitación y noche, CHECK, temporada,
-precio = precio_base × noches). Después se exportan con el mismo código del reporte «dataset de reservas».
-
-USO (recomendado: sobre una base NUEVA y local, no sobre la de producción):
-
-    DB_NAME=hestia_ml python ml/generar_datos.py              # genera ~2 años de historia
-    DB_NAME=hestia_ml python ml/generar_datos.py --ver        # solo resume qué haría
-    DB_NAME=hestia_ml python ml/generar_datos.py --borrar     # quita todo lo simulado
-
-Todo lo simulado se puede reconocer: huéspedes con documento «SIM000001…», correo @ejemplo.com y
-habitaciones con la nota «Datos simulados (ML)».
-
-IMPORTANTE (para la documentación): son datos sintéticos. Reproducen patrones plausibles de un hotel
-(temporadas, fines de semana, canales, perfiles de huésped, cancelaciones), pero los modelos aprenderán esas
-reglas del simulador, no el comportamiento de clientes reales. Cuando el hotel tenga historial real, se
-reentrena con él con el mismo procedimiento.
+Genera un historial SIMULADO de reservas dentro del propio de Hestia para entrenar modelos.
 """
 import argparse
 import math
@@ -50,7 +31,7 @@ MARCA_HABITACION = "Datos simulados (ML)"
 PREFIJO_DOC = "SIM"
 UTC = timezone.utc
 
-# nombre del tipo → (cuántas habitaciones, pisos posibles)
+
 INVENTARIO = {
     "Habitación Estándar": (8, (1, 2)),
     "Habitación Doble Twin": (5, (1, 2, 3)),
@@ -62,9 +43,9 @@ INVENTARIO = {
     "Suite Presidencial": (1, (4,)),
 }
 
-# ── Perfiles latentes de huésped (no se guardan; el modelo debe deducirlos de lo observable) ──
+
 PERFILES = {
-    #            pax                          noches                        anticipación (media, días)  tipos preferidos
+  
     "negocios": dict(pax={1: .65, 2: .35}, noches={1: .35, 2: .35, 3: .20, 4: .10}, lead=9,
                      tipos={"Habitación Estándar": .35, "Habitación Superior": .30, "Suite Ejecutiva": .15, "Suite Junior": .12, "Habitación Doble Twin": .08}),
     "pareja": dict(pax={2: 1.0}, noches={1: .15, 2: .40, 3: .30, 4: .10, 5: .05}, lead=22,
@@ -76,7 +57,7 @@ PERFILES = {
     "lujo": dict(pax={2: .70, 3: .10, 4: .20}, noches={2: .25, 3: .30, 4: .25, 5: .10, 6: .10}, lead=45,
                  tipos={"Suite Presidencial": .50, "Suite Junior": .20, "Suite Ejecutiva": .15, "Habitación Superior": .15}),
 }
-CANALES = {  # peso por perfil
+CANALES = {  
     "negocios": {"presencial": .08, "telefono": .20, "whatsapp": .10, "correo": .22, "web": .35, "otro": .05},
     "pareja": {"presencial": .06, "telefono": .08, "whatsapp": .20, "correo": .06, "web": .55, "otro": .05},
     "familia": {"presencial": .05, "telefono": .15, "whatsapp": .28, "correo": .07, "web": .42, "otro": .03},
@@ -111,7 +92,7 @@ def sigmoide(x: float) -> float:
     return 1 / (1 + math.exp(-x))
 
 
-# ───────────────────────────── preparación de la base ─────────────────────────────
+# preparación de la base 
 
 def preparar_tipos_y_habitaciones(db, rng) -> dict[str, list[Habitacion]]:
     """Asegura los 8 tipos y el inventario objetivo (30 habitaciones). Usa el catálogo oficial de tipos."""
@@ -157,7 +138,7 @@ def preparar_servicios(db) -> list[Servicio]:
     return db.query(Servicio).all()
 
 
-# ───────────────────────────── simulación ─────────────────────────────
+# simulación 
 
 def nuevo_huesped(rng, n: int, perfil: str, creada: date) -> tuple[Huesped, dict]:
     nom, ape1, ape2 = rng.choice(NOMBRES), rng.choice(APELLIDOS), rng.choice(APELLIDOS)
@@ -271,7 +252,7 @@ def simular(db, rng, hoy: date, dias_historia: int, demanda: float, servicios: l
                 continue
             llegada, salida = d, d + timedelta(days=noches)
 
-            # ── qué tipo y habitación ──
+            # qué tipo y habitación
             factibles = {n: w for n, w in P["tipos"].items() if tipos[n].capacidad_maxima >= pax}
             for n, t in tipos.items():
                 if t.capacidad_maxima >= pax:
@@ -292,7 +273,6 @@ def simular(db, rng, hoy: date, dias_historia: int, demanda: float, servicios: l
                 c["demanda_perdida"] += 1
                 continue
 
-            # ── huésped, pago y desenlace ──
             if hu is None:
                 hu, meta = nuevo_huesped(rng, len(huespedes) + 1, perfil, creada)
                 db.add(hu)
@@ -333,9 +313,9 @@ def simular(db, rng, hoy: date, dias_historia: int, demanda: float, servicios: l
                 r.fecha_checkout_real = datetime.combine(salida, time(rng.randint(9, 12), rng.randint(0, 59)), tzinfo=UTC)
             db.add(r)
 
-            if not cancelada:  # la cancelada libera la habitación; el no_show la bloqueó esa(s) noche(s)
+            if not cancelada: 
                 ocupado[habitacion.id].update(noches_rango)
-            if estado in ("pendiente", "confirmada", "checkin"):  # así lo mantiene el sistema (app/services/ocupacion.py)
+            if estado in ("pendiente", "confirmada", "checkin"):  
                 for dia in noches_rango:
                     r.noches.append(ReservaNoche(habitacion_id=habitacion.id, fecha=dia))
 

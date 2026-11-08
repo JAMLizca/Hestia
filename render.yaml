@@ -1,5 +1,3 @@
-# Blueprint de Render: un solo servicio web (API + sitio). La base de datos MySQL va fuera (Aiven).
-# Los valores marcados sync:false se piden en el panel de Render al crear el servicio.
 services:
   - type: web
     name: hestia

@@ -1,17 +1,3 @@
-"""
-PASO 5 — Exportar los modelos entrenados para que la API los use.
-
-La API NO instala scikit-learn ni pandas: usa modelos lineales guardados como JSON (coeficientes + medias +
-categorías) y los calcula en Python puro (app/ml/prediccion.py). Este script:
-
-  1. Lee los modelos entrenados en el Paso 4 (ml/modelos/*.joblib).
-  2. Los convierte a JSON en app/ml/modelos/ (esa carpeta SÍ viaja dentro de la imagen de Render).
-  3. COMPRUEBA que el cálculo en Python puro da lo mismo que scikit-learn sobre todas las filas de los datos.
-     Si hay la más mínima diferencia, se detiene y no deja archivos a medias.
-
-USO:
-    python ml/paso5_exportar_modelos.py
-"""
 import argparse
 import json
 import sys
@@ -73,7 +59,7 @@ def main() -> int:
     pendientes: dict[str, dict] = {}
     peor = 0.0
 
-    # ---------------------------------------------------------------- ocupación
+    # ocupación
     meta_o = json.loads((args.modelos / "ocupacion_meta.json").read_text(encoding="utf-8"))
     cols_o = meta_o["variables_numericas"] + meta_o["variables_categoricas"]
     datos_o = pd.read_csv(args.datos / "modelo_ocupacion.csv", parse_dates=["fecha"])
@@ -93,7 +79,7 @@ def main() -> int:
         peor = max(peor, dif)
         print(f"  ocupacion_h{h:<3} {len(t):>5} filas comprobadas · diferencia máxima con scikit-learn: {dif:.2e}")
 
-    # ---------------------------------------------------------------- recomendador
+    # recomendador
     meta_r = json.loads((args.modelos / "recomendador_meta.json").read_text(encoding="utf-8"))
     pipe = joblib.load(args.modelos / "recomendador.joblib")
     datos_r = pd.read_csv(args.datos / "modelo_recomendador.csv")

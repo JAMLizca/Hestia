@@ -1,39 +1,24 @@
 """
-PASO 2 — Exploración y limpieza de los datos con pandas.
-
-Lee lo que exportó el Paso 1 (ml/datos/reservas.csv y habitaciones.csv) y hace cuatro cosas:
-
-  1. Carga y revisa la estructura (tipos de dato, nulos).
-  2. Valida reglas de negocio (fechas coherentes, precios positivos, capacidad, duplicados).
-  3. Explora: cómo se distribuyen canales, temporadas, tipos, noches, anticipación, y cómo se
-     relacionan con cancelaciones y no-shows.
-  4. Limpia y guarda un archivo listo para el Paso 3.
-
-Salidas:
-  ml/datos/reservas_limpio.csv       datos limpios (se regenera; no se sube a git)
-  ml/informes/calidad_datos.txt      informe de calidad: va a la documentación
-  ml/informes/*.png                  3 gráficas para el informe
-
-USO:
-    python ml/paso2_exploracion_limpieza.py
+Exploración y limpieza de los datos con pandas.
 """
+
 import argparse
 import sys
 from pathlib import Path
 
 import matplotlib
 
-matplotlib.use("Agg")  # sin ventana: solo guarda archivos
+matplotlib.use("Agg")  
 import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
 RAIZ = Path(__file__).resolve().parent.parent
 FECHAS = ["fecha_creacion", "fecha_checkin", "fecha_checkout"]
-PREF_TEXTO = ["pref_piso", "pref_vista", "pref_cama"]          # texto; vacío = sin preferencia
+PREF_TEXTO = ["pref_piso", "pref_vista", "pref_cama"]          
 PREF_BANDERA = ["pref_tranquila", "pref_accesible"]            # 0/1
-ESTADOS_FINALES = ["checkout", "cancelada", "no_show"]  # el desenlace de la reserva ya se conoce
+ESTADOS_FINALES = ["checkout", "cancelada", "no_show"] 
 
-# Colores de las gráficas (paleta validada: azul y naranja se distinguen incluso con daltonismo)
+# Colores de las gráficas 
 SUPERFICIE, TEXTO, TEXTO_SUAVE, AZUL, NARANJA = "#fcfcfb", "#0b0b0b", "#52514e", "#2a78d6", "#eb6834"
 
 _informe: list[str] = []
@@ -73,7 +58,7 @@ def main() -> int:
     args = ap.parse_args()
     args.informes.mkdir(parents=True, exist_ok=True)
 
-    # ------------------------------------------------------------------ 1. CARGA
+    # CARGA
     titulo("1. CARGA Y ESTRUCTURA")
     df = pd.read_csv(args.datos / "reservas.csv", parse_dates=FECHAS)
     hab = pd.read_csv(args.datos / "habitaciones.csv")
@@ -91,13 +76,13 @@ def main() -> int:
     p(nulos.to_string() if len(nulos) else "  ninguna")
     p("  → Los vacíos en pref_* NO son errores: significan que el huésped no indicó esa preferencia.")
 
-    # ------------------------------------------------------------------ 2. VALIDACIÓN
+    # VALIDACIÓN
     titulo("2. VALIDACIÓN DE REGLAS DE NEGOCIO")
     dur = (df.fecha_checkout - df.fecha_checkin).dt.days
     antic = (df.fecha_checkin - df.fecha_creacion).dt.days
     capacidad = df.tipo_habitacion.map(hab.drop_duplicates("tipo_habitacion").set_index("tipo_habitacion").capacidad_maxima)
 
-    # Reglas "duras": si se incumplen, la fila es un error y se elimina.
+    # Reglas "duras"
     duras = {
         "código de reserva repetido": df.reserva_codigo.duplicated(),
         "noches < 1": df.noches < 1,
@@ -110,7 +95,7 @@ def main() -> int:
         "total pagado negativo": df.total_pagado < 0,
         "tipo de habitación que no existe en el inventario": capacidad.isna(),
     }
-    # Reglas "blandas": se reportan, pero no se borra nada.
+    # Reglas "blandas"
     blandas = {
         "precio_total distinto de precio_noche x noches": (df.precio_total - df.precio_noche * df.noches).abs() > 1,
         "más huéspedes que la capacidad del tipo": df.num_huespedes > capacidad,
@@ -134,7 +119,7 @@ def main() -> int:
     p("  → Con datos generados por el propio sistema se espera 0: la app ya valida al crear la reserva.")
     p("    Con datos reales o importados de otra fuente aquí sí aparecerían errores.")
 
-    # ------------------------------------------------------------------ 3. EXPLORACIÓN
+    # EXPLORACIÓN
     titulo("3. EXPLORACIÓN")
     for col in ["canal", "estado", "temporada", "tipo_habitacion"]:
         p(f"\nDistribución de «{col}»:")
@@ -179,7 +164,7 @@ def main() -> int:
     p((cruce * 100).round(0).astype(int).to_string())
     p("  → Esta relación es la base del recomendador (modelo 2).")
 
-    # ------------------------------------------------------------------ 4. LIMPIEZA
+    # LIMPIEZA
     titulo("4. LIMPIEZA Y GUARDADO")
     for col in PREF_TEXTO:
         df[col] = df[col].fillna("sin_preferencia").astype(str)
@@ -200,10 +185,10 @@ def main() -> int:
     p("  Un modelo que las use se vería perfecto en el entrenamiento y fallaría en la vida real,")
     p("  porque en el momento de decidir esos datos todavía no existen.")
 
-    # ------------------------------------------------------------------ 5. GRÁFICAS
+    # GRÁFICAS
     plt.rcParams.update({"font.family": "DejaVu Sans", "text.color": TEXTO, "axes.labelcolor": TEXTO_SUAVE})
 
-    # a) reservas por mes de llegada
+    # reservas por mes de llegada
     por_mes = df.groupby(df.fecha_checkin.dt.to_period("M")).size()
     fig, ax = plt.subplots(figsize=(9, 3.6), facecolor=SUPERFICIE)
     estilo_ejes(ax)
@@ -216,7 +201,7 @@ def main() -> int:
     fig.savefig(args.informes / "reservas_por_mes.png", dpi=150, facecolor=SUPERFICIE)
     plt.close(fig)
 
-    # b) noches por reserva
+    # noches por reserva
     noches = df.noches.value_counts().sort_index()
     fig, ax = plt.subplots(figsize=(6, 3.6), facecolor=SUPERFICIE)
     estilo_ejes(ax)
@@ -228,7 +213,7 @@ def main() -> int:
     fig.savefig(args.informes / "noches_por_reserva.png", dpi=150, facecolor=SUPERFICIE)
     plt.close(fig)
 
-    # c) cancelación y no-show por canal
+    # ccancelación y no-show por canal
     t = tasas("canal").sort_values("cancelada")
     fig, ax = plt.subplots(figsize=(7, 3.2), facecolor=SUPERFICIE)
     estilo_ejes(ax)

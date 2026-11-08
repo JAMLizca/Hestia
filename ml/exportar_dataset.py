@@ -1,15 +1,3 @@
-"""
-Exporta desde la base del sistema los dos archivos que usa el entrenamiento (carpeta ml/datos/):
-
-  reservas.csv      una fila por reserva, con el MISMO código del reporte «Dataset de reservas» de la app
-                    (app/services/reportes.py). No incluye datos personales de los huéspedes.
-  habitaciones.csv  el inventario de habitaciones (tipo, piso, capacidad, camas, m², precio base):
-                    se necesita para convertir reservas en «porcentaje de ocupación».
-
-USO:
-    DB_NAME=hestia_ml python ml/exportar_dataset.py
-    DB_NAME=hestia_ml python ml/exportar_dataset.py --desde 2024-11-01 --hasta 2026-10-31
-"""
 import argparse
 import csv
 import sys
