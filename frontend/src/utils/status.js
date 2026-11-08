@@ -1,7 +1,5 @@
 /**
- * Etiquetas y colores de estados. Los valores de estado son exactamente los
- * definidos por el backend (schemas/reserva.py y schemas/habitacion.py);
- * los colores son los del mockup.
+ * Etiquetas y colores de estados. 
  */
 export const COLORS = {
   green: "#4CAF82",
@@ -23,7 +21,7 @@ export const RESERVA_ESTADOS = {
   no_show: { label: "No se presentó", color: COLORS.gray },
 };
 
-// Pagos (backend: pagos.estado). «pendiente» = el huésped abrió el pago en línea y aún no termina.
+// Pagos
 export const PAGO_ESTADOS = {
   pagado: { label: "Pagado", color: COLORS.green },
   pendiente: { label: "En curso", color: COLORS.gold },
@@ -31,14 +29,14 @@ export const PAGO_ESTADOS = {
   anulado: { label: "Anulado", color: COLORS.gray },
 };
 
-// Pre-check-in: lo que el huésped completa antes de llegar (backend: precheckin.estado).
+// Pre-check-in
 export const PRECHECKIN_ESTADOS = {
   enviado: { label: "Enlace enviado", color: COLORS.gray },
   completado: { label: "Por validar", color: COLORS.gold },
   validado: { label: "Validado", color: COLORS.green },
 };
 
-// Cómo llegó la reserva (el backend guarda el valor en `canal`).
+// Cómo llegó la reserva
 export const CANALES = [
   { value: "presencial", label: "En recepción" },
   { value: "telefono", label: "Teléfono" },
@@ -49,11 +47,11 @@ export const CANALES = [
 ];
 export const canalLabel = (value) => CANALES.find((c) => c.value === value)?.label ?? value ?? "—";
 
-// Temporada de la estadía (backend: reservas.temporada, según la fecha de llegada).
+// Temporada de la estadía
 export const TEMPORADAS = { alta: "Alta", media: "Media", baja: "Baja" };
 export const temporadaLabel = (value) => TEMPORADAS[value] ?? value ?? "—";
 
-// Preferencias del huésped por reserva (backend: reservas.preferencias). Todas son opcionales.
+// Preferencias del huésped por reserva 
 export const PREFERENCIAS_OPCIONES = {
   piso: [
     { value: "bajo", label: "Piso bajo" },
@@ -73,7 +71,6 @@ export const PREFERENCIAS_BANDERAS = [
   { key: "accesible", label: "Accesible (movilidad reducida)" },
 ];
 
-/** "Piso alto · Vista exterior · Habitación tranquila" a partir del objeto que guarda la API. */
 export function preferenciasLabel(pref) {
   if (!pref) return "—";
   const partes = Object.entries(PREFERENCIAS_OPCIONES).map(([clave, opciones]) => opciones.find((o) => o.value === pref[clave])?.label);
@@ -82,8 +79,6 @@ export function preferenciasLabel(pref) {
   return texto || "—";
 }
 
-// El mockup muestra "Reservadas" (dorado); el backend no tiene ese estado y en su
-// lugar usa "limpieza" (la habitación pasa a limpieza tras el check-out).
 export const HABITACION_ESTADOS = {
   disponible: { label: "Disponible", plural: "Disponibles", color: COLORS.green },
   ocupada: { label: "Ocupada", plural: "Ocupadas", color: COLORS.navy },
@@ -103,7 +98,7 @@ export const HUESPED_ESTADOS = {
   "sin-reservas": { label: "Sin reservas", color: COLORS.gray },
 };
 
-// Colores de categoría tal como aparecen en el mockup de Servicios.
+// Colores de categoría.
 const CATEGORIA_COLORES = {
   alimentos: COLORS.green,
   lavanderia: COLORS.purple,

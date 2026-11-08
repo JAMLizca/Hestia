@@ -1,6 +1,6 @@
 const MESES_CORTOS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
-/** Convierte "YYYY-MM-DD" (o ISO) en Date local sin desfase de zona horaria. */
+/** Convierte "YYYY-MM-DD" */
 export function parseDate(value) {
   if (!value) return null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -11,14 +11,12 @@ export function parseDate(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-/** "27 Ago" — formato usado en las tablas del mockup. */
 export function formatShortDate(value) {
   const date = parseDate(value);
   if (!date) return "—";
   return `${String(date.getDate()).padStart(2, "0")} ${MESES_CORTOS[date.getMonth()]}`;
 }
 
-/** "Miércoles, 27 de agosto 2026" — subtítulo del header del mockup. */
 export function formatLongToday(date = new Date()) {
   const dia = date.toLocaleDateString("es-CO", { weekday: "long" });
   const mes = date.toLocaleDateString("es-CO", { month: "long" });
@@ -56,8 +54,7 @@ export function nights(checkin, checkout) {
   return Math.round((b - a) / 86400000);
 }
 
-// Moneda con la que se muestran los montos. La fija ConfigProvider según la
-// configuración del hotel (GET /configuracion/); mientras no cargue se usa COP.
+// Moneda con la que se muestran los montos.
 let moneda = "COP";
 const formateadores = {};
 
@@ -75,11 +72,10 @@ function formateador(code) {
   return formateadores[code];
 }
 
-/** Montos: el backend devuelve Decimal serializado como string. Ej.: "$150.000". */
 export function formatMoney(value) {
   const n = Number(value);
   if (Number.isNaN(n)) return "—";
-  // Se quitan los espacios entre el símbolo y la cifra para mantener "$150.000".
+  // Se quitan los espacios entre el símbolo y la cifra
   return formateador(moneda)
     .formatToParts(n)
     .filter((part) => !(part.type === "literal" && !part.value.trim()))

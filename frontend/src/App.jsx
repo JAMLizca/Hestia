@@ -36,7 +36,6 @@ const PAGES = {
   "/usuarios": UsuariosPage,
 };
 
-// Pantallas del mockup que aún dependen de endpoints que el backend no tiene (hoy ninguna).
 const PENDING_REASONS = {};
 
 export default function App() {
@@ -62,7 +61,6 @@ export default function App() {
                   {NAV_ITEMS.map(({ to, label, modulo }) => {
                     const Page = PAGES[to];
                     const pantalla = Page ? <Page /> : <ModulePending title={label} text={PENDING_REASONS[to]} />;
-                    // Cada pantalla solo se abre si el rol puede "ver" su módulo (RNF-03), aunque escriban la dirección a mano.
                     return <Route key={to} path={to} element={modulo ? <RequirePermiso modulo={modulo}>{pantalla}</RequirePermiso> : pantalla} />;
                   })}
                 </Route>

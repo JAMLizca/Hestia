@@ -46,7 +46,7 @@ export function nextStep(estado) {
 }
 
 /**
- * Estado que se muestra para un huésped 
+ * Estado que se muestra pra un huésped 
  */
 export function guestStatus(reservasHuesped = []) {
   if (!reservasHuesped.length) return { key: "sin-reservas", reserva: null };

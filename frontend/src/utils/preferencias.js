@@ -2,10 +2,9 @@ import { PREFERENCIAS_BANDERAS } from "./status";
 
 export const PREFERENCIAS_VACIAS = { piso: "", vista: "", cama: "", tranquila: false, accesible: false };
 
-/** Estado del formulario a partir de lo que guarda la API (null o {piso: "alto", ...}). */
+/** Estado del formulario a partir de lo que guarda la API */
 export const preferenciasDesde = (pref) => ({ ...PREFERENCIAS_VACIAS, ...(pref ?? {}) });
 
-/** Lo que se envía a la API: solo lo que el huésped pidió; null si no pidió nada. */
 export function preferenciasPayload(values) {
   const out = {};
   ["piso", "vista", "cama"].forEach((k) => values[k] && (out[k] = values[k]));
