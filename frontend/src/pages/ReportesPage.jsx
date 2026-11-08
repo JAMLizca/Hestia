@@ -7,7 +7,7 @@ import { Field, Input } from "../components/ui/Form";
 import { useToast } from "../context/ToastContext";
 import "./ReportesPage.css";
 
-// Diccionario del archivo: los nombres son las columnas reales (los mismos que verás en pandas, Excel o R).
+// Diccionario del archivo
 const GRUPOS = [
   { titulo: "Reserva", texto: "Identifica la reserva y de dónde vino.", columnas: ["reserva_codigo", "canal", "estado", "temporada"], nota: "temporada: alta, media o baja" },
   {
@@ -24,8 +24,7 @@ const GRUPOS = [
 ];
 
 /**
- * Exportación del dataset de reservas (GET /reportes/dataset-reservas). Solo administrador y gerente.
- * Es la base para analítica y para entrenar los modelos de Machine Learning (RF-20).
+ * Exportación del dataset de reservas
  */
 export default function ReportesPage() {
   const toast = useToast();

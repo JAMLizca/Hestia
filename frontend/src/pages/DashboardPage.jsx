@@ -272,7 +272,7 @@ function QuickAction({ icon: Icon, label, onClick }) {
   );
 }
 
-/** Barras de ocupación (estilo del mockup): el día de hoy en dorado. */
+/** Barras de ocupación: el dia de hoy dorado */
 function WeekChart({ days }) {
   const W = 640;
   const left = 40;

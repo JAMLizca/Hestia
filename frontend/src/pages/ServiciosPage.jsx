@@ -38,10 +38,6 @@ const CONSUMO_TABS = [
   { value: "finalizadas", label: "Reservas finalizadas" },
 ];
 
-/**
- * El backend no tiene un endpoint global de consumos: se piden por reserva
- * (GET /reservas/{id}/servicios/) para todas las reservas no canceladas.
- */
 async function loadConsumos() {
   const reservas = await reservasApi.list();
   const conConsumos = reservas.filter((r) => r.estado !== "cancelada");

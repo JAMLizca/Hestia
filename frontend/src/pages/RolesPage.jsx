@@ -41,7 +41,6 @@ export default function RolesPage() {
     }
   }
 
-  /** Por qué un rol no se puede eliminar (null si se puede). */
   const motivoNoEliminar = (r) =>
     ROLES_BASE.includes(r.nombre)
       ? "Es un rol del sistema y no se puede eliminar"

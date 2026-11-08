@@ -294,7 +294,7 @@
   }
 }
 
-/* Botón «Volver al inicio» (es un enlace con aspecto de botón) */
+/* Botón «Volver al inicio» */
 .pc__home {
   display: inline-flex;
   align-items: center;

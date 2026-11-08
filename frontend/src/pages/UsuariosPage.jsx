@@ -42,9 +42,7 @@ function formatDate(value) {
 }
 
 /**
- * Administración de usuarios. Los endpoints de /usuarios son solo para el rol
- * administrador; el resto del personal ve un aviso en lugar de un error 403.
- * (La autorización real la hace el backend: esto solo mejora la experiencia.)
+ * Administración de usuarios.
  */
 export default function UsuariosPage() {
   const { can } = usePermisos();
@@ -125,7 +123,6 @@ function UsuariosAdmin() {
       setRemoving(null);
       reload();
     } catch (err) {
-      // 409: ya tiene historial (reservas o validaciones); el mensaje del servidor sugiere desactivarlo.
       toast.error(err.message);
       setRemoving(null);
     } finally {

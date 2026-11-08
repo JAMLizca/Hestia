@@ -12,15 +12,11 @@ import "../components/ui/ui.css";
 import "./PreCheckinPage.css";
 import "./ReservarPage.css";
 
-
-
-// Se recuerda en la pestaña para poder confirmar el pago cuando Wompi devuelve al huésped a esta página.
 const CLAVE_RESERVA = "hestia_reserva_web";
 const recordar = (codigo, documento) => {
   try {
     sessionStorage.setItem(CLAVE_RESERVA, JSON.stringify({ codigo, documento }));
   } catch {
-    /* sin almacenamiento: se le pedirá el documento */
   }
 };
 const recordada = (codigo) => {
@@ -38,7 +34,6 @@ const sumarDias = (iso, n) => {
   return todayISO(d);
 };
 
-/** Solo lo que el huésped pidió; null si no pidió nada. */
 function preferenciasEnvio(p) {
   const out = {};
   ["piso", "vista", "cama"].forEach((k) => p[k] && (out[k] = p[k]));
@@ -46,7 +41,7 @@ function preferenciasEnvio(p) {
   return Object.keys(out).length ? out : null;
 }
 
-/** Dirección a la que se vuelve tras iniciar sesión: la misma búsqueda, con la habitación ya elegida y sus preferencias. */
+/** Dirección a la que se vuelve tras iniciar sesión */
 const volverA = (f, tipo, prefs) => {
   const q = new URLSearchParams({ llegada: f.checkin, salida: f.checkout, huespedes: String(f.huespedes) });
   if (tipo) q.set("tipo", String(tipo.tipo_habitacion_id));
@@ -55,7 +50,6 @@ const volverA = (f, tipo, prefs) => {
   return { pathname: "/reservar", search: `?${q.toString()}` };
 };
 
-/** Preferencias que venían en la dirección (solo valores válidos). */
 function prefsDesde(params) {
   const p = { piso: "", vista: "", cama: "", tranquila: false, accesible: false };
   Object.entries(PREFERENCIAS_OPCIONES).forEach(([k, opciones]) => {
@@ -142,7 +136,6 @@ function AccesoParaReservar({ status, esPersonal, logout, volver }) {
 
 function Reservar({ hotel }) {
   const hoy = todayISO();
-  // La página principal (/) envía las fechas elegidas y el tipo: ?llegada=&salida=&huespedes=&tipo=
   const [params] = useSearchParams();
   const pedido = useMemo(() => {
     const llegada = params.get("llegada") ?? "";
@@ -158,15 +151,14 @@ function Reservar({ hotel }) {
   const [errorBusqueda, setErrorBusqueda] = useState("");
   const [tipos, setTipos] = useState(null);
   const [elegido, setElegido] = useState(null);
-  const [cambiando, setCambiando] = useState(false); // con una habitación elegida, la lista solo se reabre si el huésped quiere cambiarla
+  const [cambiando, setCambiando] = useState(false); 
   const formRef = useRef(null);
   const yaDesplazo = useRef(false);
   const { user, status, esCliente, esPersonal, logout } = useAuth();
   const [huesped, setHuesped] = useState({ ...PERSONA_VACIA, email: "", telefono: "", procedencia: "" });
-  // Registro de alojamiento (antes era un paso aparte, el pre-check-in): acompañantes y datos de la llegada.
-  const [acompanantes, setAcompanantes] = useState([]);
+  // Registro de alojamiento
   const [llegada, setLlegada] = useState({ hora_llegada: "", motivo_viaje: "" });
-  // Con la cuenta iniciada, los datos de contacto se rellenan solos (se pueden cambiar: el titular puede ser otra persona).
+  // Con la cuenta iniciada, los datos de contacto se rellenan solos
   useEffect(() => {
     if (!esCliente) return;
     setHuesped((h) => ({ ...h, nombres: h.nombres || user.nombres, apellidos: h.apellidos || user.apellidos, email: h.email || user.email }));
@@ -179,7 +171,7 @@ function Reservar({ hotel }) {
   const [error, setError] = useState("");
   const [reserva, setReserva] = useState(null);
 
-  // Cambiar fechas o huéspedes invalida lo mostrado: el precio y el cupo se vuelven a consultar.
+  // Cambiar fechas o huéspedes 
   const editarFechas = (fn) => {
     setTipos(null);
     setElegido(null);
@@ -192,7 +184,6 @@ function Reservar({ hotel }) {
     setCambiando(false);
   };
 
-  // Al volver de crear la cuenta o iniciar sesión con la habitación ya elegida, se baja directo a completar los datos.
   useEffect(() => {
     if (!pedido?.tipo || !elegido || !esCliente || yaDesplazo.current) return;
     yaDesplazo.current = true;
@@ -236,10 +227,8 @@ function Reservar({ hotel }) {
     }
   }
 
-  // Viene de la página principal con fechas y habitación ya elegidas: se busca solo y se deja elegida.
   useEffect(() => {
     if (pedido) buscar(null, pedido.tipo);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function enviar(e) {
@@ -264,7 +253,7 @@ function Reservar({ hotel }) {
       window.scrollTo({ top: 0 });
     } catch (err) {
       setError(err.message);
-      if (err.status === 409) setTipos(null); // la disponibilidad cambió: que vuelva a buscar
+      if (err.status === 409) setTipos(null);
     } finally {
       setEnviando(false);
     }
@@ -594,22 +583,16 @@ function Consultar({ hotel }) {
   );
 }
 
-/**
- * Al volver de Wompi (`/reservar?pago=CÓDIGO&id=TRANSACCIÓN`): confirma el pago consultando la transacción.
- * El webhook de Wompi suele confirmarlo antes; esto cubre el caso en que no llegue (p. ej. en desarrollo).
- */
 function Retorno({ hotel, codigo, transaccion }) {
   const { status, esCliente } = useAuth();
   const [documento, setDocumento] = useState(() => recordada(codigo));
   const [estado, setEstado] = useState({ error: "", reserva: null });
   const [intentos, setIntentos] = useState(0);
-  // Con la cuenta iniciada no hace falta el documento: la reserva se identifica por la cuenta.
   const listo = esCliente || Boolean(documento);
 
   useEffect(() => {
     if (!listo) return undefined;
     let activo = true;
-    // Sin id de transacción (el huésped volvió sin terminar) solo se consulta el estado de la reserva.
     (esCliente
       ? transaccion
         ? cuentaApi.verificarPago(codigo, transaccion)
@@ -621,7 +604,6 @@ function Retorno({ hotel, codigo, transaccion }) {
       .then((reserva) => {
         if (!activo) return;
         setEstado({ error: "", reserva });
-        // Pagos por PSE o Nequi pueden tardar unos segundos en aprobarse: se reintenta un rato.
         if (reserva.estado === "pendiente" && Number(reserva.pagado) === 0 && intentos < 6) setTimeout(() => activo && setIntentos((n) => n + 1), 4000);
       })
       .catch((err) => activo && setEstado({ error: err.message, reserva: null }));
@@ -708,11 +690,6 @@ function Retorno({ hotel, codigo, transaccion }) {
   );
 }
 
-/**
- * Reserva en línea pública: cualquiera puede buscar disponibilidad por tipo de habitación, pero para reservar hay que
- * iniciar sesión con una cuenta de huésped. La reserva queda pendiente hasta que se paga el anticipo o el hotel la
- * confirma (routes/reservas_web.py).
- */
 export default function ReservarPage() {
   const [hotel, setHotel] = useState(null);
   const [loadError, setLoadError] = useState("");

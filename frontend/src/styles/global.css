@@ -1,7 +1,4 @@
-/* ──────────────────────────────────────────────────────────────
-   Tokens de diseño — extraídos de los estilos del mockup Figma
-   (branch-extra-44293684.figma.site). No cambiar sin el diseño.
-   ────────────────────────────────────────────────────────────── */
+/* Tokens de diseño */
 :root {
   --navy-900: #1a2235; /* sidebar, títulos */
   --navy-700: #2b3650; /* avatares, acentos oscuros */

@@ -11,7 +11,7 @@ import { FOTOS_DISPONIBLES, fotoDeTipo, fotoEspecificaDeTipo, fotoGeneralUrl } f
 import { configureFormat, formatMoney, formatShortDate, nights as contarNoches, todayISO } from "../utils/format";
 import "./HotelHomePage.css";
 
-const MAX_NOCHES = 30; // mismo tope que la reserva en línea
+const MAX_NOCHES = 30; 
 
 const sumarDias = (iso, n) => {
   const d = new Date(`${iso}T12:00:00`);
@@ -21,7 +21,7 @@ const sumarDias = (iso, n) => {
 
 const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 
-/** Página principal para el público: qué ofrece el hotel, disponibilidad por fechas y acceso a reservar. */
+/** Página principal */
 export default function HotelHomePage() {
   const navigate = useNavigate();
   const { status, user, esCliente, esPersonal, logout } = useAuth();
@@ -53,7 +53,7 @@ export default function HotelHomePage() {
     };
   }, []);
 
-  // Fotos del carrusel del hero: una por tipo de habitación que tenga foto propia + las fotos extra de la galería.
+  // Fotos del carrusel del hero: una por tipo de habitación.
   const slidesHero = useMemo(() => {
     const vistas = new Set();
     const lista = [];
@@ -87,7 +87,6 @@ export default function HotelHomePage() {
     setResultado(null);
     setFechas((f) => {
       const siguiente = { ...f, [campo]: valor };
-      // Si la llegada pasa a ser igual o posterior a la salida, se corre la salida un día.
       if (campo === "checkin" && valor && siguiente.checkout <= valor) siguiente.checkout = sumarDias(valor, 1);
       return siguiente;
     });

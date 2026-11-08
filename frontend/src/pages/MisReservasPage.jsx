@@ -6,7 +6,6 @@ import { useAuth } from "../context/AuthContext";
 import { Pantalla, Resumen } from "../features/reservasWeb/Comunes";
 import { configureFormat } from "../utils/format";
 
-/** Una reserva con sus propias acciones (pagar el anticipo, cancelar) y su propio estado de carga. */
 function TarjetaReserva({ reserva, hotel, onCambio }) {
   const [cancelando, setCancelando] = useState(false);
   const [errorCancelar, setErrorCancelar] = useState("");
@@ -40,7 +39,6 @@ function TarjetaReserva({ reserva, hotel, onCambio }) {
   return <Resumen r={reserva} hotel={hotel} onCancelar={cancelar} cancelando={cancelando} errorCancelar={errorCancelar} onPagar={pagar} pagando={pagando} errorPago={errorPago} />;
 }
 
-/** Las reservas hechas con la cuenta del huésped. Es solo para cuentas de huésped. */
 export default function MisReservasPage() {
   const { status, esCliente, esPersonal } = useAuth();
   const [hotel, setHotel] = useState(null);

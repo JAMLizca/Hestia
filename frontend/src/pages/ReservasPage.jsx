@@ -29,8 +29,6 @@ import { formatMoney, formatShortDate, nights } from "../utils/format";
 import { ESTADOS_CANCELABLES, ESTADOS_EDITABLES, fullName, isToday, matches, nextStep, onlyDigits } from "../utils/hotel";
 import { canalLabel, COLORS, PRECHECKIN_ESTADOS, RESERVA_ESTADOS } from "../utils/status";
 
-// Pestañas del mockup, más las que dejaron de caber en "Todas": canceladas (incluye las que vencieron
-// solas) y huéspedes que no se presentaron.
 const TABS = [
   { value: "todas", label: "Todas" },
   { value: "confirmada", label: "Confirmada" },

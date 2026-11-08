@@ -45,7 +45,7 @@ function valoresIniciales(info) {
   };
 }
 
-/** Botón para salir del registro y volver a la página principal del hotel. */
+/** Botón para salir del registro y volver a la página principal */
 function VolverAlInicio() {
   return (
     <Link to="/" className="pc__submit pc__home">

@@ -28,7 +28,7 @@ import { formatShortDate, nights } from "../utils/format";
 import { fullName, guestStatus, isToday, matches } from "../utils/hotel";
 import { COLORS, HUESPED_ESTADOS } from "../utils/status";
 
-// Pestañas del mockup de Huéspedes.
+// Pestañas de Huéspedes.
 const TABS = [
   { value: "todos", label: "Todos" },
   { value: "activo", label: "Activo" },

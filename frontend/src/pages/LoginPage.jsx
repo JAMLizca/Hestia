@@ -8,12 +8,10 @@ import "./LoginPage.css";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
-/** Una dirección "/ruta?consulta" a partir de lo que dejó guardado la pantalla anterior (location o { pathname, search }). */
 const aRuta = (from) => (from?.pathname ? `${from.pathname}${from.search ?? ""}` : "");
 
 /**
- * Acceso único: el personal entra al panel y los huéspedes vuelven a donde estaban (o a la página principal).
- * Quien no tiene cuenta de huésped puede crearla aquí mismo (`?modo=registro`).
+ * Acceso único: el personal entra al panel y los huéspedes vuelven a donde estaban
  */
 export default function LoginPage() {
   const { login, register, status, user } = useAuth();

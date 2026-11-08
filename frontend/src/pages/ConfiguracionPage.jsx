@@ -8,7 +8,7 @@ import { useConfig } from "../context/ConfigContext";
 import { useToast } from "../context/ToastContext";
 import { useApiData } from "../hooks/useApiData";
 
-// Opciones admitidas por el backend (schemas/configuracion.py).
+// Opciones admitidas.
 const MONEDAS = [
   { value: "COP", label: "COP — Peso colombiano" },
   { value: "USD", label: "USD — Dólar estadounidense" },
@@ -35,7 +35,6 @@ const ZONAS = [
 
 const TEXT_FIELDS = ["nombre", "razon_social", "nit", "direccion", "ciudad", "pais", "telefono", "email", "sitio_web"];
 
-/** De la respuesta de la API a valores de formulario (texto; la hora como HH:MM). */
 function toForm(config) {
   const values = Object.fromEntries(TEXT_FIELDS.map((k) => [k, config[k] ?? ""]));
   return {
@@ -50,7 +49,6 @@ function toForm(config) {
   };
 }
 
-/** Del formulario al cuerpo del PUT: los textos vacíos se envían como null. */
 function toPayload(values) {
   const payload = { ...values };
   TEXT_FIELDS.forEach((k) => {
@@ -68,8 +66,7 @@ function formatUpdated(value) {
 }
 
 /**
- * Configuración general: datos del hotel, horarios y ajustes regionales. Todos los usuarios
- * pueden consultarla; solo el administrador puede guardar cambios.
+ * Configuración general: datos del hotel, horarios y ajustes regionales.
  */
 export default function ConfiguracionPage() {
   const { data, loading, error, reload } = useApiData({ config: () => configApi.get() });
@@ -95,7 +92,6 @@ function ConfigForm({ initial }) {
   const [saving, setSaving] = useState(false);
 
   const dirty = JSON.stringify(values) !== JSON.stringify(baseline);
-  // VITE_PUBLIC_URL: dominio público del panel; sin él se usa el de la pestaña (en desarrollo, localhost).
   const urlReservas = `${(import.meta.env.VITE_PUBLIC_URL || window.location.origin).replace(/\/$/, "")}/reservar`;
   async function copiarUrl() {
     try {

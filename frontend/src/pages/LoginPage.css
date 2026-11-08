@@ -74,7 +74,7 @@
 }
 
 .login__headline {
-  max-width: 8.6em; /* corta en 3 líneas como en el mockup */
+  max-width: 8.6em;
   font-family: var(--font-display);
   font-weight: 400;
   font-size: clamp(36px, 4.4vw, 60px);
