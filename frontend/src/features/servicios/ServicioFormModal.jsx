@@ -4,10 +4,10 @@ import { Button, ErrorBanner } from "../../components/ui";
 import { cleanPayload, Field, Input, Textarea } from "../../components/ui/Form";
 import { Modal } from "../../components/ui/Modal";
 
-// Categorías que aparecen en el mockup (el backend acepta cualquier texto).
+// Categorías que aparecen.
 const CATEGORIAS_MOCKUP = ["Alimentos", "Lavandería", "Habitación", "Transporte", "Bienestar", "Actividades"];
 
-/** Crear o editar un servicio del catálogo (POST/PUT /servicios/, solo recepción). */
+/** Crear o editar un servicio del catálogo */
 export default function ServicioFormModal({ servicio, onClose, onSaved }) {
   const editing = Boolean(servicio);
   const [values, setValues] = useState({

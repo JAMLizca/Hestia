@@ -24,7 +24,6 @@ function useSubmit(fn, onDone) {
   return { error, saving, submit };
 }
 
-/** Corrige la cantidad de un servicio consumido (PUT /reservas/{id}/servicios/{item}). */
 export function CorregirConsumoModal({ reservaId, consumo, nombre, onClose, onSaved }) {
   const [cantidad, setCantidad] = useState(String(consumo.cantidad));
   const { error, saving, submit } = useSubmit(() => reservaServiciosApi.update(reservaId, consumo.id, { cantidad: Number(cantidad) }), onSaved);
@@ -60,7 +59,6 @@ export function CorregirConsumoModal({ reservaId, consumo, nombre, onClose, onSa
   );
 }
 
-/** Corrige el monto o el método de un pago manual (PUT /reservas/{id}/pagos/{pago}). */
 export function CorregirPagoModal({ reservaId, pago, onClose, onSaved }) {
   const [monto, setMonto] = useState(String(Number(pago.monto)));
   const [metodo, setMetodo] = useState(pago.metodo_pago);
@@ -104,7 +102,6 @@ export function CorregirPagoModal({ reservaId, pago, onClose, onSaved }) {
   );
 }
 
-/** Anula un pago manual dejando el motivo (POST /reservas/{id}/pagos/{pago}/anular). */
 export function AnularPagoModal({ reservaId, pago, onClose, onSaved }) {
   const [motivo, setMotivo] = useState("");
   const { error, saving, submit } = useSubmit(() => pagosApi.anular(reservaId, pago.id, motivo.trim()), onSaved);

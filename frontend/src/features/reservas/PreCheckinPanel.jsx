@@ -26,7 +26,6 @@ const CAMPOS = [
 
 const MOTIVOS = { turismo: "Turismo", negocios: "Negocios", familia: "Visita a familiares", salud: "Salud", estudio: "Estudio", otro: "Otro" };
 
-/** Copia al portapapeles; con http (sin contexto seguro) navigator.clipboard no existe y se usa un textarea. */
 async function copiar(texto) {
   try {
     await navigator.clipboard.writeText(texto);
@@ -44,20 +43,19 @@ async function copiar(texto) {
   }
 }
 
-/** Número para wa.me: solo dígitos; un móvil colombiano de 10 dígitos recibe el prefijo 57. */
+/** Número para wa.me: solo dígitos; un móvil colombiano 10 dígitos, prefijo 57. */
 function numeroWhatsApp(telefono) {
   const digits = onlyDigits(telefono);
   return digits.length === 10 && digits.startsWith("3") ? `57${digits}` : digits;
 }
 
 /**
- * Pestaña "Pre-check-in" del detalle de reserva: crea el enlace que se le envía al huésped, muestra lo
- * que él completó (comparado con lo que ya hay en su registro) y lo valida.
+ * Pestaña "Pre-check-in" del detalle de reserva.
  */
 export default function PreCheckinPanel({ reserva, huesped, onChanged }) {
   const toast = useToast();
   const { can } = usePermisos();
-  const puedeEditar = can("reservas", "editar"); // crear/regenerar el enlace y validar es editar la reserva
+  const puedeEditar = can("reservas", "editar"); 
   const { config } = useConfig();
   const [version, setVersion] = useState(0);
   const [state, setState] = useState({ loading: true, error: "", pc: null });
@@ -97,8 +95,6 @@ export default function PreCheckinPanel({ reserva, huesped, onChanged }) {
 
   const { pc, loading, error } = state;
   const admite = ESTADOS_ADMITEN.includes(reserva.estado);
-  // VITE_PUBLIC_URL: dominio público del panel (ej. https://hotel.com). Sin él se usa el de la pestaña actual,
-  // que en desarrollo es localhost y no sirve para enviárselo a un huésped.
   const base = (import.meta.env.VITE_PUBLIC_URL || window.location.origin).replace(/\/$/, "");
   const url = pc ? `${base}${pc.enlace}` : "";
   const mensaje = pc

@@ -15,12 +15,6 @@ function validatePassword(password, confirm) {
   return "";
 }
 
-/**
- * Crear (POST /auth/register) o editar (PUT /usuarios/{id}) un usuario del staff.
- * Al editar no se toca la contraseña (tiene su propio diálogo) ni el estado activo
- * (se cambia con el botón activar/desactivar de la tabla).
- * Un administrador no puede cambiar su propio rol: el backend lo rechaza.
- */
 export function UsuarioFormModal({ usuario, roles, esPropio, onClose, onSaved }) {
   const editing = Boolean(usuario);
   const [values, setValues] = useState({
@@ -131,7 +125,7 @@ export function UsuarioFormModal({ usuario, roles, esPropio, onClose, onSaved })
   );
 }
 
-/** Define una contraseña nueva para un usuario (PUT /usuarios/{id}/password). */
+/** Define una contraseña nueva para un usuario. */
 export function PasswordModal({ usuario, onClose, onSaved }) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");

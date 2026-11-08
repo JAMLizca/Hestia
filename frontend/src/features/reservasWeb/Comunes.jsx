@@ -17,7 +17,7 @@ export const ESTADOS = {
   no_show: { label: "No se presentó", tono: "muted" },
 };
 
-/** Acceso o cuenta de quien está en las pantallas públicas: iniciar sesión, mis reservas, salir. */
+/** */
 function BarraCuenta() {
   const { status, user, esCliente, esPersonal, logout } = useAuth();
   const location = useLocation();
@@ -66,7 +66,6 @@ export function Campo({ label, required, hint, full, children }) {
   );
 }
 
-/** Marco de las pantallas públicas de reserva: marca arriba y, a la derecha, el acceso o la cuenta del huésped. */
 export function Pantalla({ hotel, children }) {
   return (
     <main className="pc rv">

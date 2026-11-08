@@ -25,10 +25,7 @@ function addDays(iso, days) {
 }
 
 /**
- * Edición de una reserva (PUT /reservas/{id}). Qué campos se pueden tocar depende del estado:
- * pendiente/confirmada casi todo; en check-in solo la salida, los huéspedes y las notas;
- * en cualquier otro estado, solo las notas. El backend vuelve a validar disponibilidad,
- * capacidad y precio, y responde con el motivo si algo no es posible.
+ * Edición de una reserva
  */
 export default function ReservaEditModal({ reserva, huesped, onClose, onSaved }) {
   const { data, loading, error: loadError } = useApiData({

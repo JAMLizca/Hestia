@@ -8,8 +8,7 @@ import { ESTADOS_MODIFICABLES, fullName } from "../../utils/hotel";
 import { RESERVA_ESTADOS } from "../../utils/status";
 
 /**
- * Registrar el consumo de un servicio en una reserva (POST /reservas/{id}/servicios/).
- * El backend congela el precio del catálogo en el momento del registro.
+ * Registrar el consumo de un servicio en una reserva
  */
 export default function ConsumoFormModal({ reservas, catalogo, huespedes, habitaciones, onClose, onSaved }) {
   const activas = reservas.filter((r) => ESTADOS_MODIFICABLES.includes(r.estado)).sort((a, b) => b.id - a.id);

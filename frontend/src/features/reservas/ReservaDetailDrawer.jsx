@@ -30,11 +30,7 @@ function formatDateTime(value) {
 }
 
 /**
- * Detalle de una reserva:
- *  - GET /reservas/{id}, /reservas/{id}/resumen, /servicios/, /pagos/
- *  - Acciones: confirmar, check-in, check-out, editar, cancelar, no se presentó, eliminar (solo administrador)
- *  - Consumo de servicios (POST/DELETE /reservas/{id}/servicios/)
- *  - Pagos (POST /reservas/{id}/pagos/)
+ * Detalle de una reserva
  */
 export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitaciones = {}, onClose, onChanged }) {
   const { can } = usePermisos();
@@ -334,7 +330,7 @@ export default function ReservaDetailDrawer({ reservaId, huespedes = {}, habitac
   );
 }
 
-/* ── Resumen de costos (GET /reservas/{id}/resumen) ─────────── */
+/* Resumen de costos */
 function ResumenTab({ resumen }) {
   if (!resumen) return null;
   if (resumen.__error) return <ErrorBanner message={`No se pudo obtener el resumen de costos: ${resumen.__error}`} />;
@@ -379,7 +375,7 @@ function ResumenTab({ resumen }) {
   );
 }
 
-/* ── Servicios consumidos ───────────────────────────────────── */
+/* Servicios consumidos */
 function ServiciosTab({ reservaId, consumos, catalogo, modificable, estado, busy, run, onCorregido }) {
   const { can } = usePermisos();
   const [corrigiendo, setCorrigiendo] = useState(null);
@@ -497,7 +493,7 @@ function ServiciosTab({ reservaId, consumos, catalogo, modificable, estado, busy
   );
 }
 
-/* ── Pagos ──────────────────────────────────────────────────── */
+/* Pagos */
 function PagosTab({ reservaId, pagos, saldo, cancelada, busy, run, onCorregido }) {
   const { can } = usePermisos();
   const [corrigiendo, setCorrigiendo] = useState(null);

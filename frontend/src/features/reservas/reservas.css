@@ -1,4 +1,4 @@
-/* ── Formulario de nueva reserva ──────────────────── */
+/* Formulario de nueva reserva */
 .reserva-form {
   display: flex;
   flex-direction: column;
@@ -144,7 +144,7 @@
   color: var(--orange);
 }
 
-/* ── Detalle de reserva ───────────────────────────── */
+/* Detalle de reserva */
 .reserva-detail__actions {
   display: flex;
   flex-wrap: wrap;
@@ -246,7 +246,7 @@
   }
 }
 
-/* ── Pre-check-in (pestaña del detalle) ───────────── */
+/* Pre-check-in (pestaña del detalle) */
 .precheckin__status {
   display: flex;
   flex-wrap: wrap;
@@ -309,7 +309,7 @@
   border-top: 1px solid var(--canvas);
 }
 
-/* ── Preferencias de la estadía ───────────────────── */
+/* Preferencias de la estadía */
 .preferencias {
   display: grid;
   gap: 10px;

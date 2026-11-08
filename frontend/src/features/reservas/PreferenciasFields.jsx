@@ -2,8 +2,7 @@ import { Field, Select } from "../../components/ui/Form";
 import { PREFERENCIAS_BANDERAS, PREFERENCIAS_OPCIONES } from "../../utils/status";
 
 /**
- * Preferencias de la estadía (piso, vista, cama, tranquila, accesible). Son opcionales y alimentan los datos
- * que se exportan para Machine Learning (RF-20).
+ * Preferencias de la estadía.
  */
 export default function PreferenciasFields({ value, onChange, disabled = false }) {
   const set = (key, v) => onChange({ ...value, [key]: v });

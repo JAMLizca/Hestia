@@ -20,10 +20,7 @@ function addDays(iso, days) {
 }
 
 /**
- * Nueva reserva:
- * 1. Huésped (se busca por nombre, documento o teléfono, o se registra uno nuevo), canal y notas.
- * 2. Fechas + tipo → GET /disponibilidad/ devuelve las habitaciones libres.
- * 3. POST /reservas/ — el backend valida solapamientos y calcula el precio.
+ * Nueva reserva
  */
 export default function ReservaFormModal({ huespedes, tipos, initialHuespedId, onClose, onCreated, onGuestCreated }) {
   const [guests, setGuests] = useState(huespedes);
@@ -94,7 +91,7 @@ export default function ReservaFormModal({ huespedes, tipos, initialHuespedId, o
     }
   }
 
-  // Con búsqueda activa solo se listan las coincidencias (y siempre el huésped ya elegido).
+  // Con búsqueda activa solo se listan las coincidencias.
   const digits = onlyDigits(guestQuery);
   const guestMatches = (h) =>
     String(h.id) === huespedId ||
