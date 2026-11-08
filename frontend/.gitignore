@@ -23,5 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 
-# Servidor de prueba local (no es el backend)
+# Servidor de prueba local
 mock-api.mjs
