@@ -4,8 +4,6 @@ import "./FotoSelector.css";
 
 /**
  * Galería para elegir la foto de una habitación.
- * Primera opción: "Automática" (la foto del tipo de habitación).
- * `value` es el id de la foto elegida ("" = automática).
  */
 export default function FotoSelector({ value, onChange, nombreTipo }) {
   const opciones = [{ id: "", etiqueta: "Automática (según el tipo)", url: fotoDeTipo(nombreTipo) }, ...FOTOS_DISPONIBLES];

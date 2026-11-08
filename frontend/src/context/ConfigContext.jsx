@@ -3,7 +3,7 @@ import { configApi } from "../api/services";
 import { configureFormat } from "../utils/format";
 import { useAuth } from "./AuthContext";
 
-/** Valores con los que se muestra el panel mientras llega la configuración (o si no se puede leer). */
+/** Valores con los que se muestra el panel mientras llega la configuración */
 export const DEFAULT_CONFIG = {
   nombre: "Hotel Hestia",
   razon_social: null,
@@ -28,17 +28,14 @@ export const DEFAULT_CONFIG = {
 const ConfigContext = createContext(null);
 
 /**
- * Configuración general del hotel (GET /configuracion/). Se carga al iniciar sesión y la usan
- * el menú lateral (nombre del hotel) y el formato de montos (moneda). Si la lectura falla
- * —por ejemplo, si la tabla aún no existe en la base de datos— el panel sigue funcionando con
- * los valores por defecto.
+ * Configuración general del hotel 
  */
 export function ConfigProvider({ children }) {
   const { esPersonal } = useAuth();
   const [config, setConfig] = useState(DEFAULT_CONFIG);
 
   useEffect(() => {
-    if (!esPersonal) return; // GET /configuracion/ es del panel: un huésped no lo consulta
+    if (!esPersonal) return; 
     let active = true;
     configApi
       .get()
@@ -51,7 +48,6 @@ export function ConfigProvider({ children }) {
     };
   }, [esPersonal]);
 
-  // Se aplica antes de dibujar a los hijos para que formatMoney ya use la moneda vigente.
   configureFormat(config);
 
   const update = useCallback((data) => setConfig({ ...DEFAULT_CONFIG, ...data }), []);

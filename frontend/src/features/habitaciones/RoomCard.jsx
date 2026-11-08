@@ -6,9 +6,7 @@ import { COLORS, HABITACION_ESTADOS } from "../../utils/status";
 import "./RoomCard.css";
 
 /**
- * Tarjeta de habitación según el diseño enviado (foto, número, nombre, estado,
- * piso y capacidad). El backend no guarda fotos: la foto sale de
- * `utils/fotosHabitacion` (elegida en la habitación → la del tipo → la general).
+ * Tarjeta de habitación
  */
 export default function RoomCard({ habitacion, tipo, busy, onEdit, onDelete, onMarkAvailable }) {
   const estado = HABITACION_ESTADOS[habitacion.estado];

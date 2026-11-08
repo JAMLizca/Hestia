@@ -4,7 +4,7 @@ import { Button, ErrorBanner } from "../../components/ui";
 import { cleanPayload, Field, Input, Textarea } from "../../components/ui/Form";
 import { Modal } from "../../components/ui/Modal";
 
-/** Crear o editar un tipo de habitación (POST/PUT /tipos-habitacion/, admin/gerente). */
+/** Crear o editar un tipo de habitación */
 export default function TipoHabitacionFormModal({ tipo, onClose, onSaved }) {
   const editing = Boolean(tipo);
   const [values, setValues] = useState({

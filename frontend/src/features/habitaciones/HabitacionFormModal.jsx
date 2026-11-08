@@ -11,10 +11,6 @@ import FotoSelector from "./FotoSelector";
 
 const ESTADO_OPTIONS = Object.entries(HABITACION_ESTADOS).map(([value, s]) => ({ value, label: s.label }));
 
-/**
- * Crear (POST /habitaciones/, solo recepción) o editar (PUT /habitaciones/{id}).
- * Al editar se puede cambiar el número (o nombre corto), el tipo, el piso, el estado y las características.
- */
 export default function HabitacionFormModal({ habitacion, tipos, onClose, onSaved }) {
   const { can } = usePermisos();
   const editing = Boolean(habitacion);

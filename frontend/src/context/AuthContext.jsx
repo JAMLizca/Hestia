@@ -4,11 +4,6 @@ import { authApi, cuentaApi } from "../api/services";
 
 const AuthContext = createContext(null);
 
-/**
- * El JWT lleva claims que solo se leen para decidir qué mostrar en la interfaz (la autorización real la hace
- * siempre el backend): "tipo" ("personal" o "cliente"; los tokens anteriores no lo traían y son de personal) y,
- * para el personal, "rol". GET /auth/me solo devuelve rol_id, por eso el nombre del rol sale del token.
- */
 function readClaims(token) {
   try {
     return JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
@@ -23,7 +18,7 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => tokenStorage.get());
   const [user, setUser] = useState(null);
   const [status, setStatus] = useState(token ? "loading" : "anonymous");
-  // true cuando el usuario cerró sesión a propósito (no se recuerda la pantalla anterior)
+  // true cuando el usuario cerró sesión a propósito 
   const [manualLogout, setManualLogout] = useState(false);
 
   const endSession = useCallback((manual) => {
@@ -57,9 +52,6 @@ export function AuthProvider({ children }) {
       })
       .catch((err) => {
         if (!active) return;
-        // Solo un 401 invalida el token. Si la petición falla por otra causa (red caída, o la página
-        // se está recargando y el navegador aborta la llamada) el token se conserva: borrarlo aquí
-        // cerraría la sesión al pulsar F5 justo después de iniciar sesión.
         if (err?.status === 401) expire();
         else setStatus("anonymous");
       });
@@ -76,10 +68,8 @@ export function AuthProvider({ children }) {
     return tipoDeToken(access_token);
   }, []);
 
-  /** Un solo acceso para personal y huéspedes. Devuelve el tipo de sesión ("personal" | "cliente"). */
   const login = useCallback(async (email, password) => guardarToken((await authApi.login(email, password)).access_token), [guardarToken]);
 
-  /** Crea una cuenta de huésped y deja la sesión iniciada. Devuelve "cliente". */
   const register = useCallback(async (datos) => guardarToken((await cuentaApi.registro(datos)).access_token), [guardarToken]);
 
   const value = useMemo(
