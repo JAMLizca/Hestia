@@ -40,7 +40,7 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Abrir `.env` y ajustar `DB_USER`, `DB_PASSWORD` y `DB_NAME` según tu
+Abrir `.env` y ajusta `DB_USER`, `DB_PASSWORD` y `DB_NAME` según tu
 instalación local de MySQL. `SECRET_KEY` es obligatoria (mínimo 32 caracteres);
 genera una con:
 
