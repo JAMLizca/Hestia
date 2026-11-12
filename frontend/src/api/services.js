@@ -1,31 +1,55 @@
-import { apiRequest } from "./client";
+/**
+ * Servicios por recurso. Cada función corresponde 1:1 a un endpoint
+ */
+import { apiDownload, apiRequest } from "./client";
 
-//Autenticación
+//Autenticación (routes/auth.py)
 export const authApi = {
+  /** POST /auth/login — form-data: username (email), password */
   login: (email, password) =>
     apiRequest("/auth/login", { method: "POST", form: { username: email, password }, auth: false }),
+  /** GET /auth/me */
   me: () => apiRequest("/auth/me"),
+  /** POST /auth/register — { nombre, email, password, rol_id } */
   register: (data) => apiRequest("/auth/register", { method: "POST", body: data }),
+  /** PUT /auth/me/password — { password_actual, password_nueva } (204). Cambia la contraseña de quien tiene la sesión. */
   changePassword: (data) => apiRequest("/auth/me/password", { method: "PUT", body: data }),
 };
 
-//Roles
+// Cuenta del huésped (routes/cuenta.py): quien reserva en línea. El token es el mismo de siempre (tipo "cliente").
+export const cuentaApi = {
+  /** POST /cuenta/registro — { nombres, apellidos, email, password } → { access_token }: deja la sesión iniciada. */
+  registro: (data) => apiRequest("/cuenta/registro", { method: "POST", body: data, auth: false }),
+  me: () => apiRequest("/cuenta/me"),
+  reservas: () => apiRequest("/cuenta/reservas"),
+  cancelar: (codigo) => apiRequest(`/cuenta/reservas/${encodeURIComponent(codigo)}/cancelar`, { method: "POST" }),
+  /** Devuelve { url } del checkout de Wompi. */
+  pagar: (codigo) => apiRequest(`/cuenta/reservas/${encodeURIComponent(codigo)}/pagar`, { method: "POST" }),
+  verificarPago: (codigo, transaccionId) =>
+    apiRequest(`/cuenta/reservas/${encodeURIComponent(codigo)}/verificar-pago`, { method: "POST", body: { transaccion_id: transaccionId } }),
+};
+
+//Roles (routes/roles.py) 
 export const rolesApi = {
   list: () => apiRequest("/roles/"),
   create: (data) => apiRequest("/roles/", { method: "POST", body: data }),
   update: (id, data) => apiRequest(`/roles/${id}`, { method: "PUT", body: data }),
+  /** DELETE /roles/{id} — 409 si es un rol del sistema o aún tiene usuarios */
+  remove: (id) => apiRequest(`/roles/${id}`, { method: "DELETE" }),
   permisos: () => apiRequest("/roles/permisos"),
 };
 
-//Usuarios
+//Usuarios (routes/usuarios.py)
 export const usuariosApi = {
   list: () => apiRequest("/usuarios/"),
   get: (id) => apiRequest(`/usuarios/${id}`),
   update: (id, data) => apiRequest(`/usuarios/${id}`, { method: "PUT", body: data }),
+  /** DELETE /usuarios/{id} — 409 si ya registró actividad (en ese caso se desactiva) */
+  remove: (id) => apiRequest(`/usuarios/${id}`, { method: "DELETE" }),
   setPassword: (id, password) => apiRequest(`/usuarios/${id}/password`, { method: "PUT", body: { password } }),
 };
 
-//Tipos de habitación
+//Tipos de habitación (routes/tipos_habitacion.py)
 export const tiposHabitacionApi = {
   list: () => apiRequest("/tipos-habitacion/"),
   get: (id) => apiRequest(`/tipos-habitacion/${id}`),
@@ -34,7 +58,7 @@ export const tiposHabitacionApi = {
   remove: (id) => apiRequest(`/tipos-habitacion/${id}`, { method: "DELETE" }),
 };
 
-//Habitaciones
+//Habitaciones (routes/habitaciones.py)
 export const habitacionesApi = {
   /** estado: disponible | ocupada | mantenimiento | limpieza */
   list: (estado) => apiRequest("/habitaciones/", { query: { estado } }),
@@ -42,26 +66,33 @@ export const habitacionesApi = {
   create: (data) => apiRequest("/habitaciones/", { method: "POST", body: data }),
   update: (id, data) => apiRequest(`/habitaciones/${id}`, { method: "PUT", body: data }),
 
+  // DELETE /habitaciones/{id} tiene un bug en el backend (
+  // {habitacion_idz}). Se deja el servicio con el contrato esperado corregir!!!
+
   remove: (id) => apiRequest(`/habitaciones/${id}`, { method: "DELETE" }),
 };
 
-// Pre-check-in
+// Pre-check-in (routes/precheckin.py)
 export const precheckinApi = {
+  /** GET /reservas/{id}/precheckin/ — null si todavía no se creó el enlace */
   get: (reservaId) => apiRequest(`/reservas/${reservaId}/precheckin/`),
+  /** POST /reservas/{id}/precheckin/ — crea el enlace o genera uno nuevo (el anterior deja de funcionar) */
   create: (reservaId) => apiRequest(`/reservas/${reservaId}/precheckin/`, { method: "POST" }),
+  /** POST /reservas/{id}/precheckin/validar — aplica lo declarado al huésped. { actualizar_documento } si el documento difiere */
   validar: (reservaId, body) => apiRequest(`/reservas/${reservaId}/precheckin/validar`, { method: "POST", body }),
+  /** Rutas públicas (sin sesión): las usa el huésped desde el enlace */
   publicGet: (token) => apiRequest(`/publico/precheckin/${encodeURIComponent(token)}`, { auth: false }),
   publicSend: (token, body) => apiRequest(`/publico/precheckin/${encodeURIComponent(token)}`, { method: "PUT", body, auth: false }),
 };
 
-//}Disponibilidad
+//}Disponibilidad (routes/disponibilidad.py)
 export const disponibilidadApi = {
-  /** fechas formato YYYY-MM-DD */
+  /** fechas en formato YYYY-MM-DD */
   check: ({ fecha_checkin, fecha_checkout, tipo_habitacion_id }) =>
     apiRequest("/disponibilidad/", { query: { fecha_checkin, fecha_checkout, tipo_habitacion_id } }),
 };
 
-//Huéspedes
+//Huéspedes (routes/huespedes.py)
 export const huespedesApi = {
   list: () => apiRequest("/huespedes/"),
   get: (id) => apiRequest(`/huespedes/${id}`),
@@ -70,22 +101,25 @@ export const huespedesApi = {
   remove: (id) => apiRequest(`/huespedes/${id}`, { method: "DELETE" }),
 };
 
-//Reservas
+//Reservas (routes/reservas.py)
 export const reservasApi = {
   list: (filtros = {}) => apiRequest("/reservas/", { query: filtros }),
   get: (id) => apiRequest(`/reservas/${id}`),
   create: (data) => apiRequest("/reservas/", { method: "POST", body: data }),
+  /** PUT /reservas/{id} — parcial: habitacion_id, fechas, num_huespedes, canal, notas (según el estado) */
   update: (id, data) => apiRequest(`/reservas/${id}`, { method: "PUT", body: data }),
   confirmar: (id) => apiRequest(`/reservas/${id}/confirmar`, { method: "POST" }),
   checkin: (id) => apiRequest(`/reservas/${id}/checkin`, { method: "POST" }),
   checkout: (id) => apiRequest(`/reservas/${id}/checkout`, { method: "POST" }),
   cancelar: (id) => apiRequest(`/reservas/${id}/cancelar`, { method: "POST" }),
+  /** POST /reservas/{id}/no-show — el huésped no llegó */
   noShow: (id) => apiRequest(`/reservas/${id}/no-show`, { method: "POST" }),
   remove: (id) => apiRequest(`/reservas/${id}`, { method: "DELETE" }),
+  /** GET /reservas/{id}/resumen (routes/facturas.py) */
   resumen: (id) => apiRequest(`/reservas/${id}/resumen`),
 };
 
-//Servicios
+//Servicios (routes/servicios.py) 
 export const serviciosApi = {
   list: () => apiRequest("/servicios/"),
   get: (id) => apiRequest(`/servicios/${id}`),
@@ -94,33 +128,54 @@ export const serviciosApi = {
   remove: (id) => apiRequest(`/servicios/${id}`, { method: "DELETE" }),
 };
 
-//Servicios consumidos en una reserva
+//Servicios consumidos en una reserva (routes/reserva_servicios.py)
 export const reservaServiciosApi = {
   list: (reservaId) => apiRequest(`/reservas/${reservaId}/servicios/`),
+  /** { servicio_id, cantidad } */
   add: (reservaId, data) => apiRequest(`/reservas/${reservaId}/servicios/`, { method: "POST", body: data }),
+  /** PUT — corrige la cantidad: { cantidad } (el precio unitario queda congelado) */
+  update: (reservaId, itemId, data) => apiRequest(`/reservas/${reservaId}/servicios/${itemId}`, { method: "PUT", body: data }),
   remove: (reservaId, itemId) =>
     apiRequest(`/reservas/${reservaId}/servicios/${itemId}`, { method: "DELETE" }),
 };
 
-//Pagos
+//Pagos (routes/pagos.py)
 export const pagosApi = {
   list: (reservaId) => apiRequest(`/reservas/${reservaId}/pagos/`),
+  /** { monto, metodo_pago } */
   create: (reservaId, data) => apiRequest(`/reservas/${reservaId}/pagos/`, { method: "POST", body: data }),
+  /** PUT — corrige un pago manual: { monto?, metodo_pago? } (administrador o gerente) */
+  update: (reservaId, pagoId, data) => apiRequest(`/reservas/${reservaId}/pagos/${pagoId}`, { method: "PUT", body: data }),
+  /** POST — anula un pago manual dejando el motivo: { motivo } (administrador o gerente) */
+  anular: (reservaId, pagoId, motivo) => apiRequest(`/reservas/${reservaId}/pagos/${pagoId}/anular`, { method: "POST", body: { motivo } }),
 };
-//Configuración del hotel 
+
+// Reportes y datos (routes/reportes.py) — administrador y gerente
+export const reportesApi = {
+  /** Descarga el dataset de reservas para analítica/ML: { desde?, hasta?, solo_cerradas?, formato: "csv" | "json" } */
+  datasetReservas: (query) => apiDownload("/reportes/dataset-reservas", { query }),
+};
+// ── Configuración del hotel (routes/configuracion.py) ───────────
 export const configApi = {
+  /** Cualquier usuario autenticado. Devuelve valores por defecto si aún no se guardó nada. */
   get: () => apiRequest("/configuracion/"),
+  /** Solo administrador. Actualización parcial: { nombre?, nit?, ..., hora_checkin?: "HH:MM", moneda?, zona_horaria? } */
   update: (data) => apiRequest("/configuracion/", { method: "PUT", body: data }),
 };
 
-// Reservas en línea, públicas, no se requiere inicar sesión.
+// Reservas en línea, públicas (routes/reservas_web.py). Solo `crear` requiere sesión (de huésped).
 export const reservasWebApi = {
   hotel: () => apiRequest("/publico/hotel", { auth: false }),
+  /** Habitaciones y servicios que ofrece el hotel (página principal). */
+  catalogo: () => apiRequest("/publico/catalogo", { auth: false }),
   disponibilidad: ({ checkin, checkout, huespedes }) =>
     apiRequest(`/publico/disponibilidad?fecha_checkin=${checkin}&fecha_checkout=${checkout}&huespedes=${huespedes}`, { auth: false }),
-  crear: (body) => apiRequest("/publico/reservas", { method: "POST", body, auth: false }),
+  /** Exige sesión de huésped: lleva el token (auth) y el backend responde 401 sin él. */
+  crear: (body) => apiRequest("/publico/reservas", { method: "POST", body }),
   consultar: (body) => apiRequest("/publico/reservas/consultar", { method: "POST", body, auth: false }),
   cancelar: (body) => apiRequest("/publico/reservas/cancelar", { method: "POST", body, auth: false }),
+  /** Inicia el pago del anticipo: devuelve { url } del checkout de Wompi al que hay que enviar al huésped. */
   pagar: (body) => apiRequest("/publico/reservas/pagar", { method: "POST", body, auth: false }),
+  /** Al volver de Wompi: confirma el pago consultando la transacción (no depende del webhook). */
   verificarPago: (body) => apiRequest("/publico/reservas/verificar-pago", { method: "POST", body, auth: false }),
 };

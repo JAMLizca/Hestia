@@ -1,3 +1,10 @@
+/**
+ * Cliente HTTP central para la API de Hestia (FastAPI).
+ * - Agrega el token JWT (Bearer) guardado tras el login.
+ * - Traduce los errores de FastAPI ({ detail }) a mensajes legibles.
+ * - Notifica cuando el token deja de ser válido (401) para cerrar la sesión.
+ */
+
 export const API_URL = import.meta.env.VITE_API_URL || "/api/v1";
 const TOKEN_KEY = "hestia_access_token";
 
@@ -17,13 +24,14 @@ export const tokenStorage = {
     try {
       localStorage.setItem(TOKEN_KEY, token);
     } catch {
-      
+      /* almacenamiento no disponible: la sesión dura lo que dure la pestaña */
     }
   },
   clear: () => {
     try {
       localStorage.removeItem(TOKEN_KEY);
     } catch {
+      /* noop */
     }
   },
 };
@@ -43,11 +51,12 @@ export class ApiError extends Error {
 function parseDetail(payload, status) {
   const detail = payload?.detail;
   if (typeof detail === "string") return detail;
-  // Errores de validación 
+  // Errores de validación de Pydantic: [{ loc, msg, type }]
   if (Array.isArray(detail) && detail.length) {
     return detail
       .map((item) => {
         const campo = Array.isArray(item.loc) ? item.loc.filter((p) => p !== "body").join(".") : "";
+        // Pydantic antepone "Value error, " a los mensajes de nuestros validadores propios.
         const mensaje = String(item.msg).replace(/^Value error, /, "");
         return campo ? `${campo}: ${mensaje}` : mensaje;
       })
@@ -71,6 +80,7 @@ export async function apiRequest(path, { method = "GET", body, form, query, auth
 
   let requestBody;
   if (form) {
+    // OAuth2PasswordRequestForm espera application/x-www-form-urlencoded
     requestBody = new URLSearchParams(form);
     headers["Content-Type"] = "application/x-www-form-urlencoded";
   } else if (body !== undefined) {
@@ -88,6 +98,9 @@ export async function apiRequest(path, { method = "GET", body, form, query, auth
   if (response.status === 204) return null;
 
   const payload = await response.json().catch(() => null);
+
+  // Sin cuerpo JSON y con error 5xx: lo devuelve el proxy de Vite cuando la API
+  // no está encendida (ECONNREFUSED). FastAPI siempre responde con JSON.
   if (!response.ok && payload === null && response.status >= 500) {
     throw new ApiError(NO_CONNECTION, response.status);
   }
@@ -97,4 +110,44 @@ export async function apiRequest(path, { method = "GET", body, form, query, auth
     throw new ApiError(parseDetail(payload, response.status), response.status);
   }
   return payload;
+}
+
+/**
+ * Descarga un archivo de la API (la petición lleva el token, por eso no basta con un enlace <a href>).
+ * Devuelve { blob, filename } y quien llama dispara la descarga con `saveBlob`.
+ */
+export async function apiDownload(path, { query } = {}) {
+  const url = new URL(`${API_URL}${path}`, window.location.origin);
+  if (query) {
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "" && value !== false) url.searchParams.set(key, value);
+    });
+  }
+  const token = tokenStorage.get();
+  let response;
+  try {
+    response = await fetch(url.pathname + url.search, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  } catch {
+    throw new ApiError(NO_CONNECTION, 0);
+  }
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    if (response.status === 401 && unauthorizedHandler) unauthorizedHandler();
+    throw new ApiError(parseDetail(payload, response.status), response.status);
+  }
+  const disposition = response.headers.get("Content-Disposition") || "";
+  const filename = /filename="?([^";]+)"?/i.exec(disposition)?.[1] ?? "descarga";
+  return { blob: await response.blob(), filename };
+}
+
+/** Guarda un Blob en el equipo del usuario con el nombre indicado. */
+export function saveBlob(blob, filename) {
+  const href = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = href;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 1000);
 }
