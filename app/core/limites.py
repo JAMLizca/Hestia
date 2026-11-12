@@ -71,6 +71,10 @@ def registrar_creacion(request: Request) -> None:
 
 MAX_FALLOS_LOGIN = 10 
 VENTANA_LOGIN = 300
+# Además de la IP se cuenta por cuenta: detrás de un proxy la IP llega en una
+# cabecera que el cliente controla, así que rotándola se esquiva el límite por IP.
+# El correo va en el cuerpo de la petición y no se puede falsear igual.
+MAX_FALLOS_CUENTA = 10
 MAX_REGISTROS = 10  
 VENTANA_REGISTRO = 3600
 _fallos_login: dict[str, deque] = defaultdict(deque)
@@ -84,17 +88,46 @@ def _bloquear_si_excede(cola: deque, ahora: float, ventana: int, maximo: int, me
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=mensaje)
 
 
+_fallos_cuenta: dict[str, deque] = defaultdict(deque)
+_AVISO_LOGIN = "Demasiados intentos fallidos. Espera unos minutos e inténtalo de nuevo."
+
+
+def _clave_cuenta(email: str | None) -> str:
+    return (email or "").strip().lower()
+
+
 def limitar_login(request: Request) -> None:
     with _candado:
         _bloquear_si_excede(
-            _fallos_login[_ip(request)], time.monotonic(), VENTANA_LOGIN, MAX_FALLOS_LOGIN,
-            "Demasiados intentos fallidos. Espera unos minutos e inténtalo de nuevo.",
+            _fallos_login[_ip(request)], time.monotonic(), VENTANA_LOGIN, MAX_FALLOS_LOGIN, _AVISO_LOGIN,
         )
 
 
-def registrar_fallo_login(request: Request) -> None:
+def limitar_login_cuenta(email: str | None) -> None:
+    """Se llama ya dentro de la ruta, cuando el cuerpo del formulario está leído."""
+    clave = _clave_cuenta(email)
+    if not clave:
+        return
     with _candado:
-        _fallos_login[_ip(request)].append(time.monotonic())
+        _bloquear_si_excede(_fallos_cuenta[clave], time.monotonic(), VENTANA_LOGIN, MAX_FALLOS_CUENTA, _AVISO_LOGIN)
+
+
+def registrar_fallo_login(request: Request, email: str | None = None) -> None:
+    ahora = time.monotonic()
+    with _candado:
+        _fallos_login[_ip(request)].append(ahora)
+        clave = _clave_cuenta(email)
+        if clave:
+            _fallos_cuenta[clave].append(ahora)
+        if len(_fallos_cuenta) > 5000:  # evita que el diccionario crezca sin límite
+            for k in [k for k, c in _fallos_cuenta.items() if not c or ahora - c[-1] > VENTANA_LOGIN]:
+                _fallos_cuenta.pop(k, None)
+
+
+def limpiar_fallos_cuenta(email: str | None) -> None:
+    """Un inicio de sesión correcto borra los fallos acumulados de esa cuenta."""
+    with _candado:
+        _fallos_cuenta.pop(_clave_cuenta(email), None)
 
 
 def limitar_registro(request: Request) -> None:

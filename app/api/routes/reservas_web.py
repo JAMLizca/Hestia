@@ -24,6 +24,7 @@ from app.schemas.reserva_web import (
 )
 from app.schemas.inteligencia import RecomendacionOut
 from app.services import inteligencia as inteligencia_servicio
+from app.services import fechas
 from app.services import reservas_web as servicio
 
 router = APIRouter(
@@ -99,7 +100,7 @@ def crear_reserva_web(
 @router.post("/reservas/consultar", response_model=ReservaWebOut, summary="Consulta una reserva con su código y el documento del titular")
 def consultar_reserva_web(datos: ConsultaWeb, request: Request, db: Session = Depends(get_db)):
     reserva = _buscar(db, datos, request)
-    return servicio.salida(reserva, servicio.config_hotel(db))
+    return servicio.salida(reserva, servicio.config_hotel(db), hoy=fechas.hoy_hotel(db))
 
 
 @router.post("/reservas/cancelar", response_model=ReservaWebOut, summary="El huésped cancela su reserva pendiente o confirmada")

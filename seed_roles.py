@@ -1,6 +1,10 @@
 import os
 from getpass import getpass
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import app.db.base  # noqa: F401  (registra todos los modelos)
 from app.core.security import hash_password
 from app.db.session import SessionLocal

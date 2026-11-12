@@ -12,6 +12,7 @@ from app.models.usuario import Usuario
 from app.schemas.configuracion import VALORES_POR_DEFECTO
 from app.schemas.precheckin import PreCheckinEnvio, PreCheckinOut, PreCheckinPublico, ValidarPreCheckin
 from app.services._comun import confirmar_cambios
+from app.services.fechas import hoy_hotel
 
 ESTADOS_ADMITEN = ("pendiente", "confirmada")
 
@@ -55,7 +56,7 @@ def crear(db: Session, reserva_id: int) -> PreCheckinOut:
     reserva = _reserva(db, reserva_id)
     if reserva.estado not in ESTADOS_ADMITEN:
         raise SolicitudInvalida(f"Solo se puede pedir el pre-check-in de una reserva pendiente o confirmada (actual: '{reserva.estado}')")
-    if reserva.fecha_checkin_prevista < date.today():
+    if reserva.fecha_checkin_prevista < hoy_hotel(db):
         raise SolicitudInvalida("La fecha de llegada ya pasó: registra al huésped en recepción")
     pc = reserva.precheckin
     if pc and pc.estado == "validado":
@@ -111,7 +112,7 @@ def resolver(db: Session, token: str) -> PreCheckin:
     if pc is None:
         raise NoEncontrado("Este enlace no es válido. Pídele uno nuevo al hotel.")
     reserva = pc.reserva
-    if pc.estado != "validado" and (reserva.estado not in ESTADOS_ADMITEN or reserva.fecha_checkin_prevista < date.today()):
+    if pc.estado != "validado" and (reserva.estado not in ESTADOS_ADMITEN or reserva.fecha_checkin_prevista < hoy_hotel(db)):
         raise Caducado(
             "Este enlace ya no está disponible porque la reserva cambió o la fecha de llegada ya pasó. Comunícate con el hotel."
         )

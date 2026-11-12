@@ -14,6 +14,7 @@ from app.models.reserva import Reserva
 from app.models.usuario import Usuario
 from app.schemas.reserva import ReservaCreate, ReservaUpdate
 from app.services._comun import confirmar_cambios
+from app.services.fechas import hoy_hotel
 from app.services.ocupacion import ESTADOS_QUE_BLOQUEAN
 from app.services.temporada import temporada_para
 
@@ -75,7 +76,7 @@ def crear(db: Session, datos: ReservaCreate, usuario: Usuario) -> Reserva:
         raise SolicitudInvalida(f"La habitación con id {datos.habitacion_id} no existe")
     if habitacion.estado == "mantenimiento":
         raise SolicitudInvalida("La habitación está en mantenimiento y no se puede reservar")
-    if datos.fecha_checkin_prevista < date.today():
+    if datos.fecha_checkin_prevista < hoy_hotel(db):
         raise SolicitudInvalida("La fecha de check-in no puede ser pasada")
     capacidad = habitacion.tipo_habitacion.capacidad_maxima
     if datos.num_huespedes > capacidad:
@@ -138,7 +139,7 @@ def editar(db: Session, reserva_id: int, datos: ReservaUpdate) -> Reserva:
         raise SolicitudInvalida("La habitación está en mantenimiento y no se puede reservar")
     if checkout <= checkin:
         raise SolicitudInvalida("La fecha de checkout debe ser posterior a la de checkin")
-    if "fecha_checkin_prevista" in cambios and checkin < date.today():
+    if "fecha_checkin_prevista" in cambios and checkin < hoy_hotel(db):
         raise SolicitudInvalida("La fecha de check-in no puede ser pasada")
     capacidad = habitacion.tipo_habitacion.capacidad_maxima
     if num_huespedes > capacidad:
@@ -214,7 +215,7 @@ def marcar_no_show(db: Session, reserva_id: int) -> Reserva:
     reserva = obtener(db, reserva_id)
     if reserva.estado not in ("pendiente", "confirmada"):
         raise SolicitudInvalida(f"Solo se puede marcar 'no se presentó' en una reserva pendiente o confirmada (actual: '{reserva.estado}')")
-    if reserva.fecha_checkin_prevista > date.today():
+    if reserva.fecha_checkin_prevista > hoy_hotel(db):
         raise SolicitudInvalida("Aún no llega la fecha de check-in: si el huésped ya no vendrá, cancela la reserva")
     # Libera la habitación para las fechas restantes; los pagos recibidos se conservan.
     reserva.estado = "no_show"

@@ -22,9 +22,9 @@ from app.core.config import settings
 from app.core.errores import (
     Conflicto,
     DemasiadasSolicitudes,
+    NoEncontrado,
     PasarelaNoDisponible,
     Prohibido,
-    NoEncontrado,
     ServicioNoDisponible,
     SolicitudInvalida,
 )
@@ -55,11 +55,12 @@ from app.schemas.reserva_web import (
     TipoPublico,
 )
 from app.services._comun import confirmar_cambios
+from app.services.fechas import hoy_hotel
 from app.services.ocupacion import habitaciones_ocupadas
 from app.services.precheckin import ESTADOS_ADMITEN
 from app.services.reservas import generar_codigo
-from app.services.usuarios import EMAIL_USUARIO_WEB
 from app.services.temporada import temporada_para
+from app.services.usuarios import EMAIL_USUARIO_WEB
 
 MAX_PENDIENTES_WEB_POR_HUESPED = 3
 MAX_INTENTOS_PAGO = 10 
@@ -121,8 +122,7 @@ def exigir_activas(config: dict) -> None:
         raise Prohibido("Las reservas en línea no están disponibles por ahora. Comunícate con el hotel.")
 
 
-def validar_fechas(checkin: date, checkout: date) -> int:
-    hoy = date.today()
+def validar_fechas(checkin: date, checkout: date, hoy: date) -> int:
     if checkin < hoy:
         raise SolicitudInvalida("La fecha de llegada no puede ser pasada.")
     if checkout <= checkin:
@@ -148,13 +148,14 @@ def _usuario_web(db: Session) -> Usuario:
     return usuario
 
 
-def salida(reserva: Reserva, config: dict, con_enlace: bool = True) -> ReservaWebOut:
+def salida(reserva: Reserva, config: dict, con_enlace: bool = True, hoy: date | None = None) -> ReservaWebOut:
     noches = (reserva.fecha_checkout_prevista - reserva.fecha_checkin_prevista).days
     pc = reserva.precheckin
     enlace = None
     if con_enlace and pc and pc.estado != "validado" and reserva.estado in ESTADOS_ADMITEN:
         enlace = f"/pre-checkin/{pc.token}"
-    puede_cancelar = reserva.estado in ("pendiente", "confirmada") and reserva.fecha_checkin_prevista >= date.today()
+    hoy = hoy or date.today()
+    puede_cancelar = reserva.estado in ("pendiente", "confirmada") and reserva.fecha_checkin_prevista >= hoy
     pagado = _pagado(reserva)
     monto_anticipo = wompi.anticipo(reserva.precio_total, config["anticipo_porcentaje"]) if pagos_activos(config) else None
     puede_pagar = bool(monto_anticipo) and reserva.estado == "pendiente" and pagado < monto_anticipo
@@ -203,7 +204,7 @@ def datos_hotel(db: Session) -> HotelPublico:
 
 def disponibilidad(db: Session, checkin: date, checkout: date, huespedes: int) -> list[TipoDisponible]:
     exigir_activas(config_hotel(db))
-    noches = validar_fechas(checkin, checkout)
+    noches = validar_fechas(checkin, checkout, hoy_hotel(db))
     ocupadas = habitaciones_ocupadas(db, checkin, checkout)
     libres: dict[int, int] = {}
     for h in db.query(Habitacion).filter(Habitacion.estado != "mantenimiento").all():
@@ -230,7 +231,7 @@ def crear(db: Session, datos: ReservaWebCreate, cuenta: CuentaHuesped) -> Reserv
     exigir_activas(config)
     if datos.sitio_web:  # campo trampa: un humano nunca lo ve
         raise SolicitudInvalida("No se pudo procesar la solicitud.")
-    noches = validar_fechas(datos.fecha_checkin, datos.fecha_checkout)
+    noches = validar_fechas(datos.fecha_checkin, datos.fecha_checkout, hoy_hotel(db))
 
     pendientes_cuenta = db.query(Reserva).filter(Reserva.cuenta_id == cuenta.id, Reserva.estado == "pendiente").count()
     if pendientes_cuenta >= MAX_PENDIENTES_WEB_POR_HUESPED:
@@ -297,11 +298,11 @@ def crear(db: Session, datos: ReservaWebCreate, cuenta: CuentaHuesped) -> Reserv
     ))
     confirmar_cambios(db)
     db.refresh(reserva)
-    return salida(reserva, config)
+    return salida(reserva, config, hoy=hoy_hotel(db))
 
 
 def cancelar(db: Session, reserva: Reserva) -> ReservaWebOut:
-    if reserva.estado not in ("pendiente", "confirmada") or reserva.fecha_checkin_prevista < date.today():
+    if reserva.estado not in ("pendiente", "confirmada") or reserva.fecha_checkin_prevista < hoy_hotel(db):
         raise Conflicto(f"Esta reserva está en estado '{reserva.estado}' y ya no se puede cancelar en línea. Comunícate con el hotel.")
     if any(p.estado == "pagado" for p in reserva.pagos):
         raise Conflicto("Esta reserva tiene pagos registrados: comunícate con el hotel para cancelarla.")
@@ -312,7 +313,7 @@ def cancelar(db: Session, reserva: Reserva) -> ReservaWebOut:
             p.estado = "anulado"
     confirmar_cambios(db)
     db.refresh(reserva)
-    return salida(reserva, config_hotel(db))
+    return salida(reserva, config_hotel(db), hoy=hoy_hotel(db))
 
 
 def exigir_pagos_activos(db: Session) -> dict:
@@ -356,4 +357,4 @@ def verificar_pago(db: Session, reserva: Reserva, transaccion_id: str) -> Reserv
         raise NoEncontrado("Ese pago no corresponde a esta reserva.")
     wompi.aplicar_transaccion(db, tx)
     db.refresh(reserva)
-    return salida(reserva, config_hotel(db))
+    return salida(reserva, config_hotel(db), hoy=hoy_hotel(db))

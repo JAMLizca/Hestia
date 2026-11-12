@@ -33,7 +33,14 @@ class Settings(BaseSettings):
     WOMPI_EVENTS_SECRET: str = ""    
     FRONTEND_URL: str = "http://localhost:5173"
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        # El .env también lleva variables que solo usan los scripts de despliegue
+        # (ADMIN_*). Sin extra="ignore", pydantic rechaza toda clave no declarada
+        # aquí y la aplicación no arranca.
+        extra="ignore",
+    )
 
     @field_validator("SECRET_KEY")
     @classmethod

@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.api.deps import TIPO_CLIENTE, TIPO_PERSONAL, get_current_user, get_db
 from app.core.errores import ErrorNegocio
-from app.core.limites import limitar_login, registrar_fallo_login
+from app.core.limites import limitar_login, limitar_login_cuenta, limpiar_fallos_cuenta, registrar_fallo_login
 from app.core.security import create_access_token
 from app.services import cuentas
 from app.services import usuarios as servicio
@@ -37,6 +37,7 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
+    limitar_login_cuenta(form_data.username)
     try:
         if db.query(Usuario.id).filter(Usuario.email == form_data.username).first():
             usuario = servicio.autenticar(db, form_data.username, form_data.password)
@@ -48,8 +49,9 @@ def login(
             cuenta = cuentas.autenticar(db, form_data.username, form_data.password)
             token = create_access_token(subject=str(cuenta.id), extra_claims={"tipo": TIPO_CLIENTE})
     except ErrorNegocio:
-        registrar_fallo_login(request)
+        registrar_fallo_login(request, form_data.username)
         raise
+    limpiar_fallos_cuenta(form_data.username)
     return Token(access_token=token)
 
 

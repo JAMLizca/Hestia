@@ -10,7 +10,7 @@ Recomendación
   El modelo estima qué tipo de habitación suele elegirse con una reserva como esta.
 """
 from collections import defaultdict
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
 from sqlalchemy import func
@@ -21,7 +21,7 @@ from app.ml.prediccion import ModeloNoDisponible, cargar
 from app.models.habitacion import Habitacion
 from app.models.reserva import Reserva
 from app.models.tipo_habitacion import TipoHabitacion
-from app.services import configuracion
+from app.services.fechas import hoy_hotel as _hoy_hotel
 from app.services.ocupacion import habitaciones_ocupadas
 from app.services.temporada import temporada_para
 
@@ -30,16 +30,8 @@ HORIZONTE_MAXIMO = 30
 MAX_SUGERENCIAS = 3
 
 
-def hoy_hotel(db: Session) -> date:
-    zona = configuracion.obtener(db).zona_horaria
-    try:
-        from zoneinfo import ZoneInfo
-
-        return datetime.now(ZoneInfo(zona)).date()
-    except Exception:  # sin base de zonas horarias en el sistema
-        if zona == "America/Bogota":
-            return datetime.now(timezone(timedelta(hours=-5))).date()
-        return date.today()
+# Se mantiene el nombre por compatibilidad: la implementación vive en app/services/fechas.py
+hoy_hotel = _hoy_hotel
 
 
 def _modelo(nombre: str):
@@ -189,10 +181,21 @@ def recomendar(db: Session, llegada: date, salida: date, huespedes: int, prefere
     probs = modelo.probabilidades(fila)
     pesos = {tid: probs.get(tipos[tid].nombre, 0.0) for tid in por_tipo}  # un tipo que el modelo no conoce pesa 0
     total = sum(pesos.values())
-    if total <= 0:
-        return []
 
-    orden = sorted(por_tipo, key=lambda tid: pesos[tid], reverse=True)[:MAX_SUGERENCIAS]
+    # El modelo se entrenó con unos nombres de tipo concretos. Si el hotel usa otros,
+    # ninguno pesa: en vez de no sugerir nada, se ordena por ajuste de capacidad y precio.
+    modelo_aplica = total > 0
+    if not modelo_aplica:
+        pesos = {tid: 1.0 for tid in por_tipo}
+        total = float(len(pesos))
+
+    if modelo_aplica:
+        orden = sorted(por_tipo, key=lambda tid: pesos[tid], reverse=True)[:MAX_SUGERENCIAS]
+    else:
+        orden = sorted(
+            por_tipo,
+            key=lambda tid: (tipos[tid].capacidad_maxima - huespedes, tipos[tid].precio_base),
+        )[:MAX_SUGERENCIAS]
     precios = {tid: tipos[tid].precio_base for tid in orden}
     mas_barato = min(precios, key=precios.get) if len(orden) > 1 else None
 
@@ -204,7 +207,10 @@ def recomendar(db: Session, llegada: date, salida: date, huespedes: int, prefere
         mejor_n, mejor = max(puntuadas, key=lambda x: x[0])  # empata → la de número menor (el primero que aparece)
         motivos = []
         if rango == 0:
-            motivos.append("La más elegida con reservas parecidas a esta")
+            motivos.append(
+                "La más elegida con reservas parecidas a esta" if modelo_aplica
+                else "La que mejor se ajusta al grupo por capacidad y precio"
+            )
         motivos.append(f"Capacidad para {t.capacidad_maxima} personas (grupo de {huespedes})")
         motivos.extend(_cumple_preferencias(mejor, t, preferencias, piso_max, piso_min))
         if tid == mas_barato:

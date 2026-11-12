@@ -12,7 +12,7 @@ from app.models.cuenta_huesped import CuentaHuesped
 from app.schemas.cuenta import CuentaOut, RegistroCuenta
 from app.schemas.reserva_web import PagoIniciado, ReservaWebOut
 from app.schemas.usuario import Token
-from app.services import cuentas
+from app.services import cuentas, fechas
 from app.services import reservas_web as web
 
 router = APIRouter(prefix="/cuenta", tags=["Cuenta del huésped"], dependencies=[Depends(limitar_publico)])
@@ -48,7 +48,8 @@ def mi_cuenta(cuenta: CuentaHuesped = Depends(get_cuenta_actual)):
 )
 def mis_reservas(cuenta: CuentaHuesped = Depends(get_cuenta_actual), db: Session = Depends(get_db)):
     config = web.config_hotel(db)
-    return [web.salida(r, config) for r in cuentas.reservas_de(db, cuenta)]
+    hoy = fechas.hoy_hotel(db)
+    return [web.salida(r, config, hoy=hoy) for r in cuentas.reservas_de(db, cuenta)]
 
 
 @router.post(
