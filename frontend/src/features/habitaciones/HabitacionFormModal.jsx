@@ -72,8 +72,8 @@ export default function HabitacionFormModal({ habitacion, tipos, onClose, onSave
           <Field label="Número o nombre" required hint="Hasta 10 caracteres, único (ej.: 101, Suite 2).">
             <Input value={values.numero} onChange={set("numero")} required maxLength={10} autoFocus={!editing} />
           </Field>
-          <Field label="Piso">
-            <Input type="number" value={values.piso} onChange={set("piso")} />
+          <Field label="Piso" hint="Entre 0 y 200.">
+            <Input type="number" min={0} max={200} step={1} value={values.piso} onChange={set("piso")} />
           </Field>
           <Field label="Tipo de habitación" required hint={editing ? "Cambiar el tipo no modifica el precio de las reservas ya creadas." : undefined}>
             <Select

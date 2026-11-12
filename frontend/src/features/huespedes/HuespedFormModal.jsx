@@ -77,28 +77,28 @@ export default function HuespedFormModal({ huesped, onClose, onSaved }) {
             <Select options={TIPOS_DOCUMENTO} value={values.tipo_documento} onChange={set("tipo_documento")} required />
           </Field>
           <Field label="Número de documento" required hint={editing ? "El documento no se puede modificar." : undefined}>
-            <Input value={values.documento_identidad} onChange={set("documento_identidad")} required disabled={editing} />
+            <Input value={values.documento_identidad} onChange={set("documento_identidad")} required disabled={editing} minLength={3} maxLength={30} />
           </Field>
           <Field label="Nombres" required>
-            <Input value={values.nombres} onChange={set("nombres")} required autoFocus />
+            <Input value={values.nombres} onChange={set("nombres")} required maxLength={100} autoFocus />
           </Field>
           <Field label="Apellidos" required>
-            <Input value={values.apellidos} onChange={set("apellidos")} required />
+            <Input value={values.apellidos} onChange={set("apellidos")} required maxLength={100} />
           </Field>
           <Field label="Correo electrónico">
-            <Input type="email" value={values.email} onChange={set("email")} placeholder="nombre@correo.com" />
+            <Input type="email" value={values.email} onChange={set("email")} placeholder="nombre@correo.com" maxLength={150} />
           </Field>
           <Field label="Teléfono">
-            <Input type="tel" value={values.telefono} onChange={set("telefono")} />
+            <Input type="tel" value={values.telefono} onChange={set("telefono")} minLength={7} maxLength={30} pattern="[0-9+()\\- ]{7,30}" title="Solo d\u00edgitos y los signos + - ( )" />
           </Field>
           <Field label="Nacionalidad">
-            <Input value={values.nacionalidad} onChange={set("nacionalidad")} />
+            <Input value={values.nacionalidad} onChange={set("nacionalidad")} minLength={2} maxLength={60} />
           </Field>
           <Field label="Fecha de nacimiento">
             <Input type="date" value={values.fecha_nacimiento} onChange={set("fecha_nacimiento")} />
           </Field>
           <Field label="Preferencias" full hint="Ej.: piso alto, cama doble, alergias alimentarias.">
-            <Textarea value={values.preferencias} onChange={set("preferencias")} />
+            <Textarea value={values.preferencias} onChange={set("preferencias")} maxLength={255} />
           </Field>
         </div>
         {error && (

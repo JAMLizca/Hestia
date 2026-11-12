@@ -388,7 +388,7 @@ function Reservar({ hotel }) {
                 <input className="input" type="email" value={huesped.email} onChange={setH("email")} required maxLength={150} autoComplete="email" name="email" />
               </Campo>
               <Campo label="Teléfono móvil" required>
-                <input className="input" type="tel" value={huesped.telefono} onChange={setH("telefono")} required minLength={7} maxLength={30} autoComplete="tel" name="telefono" />
+                <input className="input" type="tel" value={huesped.telefono} onChange={setH("telefono")} required minLength={7} maxLength={30} pattern="[0-9+()\\- ]{7,30}" title="Solo d\u00edgitos y los signos + - ( )" autoComplete="tel" name="telefono" />
               </Campo>
               <Campo label="Ciudad y país de procedencia" full>
                 <input className="input" value={huesped.procedencia} onChange={setH("procedencia")} maxLength={100} placeholder="Ej. Medellín, Colombia" name="procedencia" />
