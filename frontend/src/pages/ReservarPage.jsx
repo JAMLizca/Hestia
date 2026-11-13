@@ -402,7 +402,8 @@ function Reservar({ hotel }) {
               <p className="pc__help">
                 Tu reserva es para {fechas.huespedes} personas. Registra a las demás (hasta {maxAcompanantes}); si alguien aún no está definido, puedes dejarlo para recepción.
               </p>
-              {acompanantes.slice(0, maxAcompanantes).map((persona, i) => (
+              {
+              acompanantes.slice(0, maxAcompanantes).map((persona, i) => (
                 <div className="pc__companion" key={i}>
                   <div className="pc__companion-head">
                     <strong>Acompañante {i + 1}</strong>
@@ -415,7 +416,7 @@ function Reservar({ hotel }) {
               ))}
               {acompanantes.length < maxAcompanantes && (
                 <button type="button" className="pc__add" onClick={() => setAcompanantes((l) => [...l, { ...PERSONA_VACIA, tipo_documento: huesped.tipo_documento }])}>
-                  <Plus size={15} /> Agregar acompañante
+                  <Plus size={15} /> Agregar acompañanteReservarPage
                 </button>
               )}
             </section>
