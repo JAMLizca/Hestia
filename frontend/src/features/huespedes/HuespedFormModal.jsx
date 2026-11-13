@@ -89,7 +89,7 @@ export default function HuespedFormModal({ huesped, onClose, onSaved }) {
             <Input type="email" value={values.email} onChange={set("email")} placeholder="nombre@correo.com" maxLength={150} />
           </Field>
           <Field label="Teléfono">
-            <Input type="tel" value={values.telefono} onChange={set("telefono")} minLength={7} maxLength={30} pattern="[0-9+()\\- ]{7,30}" title="Solo d\u00edgitos y los signos + - ( )" />
+            <Input type="tel" value={values.telefono} onChange={set("telefono")} minLength={7} maxLength={30} pattern="[0-9 +()-]{7,30}" title="Solo dígitos y los signos + - ( )" />
           </Field>
           <Field label="Nacionalidad">
             <Input value={values.nacionalidad} onChange={set("nacionalidad")} minLength={2} maxLength={60} />

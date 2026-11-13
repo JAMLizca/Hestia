@@ -217,7 +217,7 @@ export default function PreCheckinPage() {
           <Persona valores={values.titular} onChange={setTitular} prefijo="titular" />
           <div className="pc-grid pc-grid--spaced">
             <Campo label="Teléfono móvil" required>
-              <input className="input" type="tel" value={values.titular.telefono} onChange={(e) => setTitular({ ...values.titular, telefono: e.target.value })} required minLength={7} maxLength={30} pattern="[0-9+()\\- ]{7,30}" title="Solo d\u00edgitos y los signos + - ( )" autoComplete="tel" name="titular-telefono" />
+              <input className="input" type="tel" value={values.titular.telefono} onChange={(e) => setTitular({ ...values.titular, telefono: e.target.value })} required minLength={7} maxLength={30} pattern="[0-9 +()-]{7,30}" title="Solo dígitos y los signos + - ( )" autoComplete="tel" name="titular-telefono" />
             </Campo>
             <Campo label="Correo electrónico" required>
               <input className="input" type="email" value={values.titular.email} onChange={(e) => setTitular({ ...values.titular, email: e.target.value })} required maxLength={150} autoComplete="email" name="titular-email" />

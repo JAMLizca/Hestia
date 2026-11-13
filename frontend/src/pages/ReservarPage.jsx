@@ -156,7 +156,8 @@ function Reservar({ hotel }) {
   const yaDesplazo = useRef(false);
   const { user, status, esCliente, esPersonal, logout } = useAuth();
   const [huesped, setHuesped] = useState({ ...PERSONA_VACIA, email: "", telefono: "", procedencia: "" });
-  // Registro de alojamiento
+  // Registro de alojamiento: acompañantes y datos de la llegada.
+  const [acompanantes, setAcompanantes] = useState([]);
   const [llegada, setLlegada] = useState({ hora_llegada: "", motivo_viaje: "" });
   // Con la cuenta iniciada, los datos de contacto se rellenan solos
   useEffect(() => {
@@ -388,7 +389,7 @@ function Reservar({ hotel }) {
                 <input className="input" type="email" value={huesped.email} onChange={setH("email")} required maxLength={150} autoComplete="email" name="email" />
               </Campo>
               <Campo label="Teléfono móvil" required>
-                <input className="input" type="tel" value={huesped.telefono} onChange={setH("telefono")} required minLength={7} maxLength={30} pattern="[0-9+()\\- ]{7,30}" title="Solo d\u00edgitos y los signos + - ( )" autoComplete="tel" name="telefono" />
+                <input className="input" type="tel" value={huesped.telefono} onChange={setH("telefono")} required minLength={7} maxLength={30} pattern="[0-9 +()-]{7,30}" title="Solo dígitos y los signos + - ( )" autoComplete="tel" name="telefono" />
               </Campo>
               <Campo label="Ciudad y país de procedencia" full>
                 <input className="input" value={huesped.procedencia} onChange={setH("procedencia")} maxLength={100} placeholder="Ej. Medellín, Colombia" name="procedencia" />
@@ -402,8 +403,7 @@ function Reservar({ hotel }) {
               <p className="pc__help">
                 Tu reserva es para {fechas.huespedes} personas. Registra a las demás (hasta {maxAcompanantes}); si alguien aún no está definido, puedes dejarlo para recepción.
               </p>
-              {
-              acompanantes.slice(0, maxAcompanantes).map((persona, i) => (
+              {acompanantes.slice(0, maxAcompanantes).map((persona, i) => (
                 <div className="pc__companion" key={i}>
                   <div className="pc__companion-head">
                     <strong>Acompañante {i + 1}</strong>
@@ -416,7 +416,7 @@ function Reservar({ hotel }) {
               ))}
               {acompanantes.length < maxAcompanantes && (
                 <button type="button" className="pc__add" onClick={() => setAcompanantes((l) => [...l, { ...PERSONA_VACIA, tipo_documento: huesped.tipo_documento }])}>
-                  <Plus size={15} /> Agregar acompañanteReservarPage
+                  <Plus size={15} /> Agregar acompañante
                 </button>
               )}
             </section>
