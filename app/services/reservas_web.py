@@ -7,8 +7,6 @@ Reglas de las reservas en línea (página pública /reservar), sin sesión de us
   vence sola (ver app/core/vencimiento.py).
 - Consultar, cancelar y pagar una reserva con el código y el documento del titular.
 
-Todo está detrás del interruptor `reservas_web_activas` de Configuración (apagado por defecto).
-La limitación por IP (anti-abuso) es una preocupación HTTP y vive en las rutas.
 """
 import secrets
 from datetime import date, datetime, timedelta, timezone
